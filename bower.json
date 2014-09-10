@@ -1,0 +1,7 @@
+{
+  "name": "my-project",
+  "version": "0.0.1",
+  "dependencies": {
+    "swagger-ui": "~2.0.22"
+  }
+}

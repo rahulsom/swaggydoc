@@ -1,14 +1,15 @@
 class SwaggydocGrailsPlugin {
     // the plugin version
-    def version = "0.1"
+    def version = "0.1-SNAPSHOT"
     // the version or versions of Grails the plugin is designed for
     def grailsVersion = "2.4 > *"
     // resources that are excluded from plugin packaging
     def pluginExcludes = [
-        "grails-app/views/error.gsp"
+            "grails-app/views/error.gsp",
+            "grails-app/controllers/com/github/rahulsom/swaggydoc/DemoController.groovy",
+            "grails-app/domain/com/github/rahulsom/swaggydoc/Demo.groovy"
     ]
 
-    // TODO Fill in these fields
     def title = "Swaggydoc Plugin" // Headline display name of the plugin
     def author = "Rahul Somasunderam"
     def authorEmail = "rahul.som@gmail.com"
@@ -31,10 +32,10 @@ Uses swagger to document Grails Controllers
 //    def developers = [ [ name: "Joe Bloggs", email: "joe@bloggs.net" ]]
 
     // Location of the plugin's issue tracker.
-//    def issueManagement = [ system: "JIRA", url: "http://jira.grails.org/browse/GPMYPLUGIN" ]
+    def issueManagement = [ system: "Github", url: "https://github.com/rahulsom/swaggydoc" ]
 
     // Online location of the plugin's browseable source code.
-//    def scm = [ url: "http://svn.codehaus.org/grails-plugins/" ]
+    def scm = [ url: "http://github.com/rahulsom/swaggydoc.git" ]
 
     def doWithWebDescriptor = { xml ->
         // TODO Implement additions to web.xml (optional), this event occurs before
