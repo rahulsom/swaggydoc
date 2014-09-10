@@ -10,10 +10,10 @@ class SwaggydocGrailsPlugin {
 
     // TODO Fill in these fields
     def title = "Swaggydoc Plugin" // Headline display name of the plugin
-    def author = "Your name"
-    def authorEmail = ""
+    def author = "Rahul Somasunderam"
+    def authorEmail = "rahul.som@gmail.com"
     def description = '''\
-Brief summary/description of the plugin.
+Uses swagger to document Grails Controllers
 '''
 
     // URL to the plugin's documentation
@@ -22,7 +22,7 @@ Brief summary/description of the plugin.
     // Extra (optional) plugin metadata
 
     // License: one of 'APACHE', 'GPL2', 'GPL3'
-//    def license = "APACHE"
+    def license = "APACHE"
 
     // Details of company behind the plugin (if there is one)
 //    def organization = [ name: "My Company", url: "http://www.my-company.com/" ]
