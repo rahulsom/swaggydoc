@@ -8,6 +8,8 @@ import com.wordnik.swagger.annotations.ApiResponses
 import grails.converters.JSON
 import org.codehaus.groovy.grails.commons.GrailsClass
 
+import java.lang.reflect.Field
+
 class ApiController {
 
     def index() {
@@ -72,6 +74,10 @@ class ApiController {
             method.annotations.find { ann -> ann.annotationType() == ApiOperation }
         }
 
+        def modelTypes = (apiMethods*.annotations.flatten().findAll {
+            ann -> ann.annotationType() == ApiOperation
+        } as List<ApiOperation>)*.response()
+
         def apis = apiMethods.collect { method ->
             def apiParams =  (method.annotations.find {
                 it.annotationType() == ApiImplicitParams
@@ -82,7 +88,7 @@ class ApiController {
                 [it.name(), "{${it.name()}}"]
             }
             def link = g.createLink(controller: theController.logicalPropertyName, action: method.name,
-                    params: pathParams) - basePath
+                    params: pathParams).replace('%7B','{').replace('%7D', '}') - basePath
             String httpMethod = theController.referenceInstance.allowedMethods[method.name] ?: 'GET'
             ApiOperation apiOperation = method.annotations.find {
                 it.annotationType() == ApiOperation
@@ -103,14 +109,30 @@ class ApiController {
                                 notes           : apiOperation.notes(),
                                 nickname        : apiOperation.nickname() ?: inferredNickname,
                                 parameters      : parameters,
+                                type            : apiOperation.response() == Void ? 'void' : apiOperation.response().simpleName,
                                 responseMessages: apiResponses?.value()?.collect { apiResponse ->
                                     [code: apiResponse.code(), message: apiResponse.message()]
                                 }
                         ]
                     ]
             ]
+        }.groupBy {it.path}.collect {p, a ->
+          [path: p, operations: a*.operations.flatten() ]
         }
 
+        def models = modelTypes.unique().collectEntries { model ->
+            def props = model.declaredFields.findAll {
+                !it.toString().contains(' static ') && !it.toString().contains(' transient ') && it.name != 'errors'
+            }
+
+            def modelDescription = [
+                    id : model.simpleName,
+                    properties: props.collectEntries { Field f ->
+                        [f.name, getTypeDescriptor(f)]
+                    }
+            ]
+            [model.simpleName, modelDescription]
+        }
         render([
                 apiVersion    : config.apiVersion ?: grailsApplication.metadata['app.version'],
                 swaggerVersion: '1.2',
@@ -118,9 +140,27 @@ class ApiController {
                 resourcePath  : resourcePath - basePath,
                 produces      : api.produces()?.split(',') ?: ['application/json'],
                 consumes      : api.consumes()?.split(',') ?: ['application/json'],
-                apis          : apis
+                apis          : apis,
+                models        : models,
 
         ] as JSON)
+    }
+
+    private Map getTypeDescriptor(Field f) {
+        if (f.type.isAssignableFrom(String)) {
+            [type: 'string']
+        } else if (f.type.isAssignableFrom(Double)) {
+            [type: 'number', format: 'double']
+        } else if (f.type.isAssignableFrom(Long)) {
+            [type: 'integer', format: 'int64']
+        } else if (f.type.isAssignableFrom(Date)) {
+            [type: 'string', format: 'date-time']
+        } else if (f.type.isAssignableFrom(Boolean)) {
+            [type: 'boolean']
+        } else {
+            [type: f.type.simpleName]
+        }
+
     }
 
     private LinkedHashMap<String, Serializable> paramToMap(ApiImplicitParam apiParam) {

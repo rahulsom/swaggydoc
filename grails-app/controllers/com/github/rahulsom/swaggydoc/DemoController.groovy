@@ -10,9 +10,9 @@ import com.wordnik.swagger.annotations.*
         description = 'Demo API',
         position = 0,
         produces = 'application/json,application/xml,text/html',
-        consumes = 'application/json,application/xml'
+        consumes = 'application/json,application/xml,application/x-www-form-urlencoded'
 )
-class DemoController extends RestfulController<Demo> {
+class DemoController extends RestfulController {
 
     static responseFormats = ['json', 'xml']
 
@@ -21,7 +21,7 @@ class DemoController extends RestfulController<Demo> {
     }
 
     @Override
-    @ApiOperation(value = 'list demos')
+    @ApiOperation(value = 'List demos', response = Demo, responseContainer = 'list')
     @ApiImplicitParams([
             @ApiImplicitParam(name = 'offset', value = 'Records to skip', defaultValue = '0', paramType = 'query', dataType = 'int'),
             @ApiImplicitParam(name = 'max', value = 'Max records to return', defaultValue = '10', paramType = 'query', dataType = 'int'),
@@ -34,7 +34,7 @@ class DemoController extends RestfulController<Demo> {
     }
 
     @Override
-    @ApiOperation(value = "Show Demo")
+    @ApiOperation(value = "Show Demo", response = Demo)
     @ApiResponses([
             @ApiResponse(code = 400, message = 'Bad Id provided'),
             @ApiResponse(code = 404, message = 'Could not find Demo with that Id'),
@@ -46,9 +46,9 @@ class DemoController extends RestfulController<Demo> {
         super.show()
     }
 
-    @ApiOperation(value = "Save Demo")
+    @ApiOperation(value = "Save Demo", response = Demo)
     @ApiImplicitParams([
-            @ApiImplicitParam(name='body', paramType = 'body', required = true),
+            @ApiImplicitParam(name='body', paramType = 'body', required = true, dataType = 'Demo'),
     ])
     @Override
     def save() {
@@ -56,14 +56,14 @@ class DemoController extends RestfulController<Demo> {
     }
 
     @Override
-    @ApiOperation(value = "Update Demo")
+    @ApiOperation(value = "Update Demo", response = Demo)
     @ApiResponses([
             @ApiResponse(code = 400, message = 'Bad Id provided'),
             @ApiResponse(code = 404, message = 'Could not find Demo with that Id'),
     ])
     @ApiImplicitParams([
             @ApiImplicitParam(name = 'id', value = 'Id to fetch', paramType = 'path', dataType = 'int', required = true),
-            @ApiImplicitParam(name='body', paramType = 'body', required = true)
+            @ApiImplicitParam(name='body', paramType = 'body', required = true, dataType = 'Demo')
     ])
     def update() {
         super.update()
@@ -83,14 +83,14 @@ class DemoController extends RestfulController<Demo> {
     }
 
     @Override
-    @ApiOperation(value = "Patch Demo")
+    @ApiOperation(value = "Patch Demo", response = Demo)
     @ApiResponses([
             @ApiResponse(code = 400, message = 'Bad Id provided'),
             @ApiResponse(code = 404, message = 'Could not find Demo with that Id'),
     ])
     @ApiImplicitParams([
             @ApiImplicitParam(name = 'id', value = 'Id to fetch', paramType = 'path', dataType = 'int', required = true),
-            @ApiImplicitParam(name='body', paramType = 'body', required = true)
+            @ApiImplicitParam(name='body', paramType = 'body', required = true, dataType = 'Demo')
     ])
     Object patch() {
         return super.patch()

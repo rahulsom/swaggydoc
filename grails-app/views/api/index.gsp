@@ -4,7 +4,7 @@
 <head>
     <title>Swagger UI</title>
     <link href='//fonts.googleapis.com/css?family=Droid+Sans:400,700' rel='stylesheet' type='text/css'/>
-    
+
     <link href=${g.resource(dir: 'css', file: 'reset.css')} media='screen' rel='stylesheet' type='text/css'/>
     <link href=${g.resource(dir: 'css', file: 'screen.css')} media='screen' rel='stylesheet' type='text/css'/>
     <script src=${g.resource(dir: 'js/swagger-lib', file: 'shred.bundle.js')} type='text/javascript'></script>
@@ -67,7 +67,7 @@
 <body class="swagger-section">
 <div id='header'>
     <div class="swagger-ui-wrap">
-        <a id="logo" href="http://swagger.wordnik.com">swagger</a>
+        <a id="logo" href="${g.createLink(controller: 'api')}">swagger</a>
 
         <form id='api_selector'>
             <div class='input'>
