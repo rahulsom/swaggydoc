@@ -47,6 +47,9 @@ class DemoController extends RestfulController {
     }
 
     @ApiOperation(value = "Save Demo", response = Demo)
+    @ApiResponses([
+            @ApiResponse(code = 422, message = 'Bad Entity Received'),
+    ])
     @ApiImplicitParams([
             @ApiImplicitParam(name='body', paramType = 'body', required = true, dataType = 'Demo'),
     ])
@@ -60,6 +63,7 @@ class DemoController extends RestfulController {
     @ApiResponses([
             @ApiResponse(code = 400, message = 'Bad Id provided'),
             @ApiResponse(code = 404, message = 'Could not find Demo with that Id'),
+            @ApiResponse(code = 422, message = 'Bad Entity Received'),
     ])
     @ApiImplicitParams([
             @ApiImplicitParam(name = 'id', value = 'Id to fetch', paramType = 'path', dataType = 'int', required = true),
@@ -87,6 +91,7 @@ class DemoController extends RestfulController {
     @ApiResponses([
             @ApiResponse(code = 400, message = 'Bad Id provided'),
             @ApiResponse(code = 404, message = 'Could not find Demo with that Id'),
+            @ApiResponse(code = 422, message = 'Bad Entity Received'),
     ])
     @ApiImplicitParams([
             @ApiImplicitParam(name = 'id', value = 'Id to fetch', paramType = 'path', dataType = 'int', required = true),
