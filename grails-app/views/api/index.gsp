@@ -5,22 +5,22 @@
     <title>Swagger UI</title>
     <link href='//fonts.googleapis.com/css?family=Droid+Sans:400,700' rel='stylesheet' type='text/css'/>
 
-    <link href=${g.resource(dir: 'css', file: 'reset.css')} media='screen' rel='stylesheet' type='text/css'/>
-    <link href=${g.resource(dir: 'css', file: 'screen.css')} media='screen' rel='stylesheet' type='text/css'/>
-    <script src=${g.resource(dir: 'js/swagger-lib', file: 'shred.bundle.js')} type='text/javascript'></script>
-    <script src=${g.resource(dir: 'js/swagger-lib', file: 'jquery-1.8.0.min.js')} type='text/javascript'></script>
-    <script src=${g.resource(dir: 'js/swagger-lib', file: 'jquery.slideto.min.js')} type='text/javascript'></script>
-    <script src=${g.resource(dir: 'js/swagger-lib', file: 'jquery.wiggle.min.js')} type='text/javascript'></script>
-    <script src=${g.resource(dir: 'js/swagger-lib', file: 'jquery.ba-bbq.min.js')} type='text/javascript'></script>
-    <script src=${g.resource(dir: 'js/swagger-lib', file: 'handlebars-1.0.0.js')} type='text/javascript'></script>
-    <script src=${g.resource(dir: 'js/swagger-lib', file: 'underscore-min.js')} type='text/javascript'></script>
-    <script src=${g.resource(dir: 'js/swagger-lib', file: 'backbone-min.js')} type='text/javascript'></script>
-    <script src=${g.resource(dir: 'js/swagger-lib', file: 'swagger.js')} type='text/javascript'></script>
-    <script src=${g.resource(dir: 'js/', file: 'swagger-ui.min.js')} type='text/javascript'></script>
-    <script src=${g.resource(dir: 'js/swagger-lib', file: 'highlight.7.3.pack.js')} type='text/javascript'></script>
+    <link href="${g.resource(dir: 'css', file: 'reset.css')}" media='screen' rel='stylesheet' type='text/css'/>
+    <link href="${g.resource(dir: 'css', file: 'screen.css')}" media='screen' rel='stylesheet' type='text/css'/>
+    <script src="${g.resource(dir: 'js/swagger-lib', file: 'shred.bundle.js')}" type='text/javascript'></script>
+    <script src="${g.resource(dir: 'js/swagger-lib', file: 'jquery-1.8.0.min.js')}" type='text/javascript'></script>
+    <script src="${g.resource(dir: 'js/swagger-lib', file: 'jquery.slideto.min.js')}" type='text/javascript'></script>
+    <script src="${g.resource(dir: 'js/swagger-lib', file: 'jquery.wiggle.min.js')}" type='text/javascript'></script>
+    <script src="${g.resource(dir: 'js/swagger-lib', file: 'jquery.ba-bbq.min.js')}" type='text/javascript'></script>
+    <script src="${g.resource(dir: 'js/swagger-lib', file: 'handlebars-1.0.0.js')}" type='text/javascript'></script>
+    <script src="${g.resource(dir: 'js/swagger-lib', file: 'underscore-min.js')}" type='text/javascript'></script>
+    <script src="${g.resource(dir: 'js/swagger-lib', file: 'backbone-min.js')}" type='text/javascript'></script>
+    <script src="${g.resource(dir: 'js/swagger-lib', file: 'swagger.js')}" type='text/javascript'></script>
+    <script src="${g.resource(dir: 'js/', file: 'swagger-ui.min.js')}" type='text/javascript'></script>
+    <script src="${g.resource(dir: 'js/swagger-lib', file: 'highlight.7.3.pack.js')}" type='text/javascript'></script>
 
     <!-- enabling this will enable oauth2 implicit scope support -->
-    <script src=${g.resource(dir: 'js/swagger-lib', file: 'swagger-oauth.js')} type='text/javascript'></script>
+    <script src="${g.resource(dir: 'js/swagger-lib', file: 'swagger-oauth.js')}" type='text/javascript'></script>
 
     <script type="text/javascript">
         $(function () {
@@ -58,7 +58,7 @@
                     log("added key " + key);
                     window.authorizations.add("key", new ApiKeyAuthorization("api_key", key, "query"));
                 }
-            })
+            });
             window.swaggerUi.load();
         });
     </script>
