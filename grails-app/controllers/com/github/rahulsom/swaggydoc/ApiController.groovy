@@ -47,6 +47,7 @@ class ApiController {
      * Converts a controller to an api declaration
      * @param controller
      */
+    @SuppressWarnings("GrMethodMayBeStatic")
     private Map controllerToApi(GrailsClass controller) {
         def name = controller.logicalPropertyName
         [
@@ -79,7 +80,7 @@ class ApiController {
      * @param controller
      * @return
      */
-    private Api getApi(GrailsClass controller) {
+    private static Api getApi(GrailsClass controller) {
         controller.clazz.annotations.find { it.annotationType() == Api }
     }
 
@@ -90,7 +91,7 @@ class ApiController {
      * @param object
      * @return
      */
-    private <T> T findAnnotation(Class<T> clazz, AccessibleObject object) {
+    private static <T> T findAnnotation(Class<T> clazz, AccessibleObject object) {
         object.annotations.find { it.annotationType() == clazz }
     }
 
@@ -108,19 +109,26 @@ class ApiController {
         def resourcePath = g.createLink(controller: theController.logicalPropertyName)
 
         def theControllerClazz = theController.referenceInstance.class
-        List<Method> apiMethods = theControllerClazz.declaredMethods.
+        List<Method> apiMethods = theControllerClazz.methods.
                 findAll { findAnnotation(ApiOperation, it) } as List<Method>
+
+        def listMethods = theControllerClazz.methods.
+                findAll { findAnnotation(SwaggyList, it) } as List<Method>
+
+        def showMethods = theControllerClazz.methods.
+                findAll { findAnnotation(SwaggyShow, it) } as List<Method>
 
         def allAnnotations = apiMethods*.annotations.flatten()
         List<ApiOperation> apiOperationAnnotations = allAnnotations.findAll {
             it.annotationType() == ApiOperation
         } as List<ApiOperation>
-        def modelTypes = apiOperationAnnotations*.response()
+        def modelTypes = apiOperationAnnotations*.response() + grailsApplication.domainClasses.find {
+            it.logicalPropertyName == theController.logicalPropertyName
+        }.clazz
 
-        def apis = apiMethods.
-                collect { documentMethod(it, theController) }.
-                groupBy { Map it -> it.path }.
-                collect { p, a -> [path: p, operations: (a as List<Map>).collect { it.operations }.flatten()] }
+        def apis = apiMethods.collect { documentMethod(it, theController) } +
+                listMethods.collect { generateListMethod(it, theController) } +
+                showMethods.collect { generateShowMethod(it, theController) }
 
         def models = modelTypes.unique().collectEntries { Class model ->
             def props = model.declaredFields.findAll {
@@ -135,6 +143,10 @@ class ApiController {
             ]
             [model.simpleName, modelDescription]
         }
+
+        def groupedApis = apis.
+                groupBy { Map it -> it.path }.
+                collect { p, a -> [path: p, operations: (a as List<Map>).collect { it.operations }.flatten()] }
         render([
                 apiVersion    : config.apiVersion ?: grailsApplication.metadata['app.version'],
                 swaggerVersion: '1.2',
@@ -142,10 +154,84 @@ class ApiController {
                 resourcePath  : resourcePath - basePath,
                 produces      : api.produces()?.split(',') ?: ['application/json'],
                 consumes      : api.consumes()?.split(',') ?: ['application/json'],
-                apis          : apis,
+                apis          : groupedApis,
                 models        : models,
 
         ] as JSON)
+    }
+
+    @SuppressWarnings("GrMethodMayBeStatic")
+    private Map generateListMethod(Method method, GrailsClass theController) {
+        println "Generating list Method"
+        def basePath = g.createLink(uri: '')
+        def swaggyList = findAnnotation(SwaggyList, method)
+        def slug = theController.logicalPropertyName
+
+        def parameters = [
+                [name: 'offset', description: 'Records to skip. Empty means 0.', paramType: 'query', type: 'int'],
+                [name: 'max', description: 'Max records to return. Empty means 10.', paramType: 'query', type: 'int'],
+                [name: 'sort', description: 'Field to sort by. Empty means id if q is empty. If q is provided, empty means relevance.', paramType: 'query', type: 'string'],
+                [name: 'order', description: 'Order to sort by. Empty means asc if q is empty. If q is provided, empty means desc.', paramType: 'query', type: 'string'],
+                [name: 'q', description: 'Query. Follows Lucene Query Syntax.', paramType: 'query', type: 'string'],
+        ]
+        def pathParams = parameters.findAll{it.paramType == 'path'}.collect {it.name}.collectEntries { [it, "{${it}}"] }
+        def fullLink = g.createLink(controller: slug, action: method.name, params: pathParams) as String
+
+        def link = fullLink.replace('%7B', '{').replace('%7D', '}') - basePath
+        def httpMethod = getHttpMethod(theController, method)
+        def domainName = slugToDomain(slug)
+        def inferredNickname = "${httpMethod.toLowerCase()}${slug}${method.name}"
+
+        defineMethod(link, httpMethod, domainName, inferredNickname, parameters, [],"List ${domainName}s")
+    }
+
+    private static String slugToDomain(String slug) {
+        slug.with { it.replaceFirst(it[0], it[0].toUpperCase()) }
+    }
+
+    @SuppressWarnings("GrMethodMayBeStatic")
+    private Map generateShowMethod(Method method, GrailsClass theController) {
+        println "Generating show Method"
+        def basePath = g.createLink(uri: '')
+        def swaggyShow = findAnnotation(SwaggyShow, method)
+        def slug = theController.logicalPropertyName
+
+        def parameters = [
+                [name: 'id', description: 'Identifier to look for', paramType: 'path', type: 'string', required: true],
+        ]
+        def pathParams = parameters.findAll{it.paramType == 'path'}.collect {it.name}.collectEntries { [it, "{${it}}"] }
+
+        def fullLink = g.createLink(controller: slug, action: method.name, params: pathParams) as String
+        def link = fullLink.replace('%7B', '{').replace('%7D', '}') - basePath
+        def httpMethod = getHttpMethod(theController, method)
+        def domainName = slugToDomain(slug)
+        def inferredNickname = "${httpMethod.toLowerCase()}${slug}${method.name}"
+        def responseMessages = [
+                [code: 400, message: 'Bad Id provided'],
+                [code: 404, message: "Could not find ${domainName} with that Id"],
+        ]
+
+        defineMethod(link, httpMethod, domainName, inferredNickname, parameters, responseMessages,"Show ${domainName}")
+    }
+
+    private static LinkedHashMap<String, Serializable> defineMethod(
+            String link, String httpMethod, domainName, GString inferredNickname,
+            ArrayList<LinkedHashMap<String, Serializable>> parameters,
+            ArrayList<LinkedHashMap<String, Serializable>> responseMessages,
+            String summary) {
+        [
+                path      : link,
+                operations: [
+                        [
+                                method          : httpMethod,
+                                summary         : summary,
+                                nickname        : inferredNickname,
+                                parameters      : parameters,
+                                type            : domainName,
+                                responseMessages: responseMessages
+                        ]
+                ]
+        ]
     }
 
     private Map documentMethod(Method method, GrailsClass theController) {
@@ -183,10 +269,10 @@ class ApiController {
         ]
     }
 
-    private String getHttpMethod(GrailsClass theController, Method method) {
+    private static String getHttpMethod(GrailsClass theController, Method method) {
         try {
             theController.referenceInstance.allowedMethods[method.name] ?: 'GET'
-        } catch (Exception e) {
+        } catch (Exception ignored) {
             'GET'
         }
     }
@@ -196,7 +282,7 @@ class ApiController {
      * @param f
      * @return
      */
-    private Map getTypeDescriptor(Field f) {
+    private static Map getTypeDescriptor(Field f) {
         if (f.type.isAssignableFrom(String)) {
             [type: 'string']
         } else if (f.type.isAssignableFrom(Double)) {
@@ -219,13 +305,14 @@ class ApiController {
      * @param apiParam
      * @return
      */
-    private Map paramToMap(ApiImplicitParam apiParam) {
+    private static Map paramToMap(ApiImplicitParam apiParam) {
         [
-                name       : apiParam.name(),
-                description: apiParam.value(),
-                required   : apiParam.required(),
-                type       : apiParam.dataType() ?: (apiParam.paramType() == 'body' ? 'demo' : 'string'),
-                paramType  : apiParam.paramType(),
+                name        : apiParam.name(),
+                description : apiParam.value(),
+                required    : apiParam.required(),
+                type        : apiParam.dataType() ?: (apiParam.paramType() == 'body' ? 'demo' : 'string'),
+                paramType   : apiParam.paramType(),
+                defaultValue: apiParam.defaultValue()
         ]
     }
 }
