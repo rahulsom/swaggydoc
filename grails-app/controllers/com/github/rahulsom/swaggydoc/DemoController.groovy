@@ -6,7 +6,7 @@ import grails.transaction.Transactional
 
 @Transactional(readOnly = true)
 @Api(
-        value = 'demo', /*
+        value = 'demo'/*,
         description = 'Demo API',
         position = 0,
         produces = 'application/json,application/xml,text/html',
