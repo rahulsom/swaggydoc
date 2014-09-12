@@ -74,11 +74,11 @@ The low level annotations
 ```groovy
 @Transactional(readOnly = true)
 @Api(
-        value = 'demo'/*,
+        value = 'demo',
         description = 'Demo API',
         position = 0,
         produces = 'application/json,application/xml,text/html',
-        consumes = 'application/json,application/xml,application/x-www-form-urlencoded' */
+        consumes = 'application/json,application/xml,application/x-www-form-urlencoded'
 )
 class DemoController extends RestfulController {
 
