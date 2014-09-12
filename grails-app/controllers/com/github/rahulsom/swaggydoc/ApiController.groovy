@@ -95,6 +95,10 @@ class ApiController {
         object.annotations.find { it.annotationType() == clazz }
     }
 
+    private static List<Method> methodsOfType(Class annotation, Class theControllerClazz) {
+        theControllerClazz.methods.findAll { findAnnotation(annotation, it) } as List<Method>
+    }
+
     def show() {
         header 'Access-Control-Allow-Origin', '*'
         ConfigObject config = grailsApplication.config.swaggydoc
@@ -109,14 +113,14 @@ class ApiController {
         def resourcePath = g.createLink(controller: theController.logicalPropertyName)
 
         def theControllerClazz = theController.referenceInstance.class
-        List<Method> apiMethods = theControllerClazz.methods.
-                findAll { findAnnotation(ApiOperation, it) } as List<Method>
 
-        def listMethods = theControllerClazz.methods.
-                findAll { findAnnotation(SwaggyList, it) } as List<Method>
-
-        def showMethods = theControllerClazz.methods.
-                findAll { findAnnotation(SwaggyShow, it) } as List<Method>
+        def apiMethods = methodsOfType(ApiOperation, theControllerClazz)
+        def listMethods = methodsOfType(SwaggyList, theControllerClazz)
+        def showMethods = methodsOfType(SwaggyShow, theControllerClazz)
+        def saveMethods = methodsOfType(SwaggySave, theControllerClazz)
+        def updateMethods = methodsOfType(SwaggyUpdate, theControllerClazz)
+        def deleteMethods = methodsOfType(SwaggyDelete, theControllerClazz)
+        def patchMethods = methodsOfType(SwaggyPatch, theControllerClazz)
 
         def allAnnotations = apiMethods*.annotations.flatten()
         List<ApiOperation> apiOperationAnnotations = allAnnotations.findAll {
@@ -128,7 +132,11 @@ class ApiController {
 
         def apis = apiMethods.collect { documentMethod(it, theController) } +
                 listMethods.collect { generateListMethod(it, theController) } +
-                showMethods.collect { generateShowMethod(it, theController) }
+                showMethods.collect { generateShowMethod(it, theController) } +
+                saveMethods.collect { generateSaveMethod(it, theController) } +
+                updateMethods.collect { generateUpdateMethod(it, theController) } +
+                patchMethods.collect { generatePatchMethod(it, theController) } +
+                deleteMethods.collect { generateDeleteMethod(it, theController) }
 
         def models = modelTypes.unique().collectEntries { Class model ->
             def props = model.declaredFields.findAll {
@@ -174,7 +182,9 @@ class ApiController {
                 [name: 'order', description: 'Order to sort by. Empty means asc if q is empty. If q is provided, empty means desc.', paramType: 'query', type: 'string'],
                 [name: 'q', description: 'Query. Follows Lucene Query Syntax.', paramType: 'query', type: 'string'],
         ]
-        def pathParams = parameters.findAll{it.paramType == 'path'}.collect {it.name}.collectEntries { [it, "{${it}}"] }
+        def pathParams = parameters.findAll { it.paramType == 'path' }.collect { it.name }.collectEntries {
+            [it, "{${it}}"]
+        }
         def fullLink = g.createLink(controller: slug, action: method.name, params: pathParams) as String
 
         def link = fullLink.replace('%7B', '{').replace('%7D', '}') - basePath
@@ -182,7 +192,7 @@ class ApiController {
         def domainName = slugToDomain(slug)
         def inferredNickname = "${httpMethod.toLowerCase()}${slug}${method.name}"
 
-        defineMethod(link, httpMethod, domainName, inferredNickname, parameters, [],"List ${domainName}s")
+        defineMethod(link, httpMethod, domainName, inferredNickname, parameters, [], "List ${domainName}s")
     }
 
     private static String slugToDomain(String slug) {
@@ -199,7 +209,9 @@ class ApiController {
         def parameters = [
                 [name: 'id', description: 'Identifier to look for', paramType: 'path', type: 'string', required: true],
         ]
-        def pathParams = parameters.findAll{it.paramType == 'path'}.collect {it.name}.collectEntries { [it, "{${it}}"] }
+        def pathParams = parameters.findAll { it.paramType == 'path' }.collect { it.name }.collectEntries {
+            [it, "{${it}}"]
+        }
 
         def fullLink = g.createLink(controller: slug, action: method.name, params: pathParams) as String
         def link = fullLink.replace('%7B', '{').replace('%7D', '}') - basePath
@@ -211,7 +223,117 @@ class ApiController {
                 [code: 404, message: "Could not find ${domainName} with that Id"],
         ]
 
-        defineMethod(link, httpMethod, domainName, inferredNickname, parameters, responseMessages,"Show ${domainName}")
+        defineMethod(link, httpMethod, domainName, inferredNickname, parameters, responseMessages, "Show ${domainName}")
+    }
+
+    @SuppressWarnings("GrMethodMayBeStatic")
+    private Map generateSaveMethod(Method method, GrailsClass theController) {
+        println "Generating save Method"
+        def basePath = g.createLink(uri: '')
+        def swaggySave = findAnnotation(SwaggySave, method)
+        def slug = theController.logicalPropertyName
+        def domainName = slugToDomain(slug)
+
+        def parameters = [
+                [name: 'body', description: "Description of ${domainName}", paramType: 'body', type: domainName, required: true],
+        ]
+        def pathParams = parameters.findAll { it.paramType == 'path' }.collect { it.name }.collectEntries {
+            [it, "{${it}}"]
+        }
+
+        def fullLink = g.createLink(controller: slug, action: method.name, params: pathParams) as String
+        def link = fullLink.replace('%7B', '{').replace('%7D', '}') - basePath
+        def httpMethod = getHttpMethod(theController, method)
+        def inferredNickname = "${httpMethod.toLowerCase()}${slug}${method.name}"
+        def responseMessages = [
+                [code: 422, message: 'Bad Entity received'],
+        ]
+
+        defineMethod(link, httpMethod, domainName, inferredNickname, parameters, responseMessages, "Save ${domainName}")
+    }
+
+    @SuppressWarnings("GrMethodMayBeStatic")
+    private Map generateUpdateMethod(Method method, GrailsClass theController) {
+        println "Generating update Method"
+        def basePath = g.createLink(uri: '')
+        def swaggySave = findAnnotation(SwaggySave, method)
+        def slug = theController.logicalPropertyName
+        def domainName = slugToDomain(slug)
+
+        def parameters = [
+                [name: 'id', description: "Id to update", paramType: 'path', type: 'string', required: true],
+                [name: 'body', description: "Description of ${domainName}", paramType: 'body', type: domainName, required: true],
+        ]
+        def pathParams = parameters.findAll { it.paramType == 'path' }.collect { it.name }.collectEntries {
+            [it, "{${it}}"]
+        }
+
+        def fullLink = g.createLink(controller: slug, action: method.name, params: pathParams) as String
+        def link = fullLink.replace('%7B', '{').replace('%7D', '}') - basePath
+        def httpMethod = getHttpMethod(theController, method)
+        def inferredNickname = "${httpMethod.toLowerCase()}${slug}${method.name}"
+        def responseMessages = [
+                [code: 400, message: 'Bad Id provided'],
+                [code: 404, message: "Could not find ${domainName} with that Id"],
+                [code: 422, message: 'Bad Entity received'],
+        ]
+
+        defineMethod(link, httpMethod, domainName, inferredNickname, parameters, responseMessages, "Save ${domainName}")
+    }
+    @SuppressWarnings("GrMethodMayBeStatic")
+    private Map generatePatchMethod(Method method, GrailsClass theController) {
+        println "Generating patch Method"
+        def basePath = g.createLink(uri: '')
+        def swaggySave = findAnnotation(SwaggyPatch, method)
+        def slug = theController.logicalPropertyName
+        def domainName = slugToDomain(slug)
+
+        def parameters = [
+                [name: 'id', description: "Id to patch", paramType: 'path', type: 'string', required: true],
+                [name: 'body', description: "Description of ${domainName}", paramType: 'body', type: domainName, required: true],
+        ]
+        def pathParams = parameters.findAll { it.paramType == 'path' }.collect { it.name }.collectEntries {
+            [it, "{${it}}"]
+        }
+
+        def fullLink = g.createLink(controller: slug, action: method.name, params: pathParams) as String
+        def link = fullLink.replace('%7B', '{').replace('%7D', '}') - basePath
+        def httpMethod = getHttpMethod(theController, method)
+        def inferredNickname = "${httpMethod.toLowerCase()}${slug}${method.name}"
+        def responseMessages = [
+                [code: 400, message: 'Bad Id provided'],
+                [code: 404, message: "Could not find ${domainName} with that Id"],
+                [code: 422, message: 'Bad Entity received'],
+        ]
+
+        defineMethod(link, httpMethod, domainName, inferredNickname, parameters, responseMessages, "Save ${domainName}")
+    }
+
+    @SuppressWarnings("GrMethodMayBeStatic")
+    private Map generateDeleteMethod(Method method, GrailsClass theController) {
+        println "Generating delete Method"
+        def basePath = g.createLink(uri: '')
+        def swaggySave = findAnnotation(SwaggyDelete, method)
+        def slug = theController.logicalPropertyName
+        def domainName = slugToDomain(slug)
+
+        def parameters = [
+                [name: 'id', description: "Id to delete", paramType: 'path', type: 'string', required: true],
+        ]
+        def pathParams = parameters.findAll { it.paramType == 'path' }.collect { it.name }.collectEntries {
+            [it, "{${it}}"]
+        }
+
+        def fullLink = g.createLink(controller: slug, action: method.name, params: pathParams) as String
+        def link = fullLink.replace('%7B', '{').replace('%7D', '}') - basePath
+        def httpMethod = getHttpMethod(theController, method)
+        def inferredNickname = "${httpMethod.toLowerCase()}${slug}${method.name}"
+        def responseMessages = [
+                [code: 400, message: 'Bad Id provided'],
+                [code: 404, message: "Could not find ${domainName} with that Id"],
+        ]
+
+        defineMethod(link, httpMethod, 'void', inferredNickname, parameters, responseMessages, "Delete ${domainName}")
     }
 
     private static LinkedHashMap<String, Serializable> defineMethod(

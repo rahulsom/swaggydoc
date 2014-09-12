@@ -6,11 +6,11 @@ import grails.transaction.Transactional
 
 @Transactional(readOnly = true)
 @Api(
-        value = 'demo',
+        value = 'demo', /*
         description = 'Demo API',
         position = 0,
         produces = 'application/json,application/xml,text/html',
-        consumes = 'application/json,application/xml,application/x-www-form-urlencoded'
+        consumes = 'application/json,application/xml,application/x-www-form-urlencoded' */
 )
 class DemoController extends RestfulController {
 
@@ -20,7 +20,15 @@ class DemoController extends RestfulController {
         super(Demo)
     }
 
-    @Override
+    @Override/*
+    @ApiOperation(value = 'List demos', response = Demo, responseContainer = 'list')
+    @ApiImplicitParams([
+            @ApiImplicitParam(name = 'offset', value = 'Records to skip', defaultValue = '0', paramType = 'query', dataType = 'int'),
+            @ApiImplicitParam(name = 'max', value = 'Max records to return', defaultValue = '10', paramType = 'query', dataType = 'int'),
+            @ApiImplicitParam(name = 'sort', value = 'Field to sort by', defaultValue = 'id', paramType = 'query', dataType = 'string'),
+            @ApiImplicitParam(name = 'order', value = 'Order to sort by', defaultValue = 'asc', paramType = 'query', dataType = 'string'),
+            @ApiImplicitParam(name = 'q', value = 'Query', paramType = 'query', dataType = 'string'),
+    ])*/
     @SwaggyList
     def index() {
         super.index()
@@ -59,7 +67,7 @@ class DemoController extends RestfulController {
             @ApiResponse(code = 422, message = 'Bad Entity Received'),
     ])
     @ApiImplicitParams([
-            @ApiImplicitParam(name = 'id', value = 'Id to fetch', paramType = 'path', dataType = 'int', required = true),
+            @ApiImplicitParam(name = 'id', value = 'Id to update', paramType = 'path', dataType = 'int', required = true),
             @ApiImplicitParam(name = 'body', paramType = 'body', required = true, dataType = 'Demo')
     ])*/@SwaggyUpdate
     def update() {
@@ -73,7 +81,7 @@ class DemoController extends RestfulController {
             @ApiResponse(code = 404, message = 'Could not find Demo with that Id'),
     ])
     @ApiImplicitParams([
-            @ApiImplicitParam(name = 'id', value = 'Id to fetch', paramType = 'path', dataType = 'int', required = true),
+            @ApiImplicitParam(name = 'id', value = 'Id to delete', paramType = 'path', dataType = 'int', required = true),
     ])*/@SwaggyDelete
     def delete() {
         super.delete()
@@ -87,7 +95,7 @@ class DemoController extends RestfulController {
             @ApiResponse(code = 422, message = 'Bad Entity Received'),
     ])
     @ApiImplicitParams([
-            @ApiImplicitParam(name = 'id', value = 'Id to fetch', paramType = 'path', dataType = 'int', required = true),
+            @ApiImplicitParam(name = 'id', value = 'Id to patch', paramType = 'path', dataType = 'int', required = true),
             @ApiImplicitParam(name = 'body', paramType = 'body', required = true, dataType = 'Demo')
     ])*/@SwaggyPatch
     Object patch() {
