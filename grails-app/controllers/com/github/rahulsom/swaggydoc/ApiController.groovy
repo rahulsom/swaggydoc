@@ -99,6 +99,24 @@ class ApiController {
         theControllerClazz.methods.findAll { findAnnotation(annotation, it) } as List<Method>
     }
 
+    private List<Map> getSwaggyApis(GrailsClass theController) {
+        def theControllerClazz = theController.referenceInstance.class
+
+        def listMethods = methodsOfType(SwaggyList, theControllerClazz)
+        def showMethods = methodsOfType(SwaggyShow, theControllerClazz)
+        def saveMethods = methodsOfType(SwaggySave, theControllerClazz)
+        def updateMethods = methodsOfType(SwaggyUpdate, theControllerClazz)
+        def deleteMethods = methodsOfType(SwaggyDelete, theControllerClazz)
+        def patchMethods = methodsOfType(SwaggyPatch, theControllerClazz)
+
+        listMethods.collect { generateListMethod(it, theController) } +
+                showMethods.collect { generateShowMethod(it, theController) } +
+                saveMethods.collect { generateSaveMethod(it, theController) } +
+                updateMethods.collect { generateUpdateMethod(it, theController) } +
+                patchMethods.collect { generatePatchMethod(it, theController) } +
+                deleteMethods.collect { generateDeleteMethod(it, theController) }
+    }
+
     def show() {
         header 'Access-Control-Allow-Origin', '*'
         ConfigObject config = grailsApplication.config.swaggydoc
@@ -115,12 +133,6 @@ class ApiController {
         def theControllerClazz = theController.referenceInstance.class
 
         def apiMethods = methodsOfType(ApiOperation, theControllerClazz)
-        def listMethods = methodsOfType(SwaggyList, theControllerClazz)
-        def showMethods = methodsOfType(SwaggyShow, theControllerClazz)
-        def saveMethods = methodsOfType(SwaggySave, theControllerClazz)
-        def updateMethods = methodsOfType(SwaggyUpdate, theControllerClazz)
-        def deleteMethods = methodsOfType(SwaggyDelete, theControllerClazz)
-        def patchMethods = methodsOfType(SwaggyPatch, theControllerClazz)
 
         def allAnnotations = apiMethods*.annotations.flatten()
         List<ApiOperation> apiOperationAnnotations = allAnnotations.findAll {
@@ -130,13 +142,7 @@ class ApiController {
             it.logicalPropertyName == theController.logicalPropertyName
         }.clazz
 
-        def apis = apiMethods.collect { documentMethod(it, theController) } +
-                listMethods.collect { generateListMethod(it, theController) } +
-                showMethods.collect { generateShowMethod(it, theController) } +
-                saveMethods.collect { generateSaveMethod(it, theController) } +
-                updateMethods.collect { generateUpdateMethod(it, theController) } +
-                patchMethods.collect { generatePatchMethod(it, theController) } +
-                deleteMethods.collect { generateDeleteMethod(it, theController) }
+        def apis = apiMethods.collect { documentMethod(it, theController) } + getSwaggyApis(theController)
 
         def models = modelTypes.unique().collectEntries { Class model ->
             def props = model.declaredFields.findAll {
@@ -170,7 +176,6 @@ class ApiController {
 
     @SuppressWarnings("GrMethodMayBeStatic")
     private Map generateListMethod(Method method, GrailsClass theController) {
-        println "Generating list Method"
         def basePath = g.createLink(uri: '')
         def swaggyList = findAnnotation(SwaggyList, method)
         def slug = theController.logicalPropertyName
@@ -201,7 +206,6 @@ class ApiController {
 
     @SuppressWarnings("GrMethodMayBeStatic")
     private Map generateShowMethod(Method method, GrailsClass theController) {
-        println "Generating show Method"
         def basePath = g.createLink(uri: '')
         def swaggyShow = findAnnotation(SwaggyShow, method)
         def slug = theController.logicalPropertyName
@@ -228,7 +232,6 @@ class ApiController {
 
     @SuppressWarnings("GrMethodMayBeStatic")
     private Map generateSaveMethod(Method method, GrailsClass theController) {
-        println "Generating save Method"
         def basePath = g.createLink(uri: '')
         def swaggySave = findAnnotation(SwaggySave, method)
         def slug = theController.logicalPropertyName
@@ -254,7 +257,6 @@ class ApiController {
 
     @SuppressWarnings("GrMethodMayBeStatic")
     private Map generateUpdateMethod(Method method, GrailsClass theController) {
-        println "Generating update Method"
         def basePath = g.createLink(uri: '')
         def swaggySave = findAnnotation(SwaggySave, method)
         def slug = theController.logicalPropertyName
@@ -280,9 +282,9 @@ class ApiController {
 
         defineMethod(link, httpMethod, domainName, inferredNickname, parameters, responseMessages, "Save ${domainName}")
     }
+
     @SuppressWarnings("GrMethodMayBeStatic")
     private Map generatePatchMethod(Method method, GrailsClass theController) {
-        println "Generating patch Method"
         def basePath = g.createLink(uri: '')
         def swaggySave = findAnnotation(SwaggyPatch, method)
         def slug = theController.logicalPropertyName
@@ -311,7 +313,6 @@ class ApiController {
 
     @SuppressWarnings("GrMethodMayBeStatic")
     private Map generateDeleteMethod(Method method, GrailsClass theController) {
-        println "Generating delete Method"
         def basePath = g.createLink(uri: '')
         def swaggySave = findAnnotation(SwaggyDelete, method)
         def slug = theController.logicalPropertyName
