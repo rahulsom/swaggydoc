@@ -140,11 +140,11 @@ class ApiController {
         } as List<ApiOperation>
         def modelTypes = apiOperationAnnotations*.response() + grailsApplication.domainClasses.find {
             it.logicalPropertyName == theController.logicalPropertyName
-        }.clazz
+        }?.clazz
 
         def apis = apiMethods.collect { documentMethod(it, theController) } + getSwaggyApis(theController)
 
-        def models = modelTypes.unique().collectEntries { Class model ->
+        def models = modelTypes.findAll{it}.unique().collectEntries { Class model ->
             def props = model.declaredFields.findAll {
                 !it.toString().contains(' static ') &&
                         !it.toString().contains(' transient ') &&
@@ -185,8 +185,10 @@ class ApiController {
                 [name: 'max', description: 'Max records to return. Empty means 10.', paramType: 'query', type: 'int'],
                 [name: 'sort', description: 'Field to sort by. Empty means id if q is empty. If q is provided, empty means relevance.', paramType: 'query', type: 'string'],
                 [name: 'order', description: 'Order to sort by. Empty means asc if q is empty. If q is provided, empty means desc.', paramType: 'query', type: 'string'],
-                [name: 'q', description: 'Query. Follows Lucene Query Syntax.', paramType: 'query', type: 'string'],
         ]
+        if (swaggyList.searchParam()) {
+            parameters << [name: 'q', description: 'Query. Follows Lucene Query Syntax.', paramType: 'query', type: 'string']
+        }
         def pathParams = parameters.findAll { it.paramType == 'path' }.collect { it.name }.collectEntries {
             [it, "{${it}}"]
         }

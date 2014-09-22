@@ -29,7 +29,7 @@ class DemoController extends RestfulController {
             @ApiImplicitParam(name = 'order', value = 'Order to sort by', defaultValue = 'asc', paramType = 'query', dataType = 'string'),
             @ApiImplicitParam(name = 'q', value = 'Query', paramType = 'query', dataType = 'string'),
     ])*/
-    @SwaggyList
+    @SwaggyList(searchParam = false)
     def index() {
         super.index()
     }
