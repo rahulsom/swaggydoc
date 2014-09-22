@@ -16,5 +16,10 @@ class ApiControllerSpec extends Specification {
     }
 
     void "test something"() {
+        when:
+        controller.resources()
+
+        then:
+        controller.response.text.contains "Found 2 results"
     }
 }
