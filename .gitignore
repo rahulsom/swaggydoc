@@ -21,4 +21,5 @@ web-app/js/
 
 # Products
 grails-swaggydoc-*.zip
+grails-swaggydoc-*.zip.sha1
 plugin.xml
