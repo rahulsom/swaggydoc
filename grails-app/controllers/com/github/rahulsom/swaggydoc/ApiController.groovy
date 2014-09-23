@@ -160,14 +160,15 @@ class ApiController {
 
         def groupedApis = apis.
                 groupBy { Map it -> it.path }.
-                collect { p, a -> [path: p, operations: (a as List<Map>).collect { it.operations }.flatten()] }
+                collect { p, a -> [path: p, operations: (a as List<Map>).collect { it.operations }.flatten().unique()] }
+
         render([
                 apiVersion    : config.apiVersion ?: grailsApplication.metadata['app.version'],
                 swaggerVersion: '1.2',
                 basePath      : api.basePath() ?: absoluteBasePath,
                 resourcePath  : resourcePath - basePath,
-                produces      : api.produces()?.split(',') ?: ['application/json'],
-                consumes      : api.consumes()?.split(',') ?: ['application/json'],
+                produces      : api.produces()?.tokenize(',') ?: ['application/json', 'application/xml', 'text/html'],
+                consumes      : api.consumes()?.tokenize(',') ?: ['application/json', 'application/xml', 'application/x-www-form-urlencoded'],
                 apis          : groupedApis,
                 models        : models,
 
@@ -363,7 +364,7 @@ class ApiController {
         def basePath = g.createLink(uri: '')
         def apiOperation = findAnnotation(ApiOperation, method)
         def apiResponses = findAnnotation(ApiResponses, method)
-        def apiParams = findAnnotation(ApiImplicitParams, method).value()
+        def apiParams = findAnnotation(ApiImplicitParams, method)?.value() ?: []
 
         def pathParasAnnotations = apiParams.findAll { it.paramType() == 'path' } as List<ApiImplicitParam>
         def pathParams = pathParasAnnotations*.name().collectEntries { [it, "{${it}}"] }
