@@ -3,6 +3,7 @@ jdk:
   - oraclejdk7
 before_script:
   - rm -rf target
+  - npm install -g bower
 script: ./travis.sh
 env:
   global:
