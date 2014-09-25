@@ -1,10 +1,10 @@
 package com.github.rahulsom.swaggydoc.test
 
-class Domain {
+class Subdomain {
 
     String name
+    static belongsTo = [domain: Domain]
 
-    static hasMany = [subdomains: Subdomain]
     static constraints = {
     }
 }

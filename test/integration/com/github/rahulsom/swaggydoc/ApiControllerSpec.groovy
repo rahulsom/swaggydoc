@@ -44,10 +44,11 @@ class ApiControllerSpec extends Specification {
         json.resourcePath == "/domain/index"
         json.produces == ['application/json', 'application/xml', 'text/html']
         json.consumes == ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
-        json.models.size() == 1
+        json.models.size() == 2
         json.apis.size() == 6
 
         json.models.find {k,v -> k == 'Domain'}
+        json.models.find {k,v -> k == 'Subdomain'}
         def demoModel = json.models.find {k,v -> k == 'Domain'}
 
         json.apis.find {it.path == '/domain/index'}
@@ -125,11 +126,12 @@ class ApiControllerSpec extends Specification {
         json.resourcePath == "/lowLevel/index"
         json.produces == ['application/json', 'application/xml', 'text/html']
         json.consumes == ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
-        json.models.size() == 2
+        json.models.size() == 3
         json.apis.size() == 8
 
         json.models.find {k,v -> k == 'Domain'}
         json.models.find {k,v -> k == 'Void'}
+        json.models.find {k,v -> k == 'Subdomain'}
         def demoModel = json.models.find {k,v -> k == 'Domain'}
     }
 
@@ -150,7 +152,7 @@ class ApiControllerSpec extends Specification {
         json.resourcePath == "/lowLevel/index"
         json.produces == ['application/json', 'application/xml', 'text/html']
         json.consumes == ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
-        json.models.size() == 2
+        json.models.size() == 3
         json.apis.size() == 8
 
         json.apis.find {it.path == '/lowLevel/duplicateMethod/{id}'}
