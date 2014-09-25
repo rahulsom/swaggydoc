@@ -7,6 +7,7 @@ import org.codehaus.groovy.grails.commons.GrailsClass
 import java.lang.reflect.AccessibleObject
 import java.lang.reflect.Field
 import java.lang.reflect.Method
+import java.lang.reflect.ParameterizedType
 
 class ApiController {
 
@@ -144,19 +145,7 @@ class ApiController {
 
         def apis = apiMethods.collect { documentMethod(it, theController) } + getSwaggyApis(theController)
 
-        def models = modelTypes.findAll{it}.unique().collectEntries { Class model ->
-            def props = model.declaredFields.findAll {
-                !it.toString().contains(' static ') &&
-                        !it.toString().contains(' transient ') &&
-                        it.name != 'errors'
-            }
-
-            def modelDescription = [
-                    id        : model.simpleName,
-                    properties: props.collectEntries { Field f -> [f.name, getTypeDescriptor(f)] }
-            ]
-            [model.simpleName, modelDescription]
-        }
+        Map models = getModels(modelTypes)
 
         def groupedApis = apis.
                 groupBy { Map it -> it.path }.
@@ -173,6 +162,39 @@ class ApiController {
                 models        : models,
 
         ] as JSON)
+    }
+
+    private static Map getModels(Collection<Class<?>> modelTypes) {
+        Queue m = modelTypes.findAll{it} as Queue
+        def models = [:]
+        while (m.size()) {
+            Class model = m.poll()
+            def props = model.declaredFields.findAll {
+                !it.toString().contains(' static ') &&
+                        !it.toString().contains(' transient ') &&
+                        it.name != 'errors'
+            }
+
+            def modelDescription = [
+                    id        : model.simpleName,
+                    properties: props.collectEntries { Field f -> [f.name, getTypeDescriptor(f)] }
+            ]
+
+            models[model.simpleName] = modelDescription
+            def knownTypes = [int, Integer, long, Long, float, Float, double, Double, String]
+            props.each {Field f ->
+                if (!models.containsKey(f.type.simpleName) && !m.contains(f.type) && !knownTypes.contains(f.type) ) {
+                    if (f.type.isAssignableFrom(List) || f.type.isAssignableFrom(Set)) {
+                        def typeArgs = f.genericType.actualTypeArguments[0]
+                        m.add(typeArgs)
+                    } else {
+                        m.add(f.type)
+                    }
+
+                }
+            }
+        }
+        models
     }
 
     @SuppressWarnings("GrMethodMayBeStatic")
@@ -419,8 +441,14 @@ class ApiController {
             [type: 'string', format: 'date-time']
         } else if (f.type.isAssignableFrom(Boolean)) {
             [type: 'boolean']
+        } else if (f.type.isAssignableFrom(Set) || f.type.isAssignableFrom(List)){
+            def clazzName = f.genericType.actualTypeArguments[0].simpleName
+            [
+                    type: 'array',
+                    items: ['$ref': clazzName]
+            ]
         } else {
-            [type: f.type.simpleName]
+            ['$ref': f.type.simpleName]
         }
 
     }

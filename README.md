@@ -1,3 +1,5 @@
+![https://travis-ci.org/rahulsom/swaggydoc.svg](https://travis-ci.org/rahulsom/swaggydoc.svg)
+
 Configuration
 ----
 

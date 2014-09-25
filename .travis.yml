@@ -1,0 +1,13 @@
+language: groovy
+jdk:
+  - oraclejdk7
+before_script:
+  - rm -rf target
+  - npm install -g bower
+script: ./travis.sh
+env:
+  global:
+    - GIT_NAME="Rahul Somasunderam"
+    - GIT_EMAIL="rahul.som@gmail.com"
+    - GRAILS_CENTRAL_USERNAME=rahulsom
+    - secure: "lcK0atc7vh1s9oh7Z9m17VTKcXrw0AiVM57MoJkuwpbXeZ46qYGN+EThsCaSlT4VcektrhnLVklDIMDcxt0Osv8AYBiZoPFHdnR5ISYb236BJzyC3ODGx5Vj6KQQhBntBGwXTJjXUh5S018fZpbnMbuCsj9xi0KQ055gx8rnxEQ="
