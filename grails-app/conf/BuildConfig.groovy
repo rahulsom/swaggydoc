@@ -1,3 +1,8 @@
+if(System.getenv('TRAVIS_BRANCH')) {
+    grails.project.repos.grailsCentral.username = System.getenv("GRAILS_CENTRAL_USERNAME")
+    grails.project.repos.grailsCentral.password = System.getenv("GRAILS_CENTRAL_PASSWORD")
+}
+
 grails.project.class.dir = "target/classes"
 grails.project.test.class.dir = "target/test-classes"
 grails.project.test.reports.dir = "target/test-reports"
