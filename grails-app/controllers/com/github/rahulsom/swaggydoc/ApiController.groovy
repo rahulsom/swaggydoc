@@ -3,7 +3,10 @@ package com.github.rahulsom.swaggydoc
 import com.wordnik.swagger.annotations.*
 import grails.converters.JSON
 import org.codehaus.groovy.grails.commons.GrailsClass
+import org.codehaus.groovy.grails.commons.GrailsDomainClass
+import org.codehaus.groovy.grails.validation.ConstrainedProperty
 
+import java.beans.ConstructorProperties
 import java.lang.reflect.AccessibleObject
 import java.lang.reflect.Field
 import java.lang.reflect.Method
@@ -164,7 +167,7 @@ class ApiController {
         ] as JSON)
     }
 
-    private static Map getModels(Collection<Class<?>> modelTypes) {
+    private Map getModels(Collection<Class<?>> modelTypes) {
         Queue m = modelTypes.findAll{it} as Queue
         def models = [:]
         while (m.size()) {
@@ -175,8 +178,13 @@ class ApiController {
                         it.name != 'errors'
             }
 
+            def grailsDomainClass = grailsApplication.domainClasses.find { it.clazz == model } as GrailsDomainClass
+            def optional = grailsDomainClass?.constrainedProperties?.findAll { k, v -> v.isNullable() }
+            def required = props.collect{ Field f -> f.name } - optional*.key
+
             def modelDescription = [
                     id        : model.simpleName,
+                    required  : required,
                     properties: props.collectEntries { Field f -> [f.name, getTypeDescriptor(f)] }
             ]
 
