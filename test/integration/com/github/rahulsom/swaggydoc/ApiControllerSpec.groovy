@@ -44,12 +44,7 @@ class ApiControllerSpec extends Specification {
         json.resourcePath == "/domain/index"
         json.produces == ['application/json', 'application/xml', 'text/html']
         json.consumes == ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
-        json.models.size() == 2
         json.apis.size() == 6
-
-        json.models.find {k,v -> k == 'Domain'}
-        json.models.find {k,v -> k == 'Subdomain'}
-        def demoModel = json.models.find {k,v -> k == 'Domain'}
 
         json.apis.find {it.path == '/domain/index'}
         json.apis.find {it.path == '/domain/index'}.operations.size() == 1
@@ -68,6 +63,47 @@ class ApiControllerSpec extends Specification {
 
         json.apis.find {it.path == '/domain/save'}
         json.apis.find {it.path == '/domain/save'}.operations.size() == 1
+
+    }
+    void "domains list required properties correctly" () {
+        given: "A controller"
+        def controller = new ApiController()
+
+        when: "Resources are listed"
+        controller.params.id = 'domain'
+        controller.show()
+
+        then: "An expected json is returned"
+        def json = controller.response.json
+        json
+        json.models.size() == 2
+        json.models.find {k,v -> k == 'Domain'}
+        json.models.find {k,v -> k == 'Subdomain'}
+        def domainModel = json.models['Domain']
+
+        assert domainModel['id'] == 'Domain'
+        def domainProps = domainModel['properties']
+        assert domainModel['required'] as Set == ['name','id','version'] as Set
+        assert domainProps.size() == 5
+
+        assert domainProps.id
+        assert domainProps.id.format == 'int64'
+        assert domainProps.id.type == 'integer'
+
+        assert domainProps.subdomains
+        assert domainProps.subdomains.items['$ref'] == 'Subdomain'
+        assert domainProps.subdomains.type == 'array'
+
+        assert domainProps.description
+        assert domainProps.description.type == 'string'
+
+        assert domainProps.name
+        assert domainProps.name.type == 'string'
+
+        assert domainProps.version
+        assert domainProps.version.type == 'integer'
+        assert domainProps.version.format == 'int64'
+
 
     }
 
