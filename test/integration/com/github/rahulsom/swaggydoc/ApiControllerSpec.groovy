@@ -84,15 +84,23 @@ class ApiControllerSpec extends Specification {
         assert domainModel['id'] == 'Domain'
         def domainProps = domainModel['properties']
         assert domainModel['required'] as Set == ['name','id','version'] as Set
-        assert domainProps.size() == 5
+        assert domainProps.size() == 7
 
         assert domainProps.id
         assert domainProps.id.format == 'int64'
         assert domainProps.id.type == 'integer'
 
-        assert domainProps.subdomains
-        assert domainProps.subdomains.items['$ref'] == 'Subdomain'
-        assert domainProps.subdomains.type == 'array'
+        assert domainProps.subdomainsWithoutGenerics
+        assert domainProps.subdomainsWithoutGenerics.items['$ref'] == 'Subdomain'
+        assert domainProps.subdomainsWithoutGenerics.type == 'array'
+
+        assert domainProps.subdomainsWithGenerics
+        assert domainProps.subdomainsWithGenerics.items['$ref'] == 'Subdomain'
+        assert domainProps.subdomainsWithGenerics.type == 'array'
+
+        assert domainProps.implicitSubdomains
+        assert domainProps.implicitSubdomains.items['$ref'] == 'Subdomain'
+        assert domainProps.implicitSubdomains.type == 'array'
 
         assert domainProps.description
         assert domainProps.description.type == 'string'
