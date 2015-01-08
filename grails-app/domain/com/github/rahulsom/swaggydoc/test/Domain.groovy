@@ -5,7 +5,14 @@ class Domain {
     String name
     String description
 
-    static hasMany = [subdomains: Subdomain]
+    List subdomainsWithoutGenerics
+    List<Subdomain> subdomainsWithGenerics
+
+    static hasMany = [
+            subdomainsWithoutGenerics: Subdomain,
+            subdomainsWithGenerics   : Subdomain,
+            implicitSubdomains       : Subdomain,
+    ]
     static constraints = {
         description nullable: true
     }

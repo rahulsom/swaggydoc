@@ -4,13 +4,11 @@ import com.wordnik.swagger.annotations.*
 import grails.converters.JSON
 import org.codehaus.groovy.grails.commons.GrailsClass
 import org.codehaus.groovy.grails.commons.GrailsDomainClass
-import org.codehaus.groovy.grails.validation.ConstrainedProperty
 
-import java.beans.ConstructorProperties
 import java.lang.reflect.AccessibleObject
 import java.lang.reflect.Field
 import java.lang.reflect.Method
-import java.lang.reflect.ParameterizedType
+import java.lang.reflect.Type
 
 class ApiController {
 
@@ -168,7 +166,7 @@ class ApiController {
     }
 
     private Map getModels(Collection<Class<?>> modelTypes) {
-        Queue m = modelTypes.findAll{it} as Queue
+        Queue m = modelTypes.findAll { it } as Queue
         def models = [:]
         while (m.size()) {
             Class model = m.poll()
@@ -180,20 +178,20 @@ class ApiController {
 
             def grailsDomainClass = grailsApplication.domainClasses.find { it.clazz == model } as GrailsDomainClass
             def optional = grailsDomainClass?.constrainedProperties?.findAll { k, v -> v.isNullable() }
-            def required = props.collect{ Field f -> f.name } - optional*.key
+            def required = props.collect { Field f -> f.name } - optional*.key
 
             def modelDescription = [
                     id        : model.simpleName,
                     required  : required,
-                    properties: props.collectEntries { Field f -> [f.name, getTypeDescriptor(f)] }
+                    properties: props.collectEntries { Field f -> [f.name, getTypeDescriptor(f, grailsDomainClass)] }
             ]
 
             models[model.simpleName] = modelDescription
             def knownTypes = [int, Integer, long, Long, float, Float, double, Double, String]
-            props.each {Field f ->
-                if (!models.containsKey(f.type.simpleName) && !m.contains(f.type) && !knownTypes.contains(f.type) ) {
+            props.each { Field f ->
+                if (!models.containsKey(f.type.simpleName) && !m.contains(f.type) && !knownTypes.contains(f.type)) {
                     if (f.type.isAssignableFrom(List) || f.type.isAssignableFrom(Set)) {
-                        def typeArgs = f.genericType.actualTypeArguments[0]
+                        def typeArgs = grailsDomainClass.associationMap[f.name] ?: f.genericType.actualTypeArguments[0]
                         m.add(typeArgs)
                     } else {
                         m.add(f.type)
@@ -438,7 +436,7 @@ class ApiController {
      * @param f
      * @return
      */
-    private static Map getTypeDescriptor(Field f) {
+    private static Map getTypeDescriptor(Field f, GrailsDomainClass gdc) {
         if (f.type.isAssignableFrom(String)) {
             [type: 'string']
         } else if (f.type.isAssignableFrom(Double)) {
@@ -449,10 +447,11 @@ class ApiController {
             [type: 'string', format: 'date-time']
         } else if (f.type.isAssignableFrom(Boolean)) {
             [type: 'boolean']
-        } else if (f.type.isAssignableFrom(Set) || f.type.isAssignableFrom(List)){
-            def clazzName = f.genericType.actualTypeArguments[0].simpleName
+        } else if (f.type.isAssignableFrom(Set) || f.type.isAssignableFrom(List)) {
+            def genericType = gdc.associationMap[f.name] ?:  f.genericType.actualTypeArguments[0]
+            def clazzName = genericType.simpleName
             [
-                    type: 'array',
+                    type : 'array',
                     items: ['$ref': clazzName]
             ]
         } else {
