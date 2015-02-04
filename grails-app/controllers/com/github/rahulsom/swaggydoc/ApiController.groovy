@@ -40,7 +40,7 @@ class ApiController {
         render([
                 apiVersion    : config.apiVersion ?: grailsApplication.metadata['app.version'],
                 swaggerVersion: '1.2',
-                apis          : apis,
+                apis          : apis?.toArray(),
                 info          : infoObject
         ] as JSON)
     }
@@ -150,16 +150,16 @@ class ApiController {
 
         def groupedApis = apis.
                 groupBy { Map it -> it.path }.
-                collect { p, a -> [path: p, operations: (a as List<Map>).collect { it.operations }.flatten().unique()] }
+                collect { p, a -> [path: p, operations: (a as List<Map>).collect { it.operations }.flatten().unique()?.toArray()] }
 
         render([
                 apiVersion    : config.apiVersion ?: grailsApplication.metadata['app.version'],
                 swaggerVersion: '1.2',
                 basePath      : api.basePath() ?: absoluteBasePath,
                 resourcePath  : resourcePath - basePath,
-                produces      : api.produces()?.tokenize(',') ?: ['application/json', 'application/xml', 'text/html'],
-                consumes      : api.consumes()?.tokenize(',') ?: ['application/json', 'application/xml', 'application/x-www-form-urlencoded'],
-                apis          : groupedApis,
+                produces      : (api.produces()?.tokenize(',') ?: ['application/json', 'application/xml', 'text/html']).toArray(),
+                consumes      : (api.consumes()?.tokenize(',') ?: ['application/json', 'application/xml', 'application/x-www-form-urlencoded']).toArray(),
+                apis          : groupedApis?.toArray(),
                 models        : models,
 
         ] as JSON)
@@ -182,7 +182,7 @@ class ApiController {
 
             def modelDescription = [
                     id        : model.simpleName,
-                    required  : required,
+                    required  : required?.toArray(),
                     properties: props.collectEntries { Field f -> [f.name, getTypeDescriptor(f, grailsDomainClass)] }
             ]
 
@@ -380,11 +380,11 @@ class ApiController {
                                 method          : httpMethod,
                                 summary         : summary,
                                 nickname        : inferredNickname,
-                                parameters      : parameters,
+                                parameters      : parameters?.toArray(),
                                 type            : domainName,
-                                responseMessages: responseMessages
+                                responseMessages: responseMessages?.toArray()
                         ]
-                ]
+                ].toArray()
         ]
     }
 
@@ -413,11 +413,11 @@ class ApiController {
                                 summary         : apiOperation.value(),
                                 notes           : apiOperation.notes(),
                                 nickname        : apiOperation.nickname() ?: inferredNickname,
-                                parameters      : parameters,
+                                parameters      : parameters?.toArray(),
                                 type            : apiOperation.response() == Void ? 'void' : apiOperation.response().simpleName,
                                 responseMessages: apiResponses?.value()?.collect { ApiResponse apiResponse ->
                                     [code: apiResponse.code(), message: apiResponse.message()]
-                                }
+                                }?.toArray()
                         ]
                 ]
         ]
