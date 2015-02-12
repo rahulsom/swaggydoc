@@ -1,13 +1,14 @@
 class SwaggydocGrailsPlugin {
     // the plugin version
-    def version = "0.8"
+    def version = "0.9"
     // the version or versions of Grails the plugin is designed for
     def grailsVersion = "2.2 > *"
     // resources that are excluded from plugin packaging
     def pluginExcludes = [
             "grails-app/views/error.gsp",
             "grails-app/controllers/com/github/rahulsom/swaggydoc/test/*.groovy",
-            "grails-app/domain/com/github/rahulsom/swaggydoc/test/*.groovy"
+            "grails-app/domain/com/github/rahulsom/swaggydoc/test/*.groovy",
+            "src/groovy/com/github/rahulsom/swaggydoc/test/*.groovy",
     ]
 
     def title = "Swaggydoc Plugin" // Headline display name of the plugin
