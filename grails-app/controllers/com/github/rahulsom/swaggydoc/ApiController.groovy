@@ -8,13 +8,18 @@ import org.codehaus.groovy.grails.commons.GrailsDomainClass
 import java.lang.reflect.AccessibleObject
 import java.lang.reflect.Field
 import java.lang.reflect.Method
-import java.lang.reflect.Type
 
 class ApiController {
 
     /**
      * Empty Method. Needed for rendering GSP as HTML.
      */
+
+    public static
+    final ArrayList<String> DefaultResponseContentTypes = ['application/json', 'application/xml', 'text/html']
+    public static
+    final ArrayList<String> DefaultRequestContentTypes = ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
+
     def index() {
     }
 
@@ -155,10 +160,10 @@ class ApiController {
         render([
                 apiVersion    : config.apiVersion ?: grailsApplication.metadata['app.version'],
                 swaggerVersion: '1.2',
-                basePath      : api.basePath() ?: absoluteBasePath,
+                basePath      : api?.basePath() ?: absoluteBasePath,
                 resourcePath  : resourcePath - basePath,
-                produces      : api.produces()?.tokenize(',') ?: ['application/json', 'application/xml', 'text/html'],
-                consumes      : api.consumes()?.tokenize(',') ?: ['application/json', 'application/xml', 'application/x-www-form-urlencoded'],
+                produces      : api?.produces()?.tokenize(',') ?: DefaultResponseContentTypes,
+                consumes      : api?.consumes()?.tokenize(',') ?: DefaultRequestContentTypes,
                 apis          : groupedApis,
                 models        : models,
 
@@ -191,7 +196,7 @@ class ApiController {
             props.each { Field f ->
                 if (!models.containsKey(f.type.simpleName) && !m.contains(f.type) && !knownTypes.contains(f.type)) {
                     if (f.type.isAssignableFrom(List) || f.type.isAssignableFrom(Set)) {
-                        def typeArgs = grailsDomainClass.associationMap[f.name] ?: f.genericType.actualTypeArguments[0]
+                        def typeArgs = grailsDomainClass?.associationMap?.getAt(f.name) ?: f.genericType.actualTypeArguments[0]
                         m.add(typeArgs)
                     } else {
                         m.add(f.type)
@@ -439,16 +444,16 @@ class ApiController {
     private static Map getTypeDescriptor(Field f, GrailsDomainClass gdc) {
         if (f.type.isAssignableFrom(String)) {
             [type: 'string']
-        } else if (f.type.isAssignableFrom(Double)) {
+        } else if (f.type.isAssignableFrom(Double) || f.type.isAssignableFrom(Float)) {
             [type: 'number', format: 'double']
-        } else if (f.type.isAssignableFrom(Long)) {
+        } else if (f.type.isAssignableFrom(Long) || f.type.isAssignableFrom(Integer)) {
             [type: 'integer', format: 'int64']
         } else if (f.type.isAssignableFrom(Date)) {
             [type: 'string', format: 'date-time']
         } else if (f.type.isAssignableFrom(Boolean)) {
             [type: 'boolean']
         } else if (f.type.isAssignableFrom(Set) || f.type.isAssignableFrom(List)) {
-            def genericType = gdc.associationMap[f.name] ?:  f.genericType.actualTypeArguments[0]
+            def genericType = gdc?.associationMap?.getAt(f.name) ?:  f.genericType.actualTypeArguments[0]
             def clazzName = genericType.simpleName
             [
                     type : 'array',
