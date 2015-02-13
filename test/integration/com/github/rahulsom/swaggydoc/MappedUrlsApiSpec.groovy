@@ -145,4 +145,90 @@ class MappedUrlsApiSpec extends Specification {
         json.apis.find {it.path == '/outerResource/{outerResourceId}/innerResource/{id}'}.operations.find { it.method == 'PATCH' }.parameters.size() == 3
         json.apis.find {it.path == '/outerResource/{outerResourceId}/innerResource/{id}'}.operations.find { it.method == 'PUT' }.parameters.size() == 3
     }
+
+    void "alternate controller endpoint"() {
+        given:
+        withUrlMappings {
+            "/regulador/especial"(controller: "mapped", method: 'GET', action: 'especial')
+        }
+
+        when:
+        controller.params.id = 'mapped'
+        controller.show()
+
+        then:
+        def json = controller.response.json
+        json
+        json.apiVersion == '1.0'
+        json.swaggerVersion == '1.2'
+        json.basePath == "http://localhost"
+        json.resourcePath == "/regulador/especial"
+        json.produces == ['application/json', 'application/xml', 'text/html']
+        json.consumes == ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
+        json.apis.size() == 1
+        json.apis.find {it.path == '/regulador/especial'}.operations.size() == 1
+        json.apis.find {it.path == '/regulador/especial'}.operations.find { it.method == 'GET' }.parameters.size() == 0
+    }
+
+    void "mapped resource and alternate controller endpoint"() {
+        given:
+        withUrlMappings {
+            "/regulador"(resources: "mapped", includes: ['index', 'show', 'delete', 'save'])
+            "/regulador/especial"(controller: "mapped", method: 'GET', action: 'especial')
+        }
+
+        when:
+        controller.params.id = 'mapped'
+        controller.show()
+
+        then:
+        def json = controller.response.json
+        json
+        json.apiVersion == '1.0'
+        json.swaggerVersion == '1.2'
+        json.basePath == "http://localhost"
+        json.resourcePath == "/regulador"
+        json.produces == ['application/json', 'application/xml', 'text/html']
+        json.consumes == ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
+        json.apis.size() == 3
+        json.apis.find {it.path == '/regulador'}.operations.size() == 2
+        json.apis.find {it.path == '/regulador'}.operations.find { it.method == 'GET' }.parameters.size() == 4
+        json.apis.find {it.path == '/regulador'}.operations.find { it.method == 'POST' }.parameters.size() == 1
+        json.apis.find {it.path == '/regulador/{id}'}.operations.size() == 2
+        json.apis.find {it.path == '/regulador/{id}'}.operations.find { it.method == 'GET' }.parameters.size() == 1
+        json.apis.find {it.path == '/regulador/{id}'}.operations.find { it.method == 'DELETE' }.parameters.size() == 1
+        json.apis.find {it.path == '/regulador/especial'}.operations.size() == 1
+        json.apis.find {it.path == '/regulador/especial'}.operations.find { it.method == 'GET' }.parameters.size() == 0
+    }
+
+    void "mapped resource and alternate controller endpoint with annotated method"() {
+        given:
+        withUrlMappings {
+            "/regulador"(resources: "mappedWithAnnotatedSpecial", includes: ['index', 'show', 'delete', 'save'])
+            "/regulador/especial"(controller: "mappedWithAnnotatedSpecial", method: 'GET', action: 'especial')
+        }
+
+        when:
+        controller.params.id = 'mappedWithAnnotatedSpecial'
+        controller.show()
+
+        then:
+        def json = controller.response.json
+        json
+        json.apiVersion == '1.0'
+        json.swaggerVersion == '1.2'
+        json.basePath == "http://localhost"
+        json.resourcePath == "/regulador"
+        json.produces == ['application/json', 'application/xml', 'text/html']
+        json.consumes == ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
+        json.apis.size() == 3
+        json.apis.find {it.path == '/regulador'}.operations.size() == 2
+        json.apis.find {it.path == '/regulador'}.operations.find { it.method == 'GET' }.parameters.size() == 4
+        json.apis.find {it.path == '/regulador'}.operations.find { it.method == 'POST' }.parameters.size() == 1
+        json.apis.find {it.path == '/regulador/{id}'}.operations.size() == 2
+        json.apis.find {it.path == '/regulador/{id}'}.operations.find { it.method == 'GET' }.parameters.size() == 1
+        json.apis.find {it.path == '/regulador/{id}'}.operations.find { it.method == 'DELETE' }.parameters.size() == 1
+        json.apis.find {it.path == '/regulador/especial'}.operations.size() == 1
+        json.apis.find {it.path == '/regulador/especial'}.operations.find { it.method == 'GET' }.parameters.size() == 1
+    }
 }

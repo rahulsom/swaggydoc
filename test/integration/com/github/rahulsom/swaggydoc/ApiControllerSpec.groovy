@@ -20,7 +20,7 @@ class ApiControllerSpec extends Specification {
         json.apiVersion == '1.0'
         json.swaggerVersion == '1.2'
         json.info.contact == 'rahul.som@gmail.com'
-        json.apis.size() == 6
+        json.apis.size() == 7
         json.apis.find {it.path == 'http://localhost/api/show/domain'}
         json.apis.find {it.path == 'http://localhost/api/show/domain'}.description == 'Domain Controller'
         json.apis.find {it.path == 'http://localhost/api/show/domainless'}

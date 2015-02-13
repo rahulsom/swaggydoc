@@ -150,8 +150,8 @@ class SwaggyDataService {
                     resourcePathParts = pathParts
                     resourcePathParams = pathParams
                 }
-                def defaults = DefaultActionComponents[mapping.actionName](domainName)
-                def parameters = (defaults?.parameters?.clone() ?: [:]) +
+                def defaults = (DefaultActionComponents.get(mapping.actionName) ?: {[:]})(domainName)
+                def parameters = (defaults?.parameters?.clone() ?: []) +
                     pathParams.collect { pathParam ->
                         [
                             name: pathParam,
