@@ -114,4 +114,35 @@ class MappedUrlsApiSpec extends Specification {
         json.apis.find {it.path == '/outerResource/{outerResourceId}/innerResource/{id}'}.operations.find { it.method == 'PATCH' }.parameters.size() == 3
     }
 
+    void "mapped resource with hierarchical sub-resource with annotations"() {
+        given:
+        withUrlMappings {
+            "/outerResource"(resources: "mapped", includes: ['index', 'show']) {
+                "/innerResource"(resources: "mappedWithAnnotations", includes: ['index', 'show', 'delete', 'save', 'patch'])
+            }
+        }
+
+        when:
+        controller.params.id = 'mappedWithAnnotations'
+        controller.show()
+
+        then:
+        def json = controller.response.json
+        json
+        json.apiVersion == '1.0'
+        json.swaggerVersion == '1.2'
+        json.basePath == "http://localhost"
+        json.resourcePath == "/outerResource/{outerResourceId}/innerResource"
+        json.produces == ['application/json', 'application/xml', 'text/html']
+        json.consumes == ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
+        json.apis.size() == 2
+        json.apis.find {it.path == '/outerResource/{outerResourceId}/innerResource'}.operations.size() == 2
+        json.apis.find {it.path == '/outerResource/{outerResourceId}/innerResource'}.operations.find { it.method == 'GET' }.parameters.size() == 5
+        json.apis.find {it.path == '/outerResource/{outerResourceId}/innerResource'}.operations.find { it.method == 'POST' }.parameters.size() == 2
+        json.apis.find {it.path == '/outerResource/{outerResourceId}/innerResource/{id}'}.operations.size() == 4
+        json.apis.find {it.path == '/outerResource/{outerResourceId}/innerResource/{id}'}.operations.find { it.method == 'GET' }.parameters.size() == 2
+        json.apis.find {it.path == '/outerResource/{outerResourceId}/innerResource/{id}'}.operations.find { it.method == 'DELETE' }.parameters.size() == 2
+        json.apis.find {it.path == '/outerResource/{outerResourceId}/innerResource/{id}'}.operations.find { it.method == 'PATCH' }.parameters.size() == 3
+        json.apis.find {it.path == '/outerResource/{outerResourceId}/innerResource/{id}'}.operations.find { it.method == 'PUT' }.parameters.size() == 3
+    }
 }

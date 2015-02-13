@@ -124,7 +124,9 @@ class SwaggyDataService {
         def resourcePath = grailsLinkGenerator.link(controller: theController.logicalPropertyName)
         def domainName = slugToDomain(controllerName)
 
+        // These preserve the path components supporting hierarchical paths discovered through URL mappings
         List resourcePathParts
+        List resourcePathParams
         def apis = grailsUrlMappingsHolder.urlMappings.findAll {
                 it.controllerName == controllerName
             }.
@@ -146,6 +148,7 @@ class SwaggyDataService {
                 // Capture resource path candidates
                 if (!resourcePathParts || resourcePathParts.size() > pathParts.size()) {
                     resourcePathParts = pathParts
+                    resourcePathParams = pathParams
                 }
                 def defaults = DefaultActionComponents[mapping.actionName](domainName)
                 def parameters = (defaults?.parameters?.clone() ?: [:]) +
@@ -196,10 +199,14 @@ class SwaggyDataService {
             { action, documentation ->
                 if (apis.containsKey(action)) {
                     // leave the path alone, update everything else
-                    apis[action]['operations'][0] << documentation['operations'][0]
+                    apis[action].operations[0] << documentation.operations[0]
                 } else {
                     documentation.path = documentation.path.replaceFirst(/^.+(\/\{.+\})/, "${resourcePath}\$1")
                     apis[action] = documentation
+                }
+                if (resourcePathParams) {
+                    // Add additional params needed to support hierarchical path mappings
+                    apis[action].operations[0].parameters.addAll(0, resourcePathParams)
                 }
             } :
             // This code is used if there were no matching UrlMappings
