@@ -24,13 +24,37 @@ class ApiController {
      * @return
      */
     def resources() {
-        render(swaggyDataService.resources() as JSON)
+        //// START hacky workaround
+        // Fix for awful rendering bug in Grails 2.4.4.
+        // Keeping the code here as to not muddy up the service code
+        Map response = swaggyDataService.resources()
+        response.apis = response.apis?.toArray()
+        render response as JSON
+        //// END hacky workaround (remove and uncomment next line after Grails bug is fixed)
+//        render(swaggyDataService.resources() as JSON)
     }
 
 
     def show() {
         header 'Access-Control-Allow-Origin', '*'
-        render(swaggyDataService.apiDetails(params.id) as JSON)
+        //// START hacky workaround
+        // Fix for awful rendering bug in Grails 2.4.4.
+        // Keeping the code here as to not muddy up the service code
+        Map response = swaggyDataService.apiDetails(params.id)
+        response.apis = response.apis?.collect { api ->
+            api.operations = api.operations.collect { op ->
+                op.parameters = op.parameters?.toArray()
+                op.responseMessages = op.responseMessages?.toArray()
+                op
+            }.toArray()
+            api
+        }.toArray()
+        response.models.values().each { model ->
+            model.required = model.required?.toArray()
+        }
+        render response as JSON
+        //// END hacky workaround (remove and uncomment next line after Grails bug is fixed)
+//        render(swaggyDataService.apiDetails(params.id) as JSON)
     }
 
 

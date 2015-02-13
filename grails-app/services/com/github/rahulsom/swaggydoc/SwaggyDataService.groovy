@@ -89,7 +89,7 @@ class SwaggyDataService {
      * Generates map of Swagger Resources.
      * @return Map
      */
-    def resources() {
+    Map resources() {
         def apis = grailsApplication.controllerClasses.
                 findAll { getApi(it) }.
                 sort { getApi(it).position() }.
@@ -100,7 +100,7 @@ class SwaggyDataService {
         return [
                 apiVersion    : config.apiVersion ?: grailsApplication.metadata['app.version'],
                 swaggerVersion: '1.2',
-                apis          : apis?.toArray(),
+                apis          : apis,
                 info          : infoObject
         ]
     }
@@ -110,7 +110,7 @@ class SwaggyDataService {
      * @param controllerName
      * @return Map
      */
-    def apiDetails(controllerName) {
+    Map apiDetails(controllerName) {
         ConfigObject config = grailsApplication.config.swaggydoc
         def theController = grailsApplication.controllerClasses.find {
             it.logicalPropertyName == controllerName
@@ -221,7 +221,7 @@ class SwaggyDataService {
 
         def groupedApis = apis.values().
                 groupBy { Map it -> it.path }.
-                collect { p, a -> [path: p, operations: (a as List<Map>).collect { it.operations }.flatten().unique()?.toArray()] }
+                collect { p, a -> [path: p, operations: (a as List<Map>).collect { it.operations }.flatten().unique()] }
 
         return [
                 apiVersion    : config.apiVersion ?: grailsApplication.metadata['app.version'],
@@ -230,7 +230,7 @@ class SwaggyDataService {
                 resourcePath  : resourcePath - basePath,
                 produces      : api?.produces()?.tokenize(',') ?: DefaultResponseContentTypes,
                 consumes      : api?.consumes()?.tokenize(',') ?: DefaultRequestContentTypes,
-                apis          : groupedApis?.toArray(),
+                apis          : groupedApis,
                 models        : models
         ]
     }
@@ -308,7 +308,7 @@ class SwaggyDataService {
 
             def modelDescription = [
                     id        : model.simpleName,
-                    required  : required?.toArray(),
+                    required  : required,
                     properties: props.collectEntries { Field f -> [f.name, getTypeDescriptor(f, grailsDomainClass)] }
             ]
 
@@ -361,11 +361,11 @@ class SwaggyDataService {
                                 method          : httpMethod,
                                 summary         : summary,
                                 nickname        : inferredNickname,
-                                parameters      : parameters?.toArray(),
+                                parameters      : parameters,
                                 type            : domainName,
-                                responseMessages: responseMessages?.toArray()
+                                responseMessages: responseMessages,
                         ]
-                ].toArray()
+                ]
         ]
     }
 
@@ -394,11 +394,11 @@ class SwaggyDataService {
                                 summary         : apiOperation.value(),
                                 notes           : apiOperation.notes(),
                                 nickname        : apiOperation.nickname() ?: inferredNickname,
-                                parameters      : parameters?.toArray(),
+                                parameters      : parameters,
                                 type            : apiOperation.response() == Void ? 'void' : apiOperation.response().simpleName,
                                 responseMessages: apiResponses?.value()?.collect { ApiResponse apiResponse ->
                                     [code: apiResponse.code(), message: apiResponse.message()]
-                                }?.toArray()
+                                }
                         ]
                 ]
         ]
