@@ -12,12 +12,78 @@ class SwaggyDataService {
 
     def grailsApplication
     def grailsLinkGenerator
+    def grailsUrlMappingsHolder
 
     public static
     final ArrayList<String> DefaultResponseContentTypes = ['application/json', 'application/xml', 'text/html']
     public static
     final ArrayList<String> DefaultRequestContentTypes = ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
 
+    public static final Map<String, Map> DefaultActionComponents = [
+        index: { domainName -> [
+            swaggyAnnotation: SwaggyList,
+            parameters: [
+                [name: 'offset', description: 'Records to skip. Empty means 0.', paramType: 'query', type: 'int'],
+                [name: 'max', description: 'Max records to return. Empty means 10.', paramType: 'query', type: 'int'],
+                [name: 'sort', description: 'Field to sort by. Empty means id if q is empty. If q is provided, empty means relevance.', paramType: 'query', type: 'string'],
+                [name: 'order', description: 'Order to sort by. Empty means asc if q is empty. If q is provided, empty means desc.', paramType: 'query', type: 'string'],
+            ],
+            responseMessages: [],
+        ]},
+        show: { domainName -> [
+            swaggyAnnotation: SwaggyShow,
+            parameters: [
+                [name: 'id', description: 'Identifier to look for', paramType: 'path', type: 'string', required: true],
+            ],
+            responseMessages: [
+                [code: 400, message: 'Bad Id provided'],
+                [code: 404, message: "Could not find ${domainName} with that Id"],
+            ]
+        ]},
+        save: { domainName -> [
+            swaggyAnnotation: SwaggySave,
+            parameters: [
+                [name: 'body', description: "Description of ${domainName}", paramType: 'body', type: domainName, required: true],
+            ],
+            responseMessages: [
+                [code: 422, message: 'Bad Entity received'],
+            ]
+        ]},
+        update: { domainName -> [
+            swaggyAnnotation: SwaggyUpdate,
+            parameters: [
+                [name: 'id', description: "Id to update", paramType: 'path', type: 'string', required: true],
+                [name: 'body', description: "Description of ${domainName}", paramType: 'body', type: domainName, required: true],
+            ],
+            responseMessages: [
+                [code: 400, message: 'Bad Id provided'],
+                [code: 404, message: "Could not find ${domainName} with that Id"],
+                [code: 422, message: 'Bad Entity received'],
+            ]
+        ]},
+        patch: { domainName -> [
+            swaggyAnnotation: SwaggyPatch,
+            parameters: [
+                [name: 'id', description: "Id to patch", paramType: 'path', type: 'string', required: true],
+                [name: 'body', description: "Description of ${domainName}", paramType: 'body', type: domainName, required: true],
+            ],
+            responseMessages: [
+                [code: 400, message: 'Bad Id provided'],
+                [code: 404, message: "Could not find ${domainName} with that Id"],
+                [code: 422, message: 'Bad Entity received'],
+            ]
+        ]},
+        delete: { domainName -> [
+            swaggyAnnotation: SwaggyDelete,
+            parameters: [
+                [name: 'id', description: "Id to delete", paramType: 'path', type: 'string', required: true],
+            ],
+            responseMessages: [
+                [code: 400, message: 'Bad Id provided'],
+                [code: 404, message: "Could not find ${domainName} with that Id"],
+            ]
+        ]}
+    ]
 
     /**
      * Generates map of Swagger Resources.
@@ -49,14 +115,70 @@ class SwaggyDataService {
         def theController = grailsApplication.controllerClasses.find {
             it.logicalPropertyName == controllerName
         }
+        def theControllerClazz = theController.referenceInstance.class
 
         Api api = getApi(theController)
 
         def absoluteBasePath = grailsLinkGenerator.link(uri: '', absolute: true)
         def basePath = grailsLinkGenerator.link(uri: '')
         def resourcePath = grailsLinkGenerator.link(controller: theController.logicalPropertyName)
+        def domainName = slugToDomain(controllerName)
 
-        def theControllerClazz = theController.referenceInstance.class
+        List resourcePathParts
+        def apis = grailsUrlMappingsHolder.urlMappings.findAll {
+                it.controllerName == controllerName
+            }.
+            collectEntries { mapping ->
+                // Determine path and path arguments
+                List pathParams = []
+                List pathParts = []
+                mapping.urlData.tokens.eachWithIndex { String token, idx ->
+                    if (token.matches(/^\(.*[\*\+]+.*\)$/)) {
+                        def param = (idx == mapping.urlData.tokens.size() - 1) ? 'id' : pathParts[-1] + 'Id'
+                        if (param != 'id')
+                            // Don't push 'id' as it is one of the default pathParams
+                            pathParams.push(param)
+                        pathParts.push("{" + param + "}")
+                    } else {
+                        pathParts.push(token)
+                    }
+                }
+                // Capture resource path candidates
+                if (!resourcePathParts || resourcePathParts.size() > pathParts.size()) {
+                    resourcePathParts = pathParts
+                }
+                def defaults = DefaultActionComponents[mapping.actionName](domainName)
+                def parameters = (defaults?.parameters?.clone() ?: [:]) +
+                    pathParams.collect { pathParam ->
+                        [
+                            name: pathParam,
+                            description: pathParam + " identifier",
+                            paramType: "path",
+                            type: "string",
+                            required: true
+                        ]
+                    }
+                [
+                    mapping.actionName,
+                    defineAction(
+                        '/' + pathParts.join('/'),
+                        mapping.httpMethod,
+                        domainName,
+                        "${mapping.httpMethod.toLowerCase()}${controllerName}${mapping.actionName}",
+                        parameters,
+                        defaults?.responseMessages ?: [],
+                        "${mapping.actionName} ${domainName}"
+                    )
+                ]
+            }
+        if (resourcePathParts?.size()) {
+            // UrlMappings may override the resourcePath
+            if (resourcePathParts[-1].matches(/^\{.+\}$/)) {
+                resourcePathParts.pop()
+            }
+            resourcePath = '/' + resourcePathParts.join('/')
+        }
+//        grailsApplication.getArtefactByLogicalPropertyName('Controller', urlMappings[2].controllerName)
 
         def apiMethods = methodsOfType(ApiOperation, theControllerClazz)
 
@@ -67,12 +189,37 @@ class SwaggyDataService {
         def modelTypes = apiOperationAnnotations*.response() + grailsApplication.domainClasses.find {
             it.logicalPropertyName == theController.logicalPropertyName
         }?.clazz
-
-        def apis = apiMethods.collect { documentMethod(it, theController) } + getSwaggyApis(theController)
-
         Map models = getModels(modelTypes)
 
-        def groupedApis = apis.
+        def updateDocumentation = apis ?
+            // This code is used if UrlMappings were used
+            { action, documentation ->
+                if (apis.containsKey(action)) {
+                    // leave the path alone, update everything else
+                    apis[action]['operations'][0] << documentation['operations'][0]
+                } else {
+                    documentation.path = documentation.path.replaceFirst(/^.+(\/\{.+\})/, "${resourcePath}\$1")
+                    apis[action] = documentation
+                }
+            } :
+            // This code is used if there were no matching UrlMappings
+            { action, documentation ->
+                apis[action] = documentation
+            }
+        // Update APIs with low-level method annotations
+        apiMethods.each { method ->
+            updateDocumentation(method.name, documentMethod(method, theController))
+        }
+
+        // Update APIs with swaggydoc method annotations
+        DefaultActionComponents.collectEntries { action, defaultsFactory ->
+            def defaults = defaultsFactory(domainName)
+            methodsOfType(defaults.swaggyAnnotation, theControllerClazz).collectEntries {
+                [ it.name, generateMethod(action, it, theController) ]
+            }
+        }.each(updateDocumentation)
+
+        def groupedApis = apis.values().
                 groupBy { Map it -> it.path }.
                 collect { p, a -> [path: p, operations: (a as List<Map>).collect { it.operations }.flatten().unique()?.toArray()] }
 
@@ -144,24 +291,6 @@ class SwaggyDataService {
         theControllerClazz.methods.findAll { findAnnotation(annotation, it) } as List<Method>
     }
 
-    private List<Map> getSwaggyApis(GrailsClass theController) {
-        def theControllerClazz = theController.referenceInstance.class
-
-        def listMethods = methodsOfType(SwaggyList, theControllerClazz)
-        def showMethods = methodsOfType(SwaggyShow, theControllerClazz)
-        def saveMethods = methodsOfType(SwaggySave, theControllerClazz)
-        def updateMethods = methodsOfType(SwaggyUpdate, theControllerClazz)
-        def deleteMethods = methodsOfType(SwaggyDelete, theControllerClazz)
-        def patchMethods = methodsOfType(SwaggyPatch, theControllerClazz)
-
-        listMethods.collect { generateListMethod(it, theController) } +
-                showMethods.collect { generateShowMethod(it, theController) } +
-                saveMethods.collect { generateSaveMethod(it, theController) } +
-                updateMethods.collect { generateUpdateMethod(it, theController) } +
-                patchMethods.collect { generatePatchMethod(it, theController) } +
-                deleteMethods.collect { generateDeleteMethod(it, theController) }
-    }
-
     private Map getModels(Collection<Class<?>> modelTypes) {
         Queue m = modelTypes.findAll { it } as Queue
         def models = [:]
@@ -200,172 +329,27 @@ class SwaggyDataService {
         models
     }
 
-    @SuppressWarnings("GrMethodMayBeStatic")
-    private Map generateListMethod(Method method, GrailsClass theController) {
+    private Map generateMethod(String action, Method method, GrailsClass theController) {
         def basePath = grailsLinkGenerator.link(uri: '')
-        def swaggyList = findAnnotation(SwaggyList, method)
         def slug = theController.logicalPropertyName
-
-        def parameters = [
-                [name: 'offset', description: 'Records to skip. Empty means 0.', paramType: 'query', type: 'int'],
-                [name: 'max', description: 'Max records to return. Empty means 10.', paramType: 'query', type: 'int'],
-                [name: 'sort', description: 'Field to sort by. Empty means id if q is empty. If q is provided, empty means relevance.', paramType: 'query', type: 'string'],
-                [name: 'order', description: 'Order to sort by. Empty means asc if q is empty. If q is provided, empty means desc.', paramType: 'query', type: 'string'],
-        ]
-        if (swaggyList.searchParam()) {
+        def domainName = slugToDomain(slug)
+        def defaults = DefaultActionComponents[action](domainName)
+        def parameters = defaults.parameters.clone()
+        if (defaults.swaggyAnnotation.metaClass.getMetaMethod('searchParam')
+                && findAnnotation(defaults.swaggyAnnotation, method).searchParam()) {
             parameters << [name: 'q', description: 'Query. Follows Lucene Query Syntax.', paramType: 'query', type: 'string']
         }
         def pathParams = parameters.findAll { it.paramType == 'path' }.collect { it.name }.collectEntries {
             [it, "{${it}}"]
         }
         def fullLink = grailsLinkGenerator.link(controller: slug, action: method.name, params: pathParams) as String
-
-        def link = fullLink.replace('%7B', '{').replace('%7D', '}') - basePath
-        def httpMethod = getHttpMethod(theController, method)
-        def domainName = slugToDomain(slug)
-        def inferredNickname = "${httpMethod.toLowerCase()}${slug}${method.name}"
-
-        defineMethod(link, httpMethod, domainName, inferredNickname, parameters, [], "List ${domainName}s")
-    }
-
-    private static String slugToDomain(String slug) {
-        slug.with { it.replaceFirst(it[0], it[0].toUpperCase()) }
-    }
-
-    @SuppressWarnings("GrMethodMayBeStatic")
-    private Map generateShowMethod(Method method, GrailsClass theController) {
-        def basePath = grailsLinkGenerator.link(uri: '')
-        def swaggyShow = findAnnotation(SwaggyShow, method)
-        def slug = theController.logicalPropertyName
-
-        def parameters = [
-                [name: 'id', description: 'Identifier to look for', paramType: 'path', type: 'string', required: true],
-        ]
-        def pathParams = parameters.findAll { it.paramType == 'path' }.collect { it.name }.collectEntries {
-            [it, "{${it}}"]
-        }
-
-        def fullLink = grailsLinkGenerator.link(controller: slug, action: method.name, params: pathParams) as String
-        def link = fullLink.replace('%7B', '{').replace('%7D', '}') - basePath
-        def httpMethod = getHttpMethod(theController, method)
-        def domainName = slugToDomain(slug)
-        def inferredNickname = "${httpMethod.toLowerCase()}${slug}${method.name}"
-        def responseMessages = [
-                [code: 400, message: 'Bad Id provided'],
-                [code: 404, message: "Could not find ${domainName} with that Id"],
-        ]
-
-        defineMethod(link, httpMethod, domainName, inferredNickname, parameters, responseMessages, "Show ${domainName}")
-    }
-
-    @SuppressWarnings("GrMethodMayBeStatic")
-    private Map generateSaveMethod(Method method, GrailsClass theController) {
-        def basePath = grailsLinkGenerator.link(uri: '')
-        def swaggySave = findAnnotation(SwaggySave, method)
-        def slug = theController.logicalPropertyName
-        def domainName = slugToDomain(slug)
-
-        def parameters = [
-                [name: 'body', description: "Description of ${domainName}", paramType: 'body', type: domainName, required: true],
-        ]
-        def pathParams = parameters.findAll { it.paramType == 'path' }.collect { it.name }.collectEntries {
-            [it, "{${it}}"]
-        }
-
-        def fullLink = grailsLinkGenerator.link(controller: slug, action: method.name, params: pathParams) as String
         def link = fullLink.replace('%7B', '{').replace('%7D', '}') - basePath
         def httpMethod = getHttpMethod(theController, method)
         def inferredNickname = "${httpMethod.toLowerCase()}${slug}${method.name}"
-        def responseMessages = [
-                [code: 422, message: 'Bad Entity received'],
-        ]
-
-        defineMethod(link, httpMethod, domainName, inferredNickname, parameters, responseMessages, "Save ${domainName}")
+        defineAction(link, httpMethod, domainName, inferredNickname, parameters, defaults.responseMessages, "${action} ${domainName}")
     }
 
-    @SuppressWarnings("GrMethodMayBeStatic")
-    private Map generateUpdateMethod(Method method, GrailsClass theController) {
-        def basePath = grailsLinkGenerator.link(uri: '')
-        def swaggySave = findAnnotation(SwaggySave, method)
-        def slug = theController.logicalPropertyName
-        def domainName = slugToDomain(slug)
-
-        def parameters = [
-                [name: 'id', description: "Id to update", paramType: 'path', type: 'string', required: true],
-                [name: 'body', description: "Description of ${domainName}", paramType: 'body', type: domainName, required: true],
-        ]
-        def pathParams = parameters.findAll { it.paramType == 'path' }.collect { it.name }.collectEntries {
-            [it, "{${it}}"]
-        }
-
-        def fullLink = grailsLinkGenerator.link(controller: slug, action: method.name, params: pathParams) as String
-        def link = fullLink.replace('%7B', '{').replace('%7D', '}') - basePath
-        def httpMethod = getHttpMethod(theController, method)
-        def inferredNickname = "${httpMethod.toLowerCase()}${slug}${method.name}"
-        def responseMessages = [
-                [code: 400, message: 'Bad Id provided'],
-                [code: 404, message: "Could not find ${domainName} with that Id"],
-                [code: 422, message: 'Bad Entity received'],
-        ]
-
-        defineMethod(link, httpMethod, domainName, inferredNickname, parameters, responseMessages, "Save ${domainName}")
-    }
-
-    @SuppressWarnings("GrMethodMayBeStatic")
-    private Map generatePatchMethod(Method method, GrailsClass theController) {
-        def basePath = grailsLinkGenerator.link(uri: '')
-        def swaggySave = findAnnotation(SwaggyPatch, method)
-        def slug = theController.logicalPropertyName
-        def domainName = slugToDomain(slug)
-
-        def parameters = [
-                [name: 'id', description: "Id to patch", paramType: 'path', type: 'string', required: true],
-                [name: 'body', description: "Description of ${domainName}", paramType: 'body', type: domainName, required: true],
-        ]
-        def pathParams = parameters.findAll { it.paramType == 'path' }.collect { it.name }.collectEntries {
-            [it, "{${it}}"]
-        }
-
-        def fullLink = grailsLinkGenerator.link(controller: slug, action: method.name, params: pathParams) as String
-        def link = fullLink.replace('%7B', '{').replace('%7D', '}') - basePath
-        def httpMethod = getHttpMethod(theController, method)
-        def inferredNickname = "${httpMethod.toLowerCase()}${slug}${method.name}"
-        def responseMessages = [
-                [code: 400, message: 'Bad Id provided'],
-                [code: 404, message: "Could not find ${domainName} with that Id"],
-                [code: 422, message: 'Bad Entity received'],
-        ]
-
-        defineMethod(link, httpMethod, domainName, inferredNickname, parameters, responseMessages, "Save ${domainName}")
-    }
-
-    @SuppressWarnings("GrMethodMayBeStatic")
-    private Map generateDeleteMethod(Method method, GrailsClass theController) {
-        def basePath = grailsLinkGenerator.link(uri: '')
-        def swaggySave = findAnnotation(SwaggyDelete, method)
-        def slug = theController.logicalPropertyName
-        def domainName = slugToDomain(slug)
-
-        def parameters = [
-                [name: 'id', description: "Id to delete", paramType: 'path', type: 'string', required: true],
-        ]
-        def pathParams = parameters.findAll { it.paramType == 'path' }.collect { it.name }.collectEntries {
-            [it, "{${it}}"]
-        }
-
-        def fullLink = grailsLinkGenerator.link(controller: slug, action: method.name, params: pathParams) as String
-        def link = fullLink.replace('%7B', '{').replace('%7D', '}') - basePath
-        def httpMethod = getHttpMethod(theController, method)
-        def inferredNickname = "${httpMethod.toLowerCase()}${slug}${method.name}"
-        def responseMessages = [
-                [code: 400, message: 'Bad Id provided'],
-                [code: 404, message: "Could not find ${domainName} with that Id"],
-        ]
-
-        defineMethod(link, httpMethod, 'void', inferredNickname, parameters, responseMessages, "Delete ${domainName}")
-    }
-
-    private static LinkedHashMap<String, Serializable> defineMethod(
+    private static LinkedHashMap<String, Serializable> defineAction(
             String link, String httpMethod, domainName, GString inferredNickname,
             ArrayList<LinkedHashMap<String, Serializable>> parameters,
             ArrayList<LinkedHashMap<String, Serializable>> responseMessages,
@@ -455,6 +439,10 @@ class SwaggyDataService {
             ['$ref': f.type.simpleName]
         }
 
+    }
+
+    private static String slugToDomain(String slug) {
+        slug.with { it.replaceFirst(it[0], it[0].toUpperCase()) }
     }
 
     /**
