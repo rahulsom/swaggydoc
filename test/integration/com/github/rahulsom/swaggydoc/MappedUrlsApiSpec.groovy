@@ -231,4 +231,27 @@ class MappedUrlsApiSpec extends Specification {
         json.apis.find {it.path == '/regulador/especial'}.operations.size() == 1
         json.apis.find {it.path == '/regulador/especial'}.operations.find { it.method == 'GET' }.parameters.size() == 1
     }
-}
+
+    void "mapped resource with only one target (no IDs) does not include IDs in parameters"() {
+        given:
+        withUrlMappings {
+            "/justOne"(resource: "mapped", includes: ['show'])
+        }
+
+        when:
+        controller.params.id = 'mapped'
+        controller.show()
+
+        then:
+        def json = controller.response.json
+        json
+        json.apiVersion == '1.0'
+        json.swaggerVersion == '1.2'
+        json.basePath == "http://localhost"
+        json.resourcePath == "/justOne"
+        json.produces == ['application/json', 'application/xml', 'text/html']
+        json.consumes == ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
+        json.apis.size() == 1
+        json.apis.find {it.path == '/justOne'}.operations.size() == 1
+        json.apis.find {it.path == '/justOne'}.operations.find { it.method == 'GET' }.parameters.size() == 0
+    }}

@@ -161,6 +161,10 @@ class SwaggyDataService {
                             required: true
                         ]
                     }
+                if (pathParts[-1] != "{id}") {
+                    // Special case: defaults may include 'id' for single resource paths
+                    parameters.removeAll { it.name == 'id' }
+                }
                 [
                     mapping.actionName,
                     defineAction(
@@ -201,7 +205,7 @@ class SwaggyDataService {
                     // leave the path alone, update everything else
                     apis[action].operations[0] << documentation.operations[0]
                 } else {
-                    documentation.path = documentation.path.replaceFirst(/^.+(\/\{.+\})/, "${resourcePath}\$1")
+                    documentation.path = documentation.path.replaceFirst(/^.+(?=\/)/, resourcePath)
                     apis[action] = documentation
                 }
                 if (resourcePathParams) {
