@@ -1,5 +1,7 @@
 package com.github.rahulsom.swaggydoc
 
+import static org.springframework.http.HttpStatus.*
+
 import com.wordnik.swagger.annotations.*
 import org.codehaus.groovy.grails.commons.GrailsClass
 import org.codehaus.groovy.grails.commons.GrailsDomainClass
@@ -37,8 +39,8 @@ class SwaggyDataService {
                 [name: 'id', description: 'Identifier to look for', paramType: 'path', type: 'string', required: true],
             ],
             responseMessages: [
-                [code: 400, message: 'Bad Id provided'],
-                [code: 404, message: "Could not find ${domainName} with that Id"],
+                [code: BAD_REQUEST.value(), message: 'Bad Request'],
+                [code: NOT_FOUND.value(), message: "Could not find ${domainName} with that Id"],
             ]
         ]},
         save: { domainName -> [
@@ -47,7 +49,8 @@ class SwaggyDataService {
                 [name: 'body', description: "Description of ${domainName}", paramType: 'body', type: domainName, required: true],
             ],
             responseMessages: [
-                [code: 422, message: 'Bad Entity received'],
+                [code: CREATED.value(), message: 'New ${domainName} created'],
+                [code: UNPROCESSABLE_ENTITY.value(), message: 'Malformed Entity received'],
             ]
         ]},
         update: { domainName -> [
@@ -57,9 +60,9 @@ class SwaggyDataService {
                 [name: 'body', description: "Description of ${domainName}", paramType: 'body', type: domainName, required: true],
             ],
             responseMessages: [
-                [code: 400, message: 'Bad Id provided'],
-                [code: 404, message: "Could not find ${domainName} with that Id"],
-                [code: 422, message: 'Bad Entity received'],
+                [code: BAD_REQUEST.value(), message: 'Bad Request'],
+                [code: NOT_FOUND.value(), message: "Could not find ${domainName} with that Id"],
+                [code: UNPROCESSABLE_ENTITY.value(), message: 'Malformed Entity received'],
             ]
         ]},
         patch: { domainName -> [
@@ -69,9 +72,9 @@ class SwaggyDataService {
                 [name: 'body', description: "Description of ${domainName}", paramType: 'body', type: domainName, required: true],
             ],
             responseMessages: [
-                [code: 400, message: 'Bad Id provided'],
-                [code: 404, message: "Could not find ${domainName} with that Id"],
-                [code: 422, message: 'Bad Entity received'],
+                [code: BAD_REQUEST.value(), message: 'Bad Request'],
+                [code: NOT_FOUND.value(), message: "Could not find ${domainName} with that Id"],
+                [code: UNPROCESSABLE_ENTITY.value(), message: 'Malformed Entity received'],
             ]
         ]},
         delete: { domainName -> [
@@ -80,8 +83,9 @@ class SwaggyDataService {
                 [name: 'id', description: "Id to delete", paramType: 'path', type: 'string', required: true],
             ],
             responseMessages: [
-                [code: 400, message: 'Bad Id provided'],
-                [code: 404, message: "Could not find ${domainName} with that Id"],
+                [code: NO_CONTENT.value(), message: 'Delete successful'],
+                [code: BAD_REQUEST.value(), message: 'Bad Request'],
+                [code: NOT_FOUND.value(), message: "Could not find ${domainName} with that Id"],
             ]
         ]}
     ]
