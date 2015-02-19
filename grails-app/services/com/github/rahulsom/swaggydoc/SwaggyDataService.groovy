@@ -13,6 +13,7 @@ class SwaggyDataService {
     def grailsApplication
     def grailsLinkGenerator
     def grailsUrlMappingsHolder
+    def grailsMimeUtility
 
     public static
     final ArrayList<String> DefaultResponseContentTypes = ['application/json', 'application/xml', 'text/html']
@@ -239,7 +240,7 @@ class SwaggyDataService {
                 swaggerVersion: '1.2',
                 basePath      : api?.basePath() ?: absoluteBasePath,
                 resourcePath  : resourcePath - basePath,
-                produces      : api?.produces()?.tokenize(',') ?: DefaultResponseContentTypes,
+                produces      : api?.produces()?.tokenize(',') ?: responseContentTypes(theControllerClazz),
                 consumes      : api?.consumes()?.tokenize(',') ?: DefaultRequestContentTypes,
                 apis          : groupedApis,
                 models        : models
@@ -471,5 +472,11 @@ class SwaggyDataService {
                 paramType   : apiParam.paramType(),
                 defaultValue: apiParam.defaultValue()
         ]
+    }
+
+    private List<String> responseContentTypes(Class controller) {
+        controller?.responseFormats?.collect {
+            grailsMimeUtility.getMimeTypeForExtension(it)?.name
+        }.grep() as List<String> ?: DefaultResponseContentTypes
     }
 }

@@ -42,7 +42,7 @@ class MappedUrlsApiSpec extends Specification {
         json.swaggerVersion == '1.2'
         json.basePath == "http://localhost"
         json.resourcePath == "/altPath"
-        json.produces == ['application/json', 'application/xml', 'text/html']
+        json.produces == ['application/json', 'text/xml']
         json.consumes == ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
         json.apis.size() == 2
         json.apis.find {it.path == '/altPath'}.operations.size() == 2
@@ -70,7 +70,7 @@ class MappedUrlsApiSpec extends Specification {
         json.swaggerVersion == '1.2'
         json.basePath == "http://localhost"
         json.resourcePath == "/somePath"
-        json.produces == ['application/json', 'application/xml', 'text/html']
+        json.produces == ['application/json', 'text/xml']
         json.consumes == ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
         json.apis.size() == 2
         json.apis.find {it.path == '/somePath'}.operations.size() == 2
@@ -102,7 +102,7 @@ class MappedUrlsApiSpec extends Specification {
         json.swaggerVersion == '1.2'
         json.basePath == "http://localhost"
         json.resourcePath == "/outerResource/{outerResourceId}/innerResource"
-        json.produces == ['application/json', 'application/xml', 'text/html']
+        json.produces == ['application/json', 'text/xml']
         json.consumes == ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
         json.apis.size() == 2
         json.apis.find {it.path == '/outerResource/{outerResourceId}/innerResource'}.operations.size() == 2
@@ -133,7 +133,7 @@ class MappedUrlsApiSpec extends Specification {
         json.swaggerVersion == '1.2'
         json.basePath == "http://localhost"
         json.resourcePath == "/outerResource/{outerResourceId}/innerResource"
-        json.produces == ['application/json', 'application/xml', 'text/html']
+        json.produces == ['application/json', 'text/xml']
         json.consumes == ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
         json.apis.size() == 2
         json.apis.find {it.path == '/outerResource/{outerResourceId}/innerResource'}.operations.size() == 2
@@ -163,7 +163,7 @@ class MappedUrlsApiSpec extends Specification {
         json.swaggerVersion == '1.2'
         json.basePath == "http://localhost"
         json.resourcePath == "/regulador/especial"
-        json.produces == ['application/json', 'application/xml', 'text/html']
+        json.produces == ['application/json', 'text/xml']
         json.consumes == ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
         json.apis.size() == 1
         json.apis.find {it.path == '/regulador/especial'}.operations.size() == 1
@@ -188,7 +188,7 @@ class MappedUrlsApiSpec extends Specification {
         json.swaggerVersion == '1.2'
         json.basePath == "http://localhost"
         json.resourcePath == "/regulador"
-        json.produces == ['application/json', 'application/xml', 'text/html']
+        json.produces == ['application/json', 'text/xml']
         json.consumes == ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
         json.apis.size() == 3
         json.apis.find {it.path == '/regulador'}.operations.size() == 2
@@ -219,7 +219,7 @@ class MappedUrlsApiSpec extends Specification {
         json.swaggerVersion == '1.2'
         json.basePath == "http://localhost"
         json.resourcePath == "/regulador"
-        json.produces == ['application/json', 'application/xml', 'text/html']
+        json.produces == ['application/json', 'text/xml']
         json.consumes == ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
         json.apis.size() == 3
         json.apis.find {it.path == '/regulador'}.operations.size() == 2
@@ -249,7 +249,7 @@ class MappedUrlsApiSpec extends Specification {
         json.swaggerVersion == '1.2'
         json.basePath == "http://localhost"
         json.resourcePath == "/justOne"
-        json.produces == ['application/json', 'application/xml', 'text/html']
+        json.produces == ['application/json', 'text/xml']
         json.consumes == ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
         json.apis.size() == 1
         json.apis.find {it.path == '/justOne'}.operations.size() == 1

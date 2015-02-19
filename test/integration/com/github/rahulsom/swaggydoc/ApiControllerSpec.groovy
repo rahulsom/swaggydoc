@@ -50,7 +50,7 @@ class ApiControllerSpec extends Specification {
         json.swaggerVersion == '1.2'
         json.basePath == "http://localhost"
         json.resourcePath == "/domain/index"
-        json.produces == ['application/json', 'application/xml', 'text/html']
+        json.produces == ['application/json', 'text/xml']
         json.consumes == ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
         json.apis.size() == 6
 
@@ -228,7 +228,7 @@ class ApiControllerSpec extends Specification {
         json.swaggerVersion == '1.2'
         json.basePath == "http://localhost"
         json.resourcePath == "/domainless/index"
-        json.produces == ['application/json', 'application/xml', 'text/html']
+        json.produces == ['application/json', 'text/xml']
         json.consumes == ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
         json.models.size() == 0
         json.apis.size() == 6
