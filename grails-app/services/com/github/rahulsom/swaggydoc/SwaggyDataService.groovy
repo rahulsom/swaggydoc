@@ -49,7 +49,7 @@ class SwaggyDataService {
                 [name: 'body', description: "Description of ${domainName}", paramType: 'body', type: domainName, required: true],
             ],
             responseMessages: [
-                [code: CREATED.value(), message: 'New ${domainName} created'],
+                [code: CREATED.value(), message: "New ${domainName} created"],
                 [code: UNPROCESSABLE_ENTITY.value(), message: 'Malformed Entity received'],
             ]
         ]},
