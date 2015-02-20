@@ -1,5 +1,8 @@
 package com.github.rahulsom.swaggydoc
 
+import grails.util.Holders
+import org.codehaus.groovy.grails.commons.GrailsClassUtils as GCU
+
 import static org.springframework.http.HttpStatus.*
 
 import com.wordnik.swagger.annotations.*
@@ -16,10 +19,9 @@ class SwaggyDataService {
     def grailsUrlMappingsHolder
     def grailsMimeUtility
 
-    public static
-    final ArrayList<String> DefaultResponseContentTypes = ['application/json', 'application/xml', 'text/html']
-    public static
-    final ArrayList<String> DefaultRequestContentTypes = ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
+    static final ArrayList<String> DefaultResponseContentTypes = ['application/json', 'application/xml', 'text/html']
+    static final ArrayList<String> DefaultRequestContentTypes = ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
+    static final List knownTypes = [int, Integer, long, Long, float, Float, double, Double, String]
 
     public static final Map<String, Map> DefaultActionComponents = [
         index: { domainName -> [
@@ -306,8 +308,33 @@ class SwaggyDataService {
         theControllerClazz.methods.findAll { findAnnotation(annotation, it) } as List<Method>
     }
 
+    /**
+     * Provides optional support for the "marshallers" grails plugin when building models from domains
+     */
+    private Map _marshallingConfig
+    private def getMarshallingConfigForDomain(String domainName) {
+        if (_marshallingConfig == null) {
+            _marshallingConfig = [:]
+            if (Holders.pluginManager.hasGrailsPlugin('marshallers')) {
+                def MarshallingConfigBuilder = grailsApplication.getClassLoader().loadClass("org.grails.plugins.marshallers.config.MarshallingConfigBuilder")
+                grailsApplication.domainClasses.each {
+                    def clazz = it.clazz
+                    Closure mc = GCU.getStaticPropertyValue(clazz, 'marshalling')
+                    if (mc) {
+                        def builder = MarshallingConfigBuilder.newInstance(clazz)
+                        mc.delegate = builder
+                        mc.resolveStrategy = Closure.DELEGATE_FIRST
+                        mc()
+                        _marshallingConfig[clazz.name] = builder.config
+                    }
+                }
+            }
+        }
+        return _marshallingConfig[domainName]
+    }
+
     private Map getModels(Collection<Class<?>> modelTypes) {
-        Queue m = modelTypes.findAll { it } as Queue
+        Queue m = modelTypes as Queue
         def models = [:]
         while (m.size()) {
             Class model = m.poll()
@@ -318,7 +345,6 @@ class SwaggyDataService {
              * Interface for these two classes are similar enough to duck type for our purposes
              */
             def props = (domainClass ?
-                [domainClass.identifier, domainClass.version] + domainClass.getPersistentProperties().toList()
                 [domainClass.identifier, domainClass.version] + domainClass.persistentProperties.toList()
                 : model.declaredFields
             ).findAll {
@@ -328,6 +354,48 @@ class SwaggyDataService {
             }
 
             def optional = domainClass?.constrainedProperties?.findAll { k, v -> v.isNullable() }
+
+            if (domainClass) {
+                // Check for marshalling config
+                def marshallingConfig = getMarshallingConfigForDomain(domainClass.fullName)
+                if (marshallingConfig) {
+//                    Set deepProps = [] as Set
+                    def addProp = { fn ->
+                        props.add([name: fn, type: String])
+                        optional[fn] = true
+                    }
+                    def processMarshallingConfig;
+                    processMarshallingConfig = { config ->
+                        if (config.name != "default")
+                            // Currently we only support default marshalling, as that is conventional pattern
+                            return
+                        // N.B. we are not checking config.type, so we will conflate json and xml together
+                        // adding or suppressing fields for only one response type is an anti-pattern anyway
+                        if (!config.shouldOutputIdentifier) {
+                            props.remove(domainClass.identifier)
+                        }
+                        if (!config.shouldOutputVersion) {
+                            props.remove(domainClass.version)
+                        }
+                        if (config.shouldOutputClass) {
+                            addProp("class")
+                        }
+                        config.ignore?.each { fn ->
+                            props.removeAll { it.name == fn }
+                        }
+                        config.virtual?.keySet().each(addProp)
+//                        deepProps.addAll(config.deep ?: [])
+                        config.children?.each(processMarshallingConfig)
+                    }
+                    processMarshallingConfig(marshallingConfig)
+                    // FIXME: Handle "deep" the way marshallers does (may be a bit tricky)
+//                    props.findAll { f ->
+//                        !(deepProps.contains(f.name) || knownTypes.contains(f.type))
+//                    }.each { f ->
+//                    }
+                }
+            }
+
             def required = props.collect { f -> f.name } - optional*.key
 
             def modelDescription = [
@@ -337,7 +405,6 @@ class SwaggyDataService {
             ]
 
             models[model.simpleName] = modelDescription
-            def knownTypes = [int, Integer, long, Long, float, Float, double, Double, String]
             props.each { f ->
                 if (!models.containsKey(f.type.simpleName) && !m.contains(f.type) && !knownTypes.contains(f.type)) {
                     if (f.type.isAssignableFrom(List) || f.type.isAssignableFrom(Set)) {
@@ -487,7 +554,7 @@ class SwaggyDataService {
     }
 
     private List<String> responseContentTypes(Class controller) {
-        controller?.responseFormats?.collect {
+        GCU.getStaticPropertyValue(controller, 'responseFormats')?.collect {
             grailsMimeUtility.getMimeTypeForExtension(it)?.name
         }.grep() as List<String> ?: DefaultResponseContentTypes
     }
