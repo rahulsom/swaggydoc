@@ -199,9 +199,9 @@ class SwaggyDataService {
         List<ApiOperation> apiOperationAnnotations = allAnnotations.findAll {
             it.annotationType() == ApiOperation
         } as List<ApiOperation>
-        def modelTypes = apiOperationAnnotations*.response() + grailsApplication.domainClasses.find {
+        def modelTypes = (apiOperationAnnotations*.response() + grailsApplication.domainClasses.find {
             it.logicalPropertyName == theController.logicalPropertyName
-        }?.clazz
+        }?.clazz).grep()
         Map models = getModels(modelTypes)
 
         def updateDocumentation = apis ?
@@ -555,7 +555,7 @@ class SwaggyDataService {
 
     private List<String> responseContentTypes(Class controller) {
         GCU.getStaticPropertyValue(controller, 'responseFormats')?.collect {
-            grailsMimeUtility.getMimeTypeForExtension(it)?.name
+            grailsMimeUtility.getMimeTypeForExtension(it)?.name ?: it
         }.grep() as List<String> ?: DefaultResponseContentTypes
     }
 }
