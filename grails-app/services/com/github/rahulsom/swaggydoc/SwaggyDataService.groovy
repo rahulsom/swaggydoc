@@ -7,7 +7,6 @@ import org.codehaus.groovy.grails.commons.GrailsClass
 import org.codehaus.groovy.grails.commons.GrailsDomainClass
 
 import java.lang.reflect.AccessibleObject
-import java.lang.reflect.Field
 import java.lang.reflect.Method
 
 class SwaggyDataService {
@@ -312,28 +311,37 @@ class SwaggyDataService {
         def models = [:]
         while (m.size()) {
             Class model = m.poll()
-            def props = model.declaredFields.findAll {
+            def domainClass = grailsApplication.domainClasses.find { it.clazz == model } as GrailsDomainClass
+            /** Duck typing here:
+             * if model has a GrailsDomainClass then props will be list of GrailsDomainClassProperty objects
+             * otherwise props will be a list of Field objects
+             * Interface for these two classes are similar enough to duck type for our purposes
+             */
+            def props = (domainClass ?
+                [domainClass.identifier, domainClass.version] + domainClass.getPersistentProperties().toList()
+                [domainClass.identifier, domainClass.version] + domainClass.persistentProperties.toList()
+                : model.declaredFields
+            ).findAll {
                 !it.toString().contains(' static ') &&
                         !it.toString().contains(' transient ') &&
                         it.name != 'errors'
             }
 
-            def grailsDomainClass = grailsApplication.domainClasses.find { it.clazz == model } as GrailsDomainClass
-            def optional = grailsDomainClass?.constrainedProperties?.findAll { k, v -> v.isNullable() }
-            def required = props.collect { Field f -> f.name } - optional*.key
+            def optional = domainClass?.constrainedProperties?.findAll { k, v -> v.isNullable() }
+            def required = props.collect { f -> f.name } - optional*.key
 
             def modelDescription = [
-                    id        : model.simpleName,
-                    required  : required,
-                    properties: props.collectEntries { Field f -> [f.name, getTypeDescriptor(f, grailsDomainClass)] }
+                id        : model.simpleName,
+                required  : required,
+                properties: props.collectEntries { f -> [f.name, getTypeDescriptor(f, domainClass)] }
             ]
 
             models[model.simpleName] = modelDescription
             def knownTypes = [int, Integer, long, Long, float, Float, double, Double, String]
-            props.each { Field f ->
+            props.each { f ->
                 if (!models.containsKey(f.type.simpleName) && !m.contains(f.type) && !knownTypes.contains(f.type)) {
                     if (f.type.isAssignableFrom(List) || f.type.isAssignableFrom(Set)) {
-                        def typeArgs = grailsDomainClass?.associationMap?.getAt(f.name) ?: f.genericType.actualTypeArguments[0]
+                        def typeArgs = domainClass?.associationMap?.getAt(f.name) ?: f.genericType.actualTypeArguments[0]
                         m.add(typeArgs)
                     } else {
                         m.add(f.type)
@@ -433,7 +441,7 @@ class SwaggyDataService {
      * @param f
      * @return
      */
-    private static Map getTypeDescriptor(Field f, GrailsDomainClass gdc) {
+    private static Map getTypeDescriptor(def f, GrailsDomainClass gdc) {
         if (f.type.isAssignableFrom(String)) {
             [type: 'string']
         } else if (f.type.isAssignableFrom(Double) || f.type.isAssignableFrom(Float)) {
