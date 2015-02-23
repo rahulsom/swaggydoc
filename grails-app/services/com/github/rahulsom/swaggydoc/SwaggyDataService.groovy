@@ -555,7 +555,7 @@ class SwaggyDataService {
 
     private List<String> responseContentTypes(Class controller) {
         GCU.getStaticPropertyValue(controller, 'responseFormats')?.collect {
-            grailsMimeUtility.getMimeTypeForExtension(it)?.name ?: it
+            grailsMimeUtility.getMimeTypeForExtension(it)?.name ?: it.contains('/') ? it : null
         }.grep() as List<String> ?: DefaultResponseContentTypes
     }
 }

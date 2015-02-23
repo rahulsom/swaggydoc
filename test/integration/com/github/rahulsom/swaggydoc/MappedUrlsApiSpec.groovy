@@ -219,7 +219,7 @@ class MappedUrlsApiSpec extends Specification {
         json.swaggerVersion == '1.2'
         json.basePath == "http://localhost"
         json.resourcePath == "/regulador"
-        json.produces == ['application/json', 'text/xml']
+        json.produces == ['application/json', 'text/xml', 'application/x-gleeborp']
         json.consumes == ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
         json.apis.size() == 3
         json.apis.find {it.path == '/regulador'}.operations.size() == 2

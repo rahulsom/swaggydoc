@@ -11,7 +11,8 @@ import grails.transaction.Transactional
 @Api(value = 'mapped with annotated "special" action')
 class MappedWithAnnotatedSpecialController extends RestfulController {
 
-    static responseFormats = ['json', 'xml', 'gleeborp'] // Unknown response format will be ignored by SwaggyDataService
+    // Unknown response format will be ignored by SwaggyDataService, unless it has a '/'
+    static responseFormats = ['json', 'xml', 'gleeborp', 'application/x-gleeborp']
 
     MappedWithAnnotatedSpecialController() {
         super(Domain)
