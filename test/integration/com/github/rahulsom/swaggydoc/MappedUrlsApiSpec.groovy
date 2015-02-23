@@ -46,11 +46,11 @@ class MappedUrlsApiSpec extends Specification {
         json.consumes == ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
         json.apis.size() == 2
         json.apis.find {it.path == '/altPath'}.operations.size() == 2
-        json.apis.find {it.path == '/altPath'}.operations.find { it.method == 'GET' }.parameters.size() == 4
-        json.apis.find {it.path == '/altPath'}.operations.find { it.method == 'POST' }.parameters.size() == 1
+        json.apis.find {it.path == '/altPath'}.operations.find { it.method == 'GET' }.parameters.collect { it.name }.toSet() == ['offset', 'max', 'sort', 'order'] as Set
+        json.apis.find {it.path == '/altPath'}.operations.find { it.method == 'POST' }.parameters.collect { it.name }.toSet() == ['body'] as Set
         json.apis.find {it.path == '/altPath/{id}'}.operations.size() == 2
-        json.apis.find {it.path == '/altPath/{id}'}.operations.find { it.method == 'GET' }.parameters.size() == 1
-        json.apis.find {it.path == '/altPath/{id}'}.operations.find { it.method == 'DELETE' }.parameters.size() == 1
+        json.apis.find {it.path == '/altPath/{id}'}.operations.find { it.method == 'GET' }.parameters.collect { it.name }.toSet() == ['id'] as Set
+        json.apis.find {it.path == '/altPath/{id}'}.operations.find { it.method == 'DELETE' }.parameters.collect { it.name }.toSet() == ['id'] as Set
     }
 
     void "mapped resource with Controller annotations overriding default behavior"() {
@@ -74,13 +74,13 @@ class MappedUrlsApiSpec extends Specification {
         json.consumes == ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
         json.apis.size() == 2
         json.apis.find {it.path == '/somePath'}.operations.size() == 2
-        json.apis.find {it.path == '/somePath'}.operations.find { it.method == 'GET' }.parameters.size() == 4
-        json.apis.find {it.path == '/somePath'}.operations.find { it.method == 'POST' }.parameters.size() == 1
+        json.apis.find {it.path == '/somePath'}.operations.find { it.method == 'GET' }.parameters.collect { it.name }.toSet() == ['offset', 'max', 'sort', 'order'] as Set
+        json.apis.find {it.path == '/somePath'}.operations.find { it.method == 'POST' }.parameters.collect { it.name }.toSet() == ['body'] as Set
         json.apis.find {it.path == '/somePath/{id}'}.operations.size() == 4
-        json.apis.find {it.path == '/somePath/{id}'}.operations.find { it.method == 'GET' }.parameters.size() == 1
-        json.apis.find {it.path == '/somePath/{id}'}.operations.find { it.method == 'PUT' }.parameters.size() == 2
-        json.apis.find {it.path == '/somePath/{id}'}.operations.find { it.method == 'DELETE' }.parameters.size() == 1
-        json.apis.find {it.path == '/somePath/{id}'}.operations.find { it.method == 'PATCH' }.parameters.size() == 2
+        json.apis.find {it.path == '/somePath/{id}'}.operations.find { it.method == 'GET' }.parameters.collect { it.name }.toSet() == ['id'] as Set
+        json.apis.find {it.path == '/somePath/{id}'}.operations.find { it.method == 'PUT' }.parameters.collect { it.name }.toSet() == ['id', 'body'] as Set
+        json.apis.find {it.path == '/somePath/{id}'}.operations.find { it.method == 'DELETE' }.parameters.collect { it.name }.toSet() == ['id'] as Set
+        json.apis.find {it.path == '/somePath/{id}'}.operations.find { it.method == 'PATCH' }.parameters.collect { it.name }.toSet() == ['id', 'body'] as Set
     }
 
     void "mapped resource with hierarchical sub-resource"() {
@@ -101,17 +101,17 @@ class MappedUrlsApiSpec extends Specification {
         json.apiVersion == '1.0'
         json.swaggerVersion == '1.2'
         json.basePath == "http://localhost"
-        json.resourcePath == "/outerResource/{outerResourceId}/innerResource"
+        json.resourcePath == "/outerResource/{mappedWithAnnotationsId}/innerResource"
         json.produces == ['application/json', 'text/xml']
         json.consumes == ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
         json.apis.size() == 2
-        json.apis.find {it.path == '/outerResource/{outerResourceId}/innerResource'}.operations.size() == 2
-        json.apis.find {it.path == '/outerResource/{outerResourceId}/innerResource'}.operations.find { it.method == 'GET' }.parameters.size() == 5
-        json.apis.find {it.path == '/outerResource/{outerResourceId}/innerResource'}.operations.find { it.method == 'POST' }.parameters.size() == 2
-        json.apis.find {it.path == '/outerResource/{outerResourceId}/innerResource/{id}'}.operations.size() == 3
-        json.apis.find {it.path == '/outerResource/{outerResourceId}/innerResource/{id}'}.operations.find { it.method == 'GET' }.parameters.size() == 2
-        json.apis.find {it.path == '/outerResource/{outerResourceId}/innerResource/{id}'}.operations.find { it.method == 'DELETE' }.parameters.size() == 2
-        json.apis.find {it.path == '/outerResource/{outerResourceId}/innerResource/{id}'}.operations.find { it.method == 'PATCH' }.parameters.size() == 3
+        json.apis.find {it.path == '/outerResource/{mappedWithAnnotationsId}/innerResource'}.operations.size() == 2
+        json.apis.find {it.path == '/outerResource/{mappedWithAnnotationsId}/innerResource'}.operations.find { it.method == 'GET' }.parameters.collect { it.name }.toSet() == ['mappedWithAnnotationsId', 'offset', 'max', 'sort', 'order'] as Set
+        json.apis.find {it.path == '/outerResource/{mappedWithAnnotationsId}/innerResource'}.operations.find { it.method == 'POST' }.parameters.collect { it.name }.toSet() == ['mappedWithAnnotationsId', 'body'] as Set
+        json.apis.find {it.path == '/outerResource/{mappedWithAnnotationsId}/innerResource/{id}'}.operations.size() == 3
+        json.apis.find {it.path == '/outerResource/{mappedWithAnnotationsId}/innerResource/{id}'}.operations.find { it.method == 'GET' }.parameters.collect { it.name }.toSet() == ['mappedWithAnnotationsId', 'id'] as Set
+        json.apis.find {it.path == '/outerResource/{mappedWithAnnotationsId}/innerResource/{id}'}.operations.find { it.method == 'DELETE' }.parameters.collect { it.name }.toSet() == ['mappedWithAnnotationsId', 'id'] as Set
+        json.apis.find {it.path == '/outerResource/{mappedWithAnnotationsId}/innerResource/{id}'}.operations.find { it.method == 'PATCH' }.parameters.collect { it.name }.toSet() == ['mappedWithAnnotationsId', 'id', 'body'] as Set
     }
 
     void "mapped resource with hierarchical sub-resource with annotations"() {
@@ -132,18 +132,53 @@ class MappedUrlsApiSpec extends Specification {
         json.apiVersion == '1.0'
         json.swaggerVersion == '1.2'
         json.basePath == "http://localhost"
-        json.resourcePath == "/outerResource/{outerResourceId}/innerResource"
+        json.resourcePath == "/outerResource/{mappedId}/innerResource"
         json.produces == ['application/json', 'text/xml']
         json.consumes == ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
         json.apis.size() == 2
-        json.apis.find {it.path == '/outerResource/{outerResourceId}/innerResource'}.operations.size() == 2
-        json.apis.find {it.path == '/outerResource/{outerResourceId}/innerResource'}.operations.find { it.method == 'GET' }.parameters.size() == 5
-        json.apis.find {it.path == '/outerResource/{outerResourceId}/innerResource'}.operations.find { it.method == 'POST' }.parameters.size() == 2
-        json.apis.find {it.path == '/outerResource/{outerResourceId}/innerResource/{id}'}.operations.size() == 4
-        json.apis.find {it.path == '/outerResource/{outerResourceId}/innerResource/{id}'}.operations.find { it.method == 'GET' }.parameters.size() == 2
-        json.apis.find {it.path == '/outerResource/{outerResourceId}/innerResource/{id}'}.operations.find { it.method == 'DELETE' }.parameters.size() == 2
-        json.apis.find {it.path == '/outerResource/{outerResourceId}/innerResource/{id}'}.operations.find { it.method == 'PATCH' }.parameters.size() == 3
-        json.apis.find {it.path == '/outerResource/{outerResourceId}/innerResource/{id}'}.operations.find { it.method == 'PUT' }.parameters.size() == 3
+        json.apis.find {it.path == '/outerResource/{mappedId}/innerResource'}.operations.size() == 2
+        json.apis.find {it.path == '/outerResource/{mappedId}/innerResource'}.operations.find { it.method == 'GET' }.parameters.collect { it.name }.toSet() == ['mappedId', 'offset', 'max', 'sort', 'order'] as Set
+        json.apis.find {it.path == '/outerResource/{mappedId}/innerResource'}.operations.find { it.method == 'POST' }.parameters.collect { it.name }.toSet() == ['mappedId', 'body'] as Set
+        json.apis.find {it.path == '/outerResource/{mappedId}/innerResource/{id}'}.operations.size() == 4
+        json.apis.find {it.path == '/outerResource/{mappedId}/innerResource/{id}'}.operations.find { it.method == 'GET' }.parameters.collect { it.name }.toSet() == ['mappedId', 'id'] as Set
+        json.apis.find {it.path == '/outerResource/{mappedId}/innerResource/{id}'}.operations.find { it.method == 'DELETE' }.parameters.collect { it.name }.toSet() == ['mappedId', 'id'] as Set
+        json.apis.find {it.path == '/outerResource/{mappedId}/innerResource/{id}'}.operations.find { it.method == 'PATCH' }.parameters.collect { it.name }.toSet() == ['mappedId', 'id', 'body'] as Set
+        json.apis.find {it.path == '/outerResource/{mappedId}/innerResource/{id}'}.operations.find { it.method == 'PUT' }.parameters.collect { it.name }.toSet() == ['mappedId', 'id', 'body'] as Set
+    }
+
+    void "mapped resource with deeply nested hierarchical sub-resource"() {
+        given:
+        withUrlMappings {
+            "/domain"(resources: "domain", includes: ['index', 'show']) {
+                "/insideDomain"(resources: "subdomain", includes: ['index', 'show']) {
+                    "/nestingdoll"(resources: "mappedWithAnnotations", includes: ['index', 'show']) {
+                        "/innermostResource"(resources: "mapped", includes: ['index', 'show', 'delete', 'save', 'patch'])
+                    }
+                }
+            }
+        }
+
+        when:
+        controller.params.id = 'mapped'
+        controller.show()
+
+        then:
+        def json = controller.response.json
+        json
+        json.apiVersion == '1.0'
+        json.swaggerVersion == '1.2'
+        json.basePath == "http://localhost"
+        json.resourcePath == "/domain/{domainId}/insideDomain/{subdomainId}/nestingdoll/{mappedWithAnnotationsId}/innermostResource"
+        json.produces == ['application/json', 'text/xml']
+        json.consumes == ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
+        json.apis.size() == 2
+        json.apis.find {it.path == '/domain/{domainId}/insideDomain/{subdomainId}/nestingdoll/{mappedWithAnnotationsId}/innermostResource'}.operations.size() == 2
+        json.apis.find {it.path == '/domain/{domainId}/insideDomain/{subdomainId}/nestingdoll/{mappedWithAnnotationsId}/innermostResource'}.operations.find { it.method == 'GET' }.parameters.collect { it.name }.toSet() == ['domainId', 'subdomainId', 'mappedWithAnnotationsId', 'offset', 'max', 'sort', 'order'] as Set
+        json.apis.find {it.path == '/domain/{domainId}/insideDomain/{subdomainId}/nestingdoll/{mappedWithAnnotationsId}/innermostResource'}.operations.find { it.method == 'POST' }.parameters.collect { it.name }.toSet() == ['domainId', 'subdomainId', 'mappedWithAnnotationsId', 'body'] as Set
+        json.apis.find {it.path == '/domain/{domainId}/insideDomain/{subdomainId}/nestingdoll/{mappedWithAnnotationsId}/innermostResource/{id}'}.operations.size() == 3
+        json.apis.find {it.path == '/domain/{domainId}/insideDomain/{subdomainId}/nestingdoll/{mappedWithAnnotationsId}/innermostResource/{id}'}.operations.find { it.method == 'GET' }.parameters.collect { it.name }.toSet() == ['domainId', 'subdomainId', 'mappedWithAnnotationsId', 'id'] as Set
+        json.apis.find {it.path == '/domain/{domainId}/insideDomain/{subdomainId}/nestingdoll/{mappedWithAnnotationsId}/innermostResource/{id}'}.operations.find { it.method == 'DELETE' }.parameters.collect { it.name }.toSet() == ['domainId', 'subdomainId', 'mappedWithAnnotationsId', 'id'] as Set
+        json.apis.find {it.path == '/domain/{domainId}/insideDomain/{subdomainId}/nestingdoll/{mappedWithAnnotationsId}/innermostResource/{id}'}.operations.find { it.method == 'PATCH' }.parameters.collect { it.name }.toSet() == ['domainId', 'subdomainId', 'mappedWithAnnotationsId', 'id', 'body'] as Set
     }
 
     void "alternate controller endpoint"() {
@@ -192,11 +227,11 @@ class MappedUrlsApiSpec extends Specification {
         json.consumes == ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
         json.apis.size() == 3
         json.apis.find {it.path == '/regulador'}.operations.size() == 2
-        json.apis.find {it.path == '/regulador'}.operations.find { it.method == 'GET' }.parameters.size() == 4
-        json.apis.find {it.path == '/regulador'}.operations.find { it.method == 'POST' }.parameters.size() == 1
+        json.apis.find {it.path == '/regulador'}.operations.find { it.method == 'GET' }.parameters.collect { it.name }.toSet() == ['offset', 'max', 'sort', 'order'] as Set
+        json.apis.find {it.path == '/regulador'}.operations.find { it.method == 'POST' }.parameters.collect { it.name }.toSet() == ['body'] as Set
         json.apis.find {it.path == '/regulador/{id}'}.operations.size() == 2
-        json.apis.find {it.path == '/regulador/{id}'}.operations.find { it.method == 'GET' }.parameters.size() == 1
-        json.apis.find {it.path == '/regulador/{id}'}.operations.find { it.method == 'DELETE' }.parameters.size() == 1
+        json.apis.find {it.path == '/regulador/{id}'}.operations.find { it.method == 'GET' }.parameters.collect { it.name }.toSet() == ['id'] as Set
+        json.apis.find {it.path == '/regulador/{id}'}.operations.find { it.method == 'DELETE' }.parameters.collect { it.name }.toSet() == ['id'] as Set
         json.apis.find {it.path == '/regulador/especial'}.operations.size() == 1
         json.apis.find {it.path == '/regulador/especial'}.operations.find { it.method == 'GET' }.parameters.size() == 0
     }
@@ -223,13 +258,13 @@ class MappedUrlsApiSpec extends Specification {
         json.consumes == ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
         json.apis.size() == 3
         json.apis.find {it.path == '/regulador'}.operations.size() == 2
-        json.apis.find {it.path == '/regulador'}.operations.find { it.method == 'GET' }.parameters.size() == 4
-        json.apis.find {it.path == '/regulador'}.operations.find { it.method == 'POST' }.parameters.size() == 1
+        json.apis.find {it.path == '/regulador'}.operations.find { it.method == 'GET' }.parameters.collect { it.name }.toSet() == ['offset', 'max', 'sort', 'order'] as Set
+        json.apis.find {it.path == '/regulador'}.operations.find { it.method == 'POST' }.parameters.collect { it.name }.toSet() == ['body'] as Set
         json.apis.find {it.path == '/regulador/{id}'}.operations.size() == 2
-        json.apis.find {it.path == '/regulador/{id}'}.operations.find { it.method == 'GET' }.parameters.size() == 1
-        json.apis.find {it.path == '/regulador/{id}'}.operations.find { it.method == 'DELETE' }.parameters.size() == 1
+        json.apis.find {it.path == '/regulador/{id}'}.operations.find { it.method == 'GET' }.parameters.collect { it.name }.toSet() == ['id'] as Set
+        json.apis.find {it.path == '/regulador/{id}'}.operations.find { it.method == 'DELETE' }.parameters.collect { it.name }.toSet() == ['id'] as Set
         json.apis.find {it.path == '/regulador/especial'}.operations.size() == 1
-        json.apis.find {it.path == '/regulador/especial'}.operations.find { it.method == 'GET' }.parameters.size() == 1
+        json.apis.find {it.path == '/regulador/especial'}.operations.find { it.method == 'GET' }.parameters.collect { it.name }.toSet() == ['dingbat'] as Set
     }
 
     void "mapped resource with only one target (no IDs) does not include IDs in parameters"() {

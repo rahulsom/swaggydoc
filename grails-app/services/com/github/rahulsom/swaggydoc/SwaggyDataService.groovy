@@ -130,6 +130,16 @@ class SwaggyDataService {
         def resourcePath = grailsLinkGenerator.link(controller: theController.logicalPropertyName)
         def domainName = slugToDomain(controllerName)
 
+        def makePathParam = { pathParam ->
+            [
+                name: pathParam,
+                description: pathParam + " identifier",
+                paramType: "path",
+                type: "string",
+                required: true
+            ]
+        }
+
         // These preserve the path components supporting hierarchical paths discovered through URL mappings
         List resourcePathParts
         List resourcePathParams
@@ -140,12 +150,14 @@ class SwaggyDataService {
                 // Determine path and path arguments
                 List pathParams = []
                 List pathParts = []
+                def constraintIdx = 0
                 mapping.urlData.tokens.eachWithIndex { String token, idx ->
                     if (token.matches(/^\(.*[\*\+]+.*\)$/)) {
-                        def param = (idx == mapping.urlData.tokens.size() - 1) ? 'id' : pathParts[-1] + 'Id'
+                        def param = (idx == mapping.urlData.tokens.size() - 1) ? 'id' : mapping.constraints[constraintIdx]?.propertyName
+                        constraintIdx++
                         if (param != 'id')
                             // Don't push 'id' as it is one of the default pathParams
-                            pathParams.push(param)
+                            pathParams.push(makePathParam(param))
                         pathParts.push("{" + param + "}")
                     } else {
                         pathParts.push(token)
@@ -157,16 +169,7 @@ class SwaggyDataService {
                     resourcePathParams = pathParams
                 }
                 def defaults = (DefaultActionComponents.get(mapping.actionName) ?: {[:]})(domainName)
-                def parameters = (defaults?.parameters?.clone() ?: []) +
-                    pathParams.collect { pathParam ->
-                        [
-                            name: pathParam,
-                            description: pathParam + " identifier",
-                            paramType: "path",
-                            type: "string",
-                            required: true
-                        ]
-                    }
+                def parameters = (defaults?.parameters?.clone() ?: []) + pathParams
                 if (pathParts[-1] != "{id}") {
                     // Special case: defaults may include 'id' for single resource paths
                     parameters.removeAll { it.name == 'id' }
