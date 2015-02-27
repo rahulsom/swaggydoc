@@ -54,6 +54,7 @@ grails.project.dependency.resolution = {
         build (":tomcat:7.0.55") {
             export = false
         }
+        compile (":marshallers:0.6")
 
     }
 }

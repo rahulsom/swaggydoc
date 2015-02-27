@@ -20,11 +20,19 @@ class ApiControllerSpec extends Specification {
         json.apiVersion == '1.0'
         json.swaggerVersion == '1.2'
         json.info.contact == 'rahul.som@gmail.com'
-        json.apis.size() == 3
+        json.apis.size() == 7
         json.apis.find {it.path == 'http://localhost/api/show/domain'}
         json.apis.find {it.path == 'http://localhost/api/show/domain'}.description == 'Domain Controller'
         json.apis.find {it.path == 'http://localhost/api/show/domainless'}
         json.apis.find {it.path == 'http://localhost/api/show/domainless'}.description == 'Domainless Controller'
+        json.apis.find {it.path == 'http://localhost/api/show/lowLevel'}
+        json.apis.find {it.path == 'http://localhost/api/show/lowLevel'}.description == 'Demo API'
+        json.apis.find {it.path == 'http://localhost/api/show/pogo'}
+        json.apis.find {it.path == 'http://localhost/api/show/pogo'}.description == 'Pogo API'
+        json.apis.find {it.path == 'http://localhost/api/show/mapped'}
+        json.apis.find {it.path == 'http://localhost/api/show/mapped'}.description == 'Mapped Controller'
+        json.apis.find {it.path == 'http://localhost/api/show/mappedWithAnnotations'}
+        json.apis.find {it.path == 'http://localhost/api/show/mappedWithAnnotations'}.description == 'Mapped With Annotations Controller'
     }
 
     void "test showing a controller with matching domain" () {
@@ -42,7 +50,7 @@ class ApiControllerSpec extends Specification {
         json.swaggerVersion == '1.2'
         json.basePath == "http://localhost"
         json.resourcePath == "/domain/index"
-        json.produces == ['application/json', 'application/xml', 'text/html']
+        json.produces == ['application/json', 'text/xml']
         json.consumes == ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
         json.apis.size() == 6
 
@@ -65,6 +73,7 @@ class ApiControllerSpec extends Specification {
         json.apis.find {it.path == '/domain/save'}.operations.size() == 1
 
     }
+
     void "domains list required properties correctly" () {
         given: "A controller"
         def controller = new ApiController()
@@ -219,10 +228,51 @@ class ApiControllerSpec extends Specification {
         json.swaggerVersion == '1.2'
         json.basePath == "http://localhost"
         json.resourcePath == "/domainless/index"
-        json.produces == ['application/json', 'application/xml', 'text/html']
+        json.produces == ['application/json', 'text/xml']
         json.consumes == ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
         json.models.size() == 0
         json.apis.size() == 6
+    }
+
+    void "test showing a controller with a Pogo" () {
+        given: "A controller"
+        def controller = new ApiController()
+
+        when: "Resources are listed"
+        controller.params.id = 'pogo'
+        controller.show()
+
+        then: "An expected json is returned"
+        def json = controller.response.json
+        json
+        json.apiVersion == '1.0'
+        json.swaggerVersion == '1.2'
+        json.basePath == "http://localhost"
+        json.resourcePath == "/pogo/save"
+        json.produces == ['application/json', 'application/xml', 'text/html']
+        json.consumes == ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
+
+        json.models.size() == 2
+        def pogoModel = json.models['Pogo']
+        def subPogoModel = json.models['SubPogo']
+        pogoModel
+        pogoModel.properties.size() == 2
+
+        pogoModel.properties.id
+        pogoModel.properties.id.format == 'int64'
+        pogoModel.properties.id.type == 'integer'
+
+        pogoModel.properties.subPogoList
+        pogoModel.properties.subPogoList.items['$ref'] == 'SubPogo'
+        pogoModel.properties.subPogoList.type == 'array'
+
+        subPogoModel
+        subPogoModel.properties.size() == 1
+
+        subPogoModel.properties.string
+        subPogoModel.properties.string.type == 'string'
+
+        json.apis.size() == 1
     }
 
 }
