@@ -2,12 +2,11 @@
 *.iml
 *.ipr
 *.iws
-.idea/workspace.xml
-.idea/tasks.xml
-.idea/dictionaries
-.idea/uiDesigner.xml
-.idea/vcs.xml
+.idea/
 classes
+.classpath
+.project
+.DS_Store
 
 # Grails Stuff
 target/
