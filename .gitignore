@@ -8,6 +8,7 @@
 .idea/uiDesigner.xml
 .idea/vcs.xml
 classes
+out/
 
 # Grails Stuff
 target/
