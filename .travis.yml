@@ -16,3 +16,4 @@ cache:
   directories:
     - $HOME/.grails/wrapper
     - $HOME/.m2
+    - $HOME/.bower/cache
