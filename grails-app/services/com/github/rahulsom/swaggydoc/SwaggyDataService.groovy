@@ -1,16 +1,15 @@
 package com.github.rahulsom.swaggydoc
 
-import grails.util.Holders
-import org.codehaus.groovy.grails.commons.GrailsClassUtils as GCU
-
-import static org.springframework.http.HttpStatus.*
-
 import com.wordnik.swagger.annotations.*
+import grails.util.Holders
 import org.codehaus.groovy.grails.commons.GrailsClass
+import org.codehaus.groovy.grails.commons.GrailsClassUtils as GCU
 import org.codehaus.groovy.grails.commons.GrailsDomainClass
 
 import java.lang.reflect.AccessibleObject
 import java.lang.reflect.Method
+
+import static org.springframework.http.HttpStatus.*
 
 class SwaggyDataService {
 
@@ -20,75 +19,88 @@ class SwaggyDataService {
     def grailsMimeUtility
 
     static final ArrayList<String> DefaultResponseContentTypes = ['application/json', 'application/xml', 'text/html']
-    static final ArrayList<String> DefaultRequestContentTypes = ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
+    static
+    final ArrayList<String> DefaultRequestContentTypes = ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
     static final List knownTypes = [int, Integer, long, Long, float, Float, double, Double, String]
 
-    public static final Map<String, Map> DefaultActionComponents = [
-        index: { domainName -> [
-            swaggyAnnotation: SwaggyList,
-            parameters: [
-                [name: 'offset', description: 'Records to skip. Empty means 0.', paramType: 'query', type: 'int'],
-                [name: 'max', description: 'Max records to return. Empty means 10.', paramType: 'query', type: 'int'],
-                [name: 'sort', description: 'Field to sort by. Empty means id if q is empty. If q is provided, empty means relevance.', paramType: 'query', type: 'string'],
-                [name: 'order', description: 'Order to sort by. Empty means asc if q is empty. If q is provided, empty means desc.', paramType: 'query', type: 'string'],
-            ],
-            responseMessages: [],
-        ]},
-        show: { domainName -> [
-            swaggyAnnotation: SwaggyShow,
-            parameters: [
-                [name: 'id', description: 'Identifier to look for', paramType: 'path', type: 'string', required: true],
-            ],
-            responseMessages: [
-                [code: BAD_REQUEST.value(), message: 'Bad Request'],
-                [code: NOT_FOUND.value(), message: "Could not find ${domainName} with that Id"],
-            ]
-        ]},
-        save: { domainName -> [
-            swaggyAnnotation: SwaggySave,
-            parameters: [
-                [name: 'body', description: "Description of ${domainName}", paramType: 'body', type: domainName, required: true],
-            ],
-            responseMessages: [
-                [code: CREATED.value(), message: "New ${domainName} created"],
-                [code: UNPROCESSABLE_ENTITY.value(), message: 'Malformed Entity received'],
-            ]
-        ]},
-        update: { domainName -> [
-            swaggyAnnotation: SwaggyUpdate,
-            parameters: [
-                [name: 'id', description: "Id to update", paramType: 'path', type: 'string', required: true],
-                [name: 'body', description: "Description of ${domainName}", paramType: 'body', type: domainName, required: true],
-            ],
-            responseMessages: [
-                [code: BAD_REQUEST.value(), message: 'Bad Request'],
-                [code: NOT_FOUND.value(), message: "Could not find ${domainName} with that Id"],
-                [code: UNPROCESSABLE_ENTITY.value(), message: 'Malformed Entity received'],
-            ]
-        ]},
-        patch: { domainName -> [
-            swaggyAnnotation: SwaggyPatch,
-            parameters: [
-                [name: 'id', description: "Id to patch", paramType: 'path', type: 'string', required: true],
-                [name: 'body', description: "Description of ${domainName}", paramType: 'body', type: domainName, required: true],
-            ],
-            responseMessages: [
-                [code: BAD_REQUEST.value(), message: 'Bad Request'],
-                [code: NOT_FOUND.value(), message: "Could not find ${domainName} with that Id"],
-                [code: UNPROCESSABLE_ENTITY.value(), message: 'Malformed Entity received'],
-            ]
-        ]},
-        delete: { domainName -> [
-            swaggyAnnotation: SwaggyDelete,
-            parameters: [
-                [name: 'id', description: "Id to delete", paramType: 'path', type: 'string', required: true],
-            ],
-            responseMessages: [
-                [code: NO_CONTENT.value(), message: 'Delete successful'],
-                [code: BAD_REQUEST.value(), message: 'Bad Request'],
-                [code: NOT_FOUND.value(), message: "Could not find ${domainName} with that Id"],
-            ]
-        ]}
+    public static final Map<String, Closure<Map>> DefaultActionComponents = [
+            index : { domainName ->
+                [
+                        swaggyAnnotation: SwaggyList,
+                        parameters      : [
+                                [name: 'offset', description: 'Records to skip. Empty means 0.', paramType: 'query', type: 'int'],
+                                [name: 'max', description: 'Max records to return. Empty means 10.', paramType: 'query', type: 'int'],
+                                [name: 'sort', description: 'Field to sort by. Empty means id if q is empty. If q is provided, empty means relevance.', paramType: 'query', type: 'string'],
+                                [name: 'order', description: 'Order to sort by. Empty means asc if q is empty. If q is provided, empty means desc.', paramType: 'query', type: 'string'],
+                        ],
+                        responseMessages: [],
+                ]
+            },
+            show  : { domainName ->
+                [
+                        swaggyAnnotation: SwaggyShow,
+                        parameters      : [
+                                [name: 'id', description: 'Identifier to look for', paramType: 'path', type: 'string', required: true],
+                        ],
+                        responseMessages: [
+                                [code: BAD_REQUEST.value(), message: 'Bad Request'],
+                                [code: NOT_FOUND.value(), message: "Could not find ${domainName} with that Id"],
+                        ]
+                ]
+            },
+            save  : { domainName ->
+                [
+                        swaggyAnnotation: SwaggySave,
+                        parameters      : [
+                                [name: 'body', description: "Description of ${domainName}", paramType: 'body', type: domainName, required: true],
+                        ],
+                        responseMessages: [
+                                [code: CREATED.value(), message: "New ${domainName} created"],
+                                [code: UNPROCESSABLE_ENTITY.value(), message: 'Malformed Entity received'],
+                        ]
+                ]
+            },
+            update: { domainName ->
+                [
+                        swaggyAnnotation: SwaggyUpdate,
+                        parameters      : [
+                                [name: 'id', description: "Id to update", paramType: 'path', type: 'string', required: true],
+                                [name: 'body', description: "Description of ${domainName}", paramType: 'body', type: domainName, required: true],
+                        ],
+                        responseMessages: [
+                                [code: BAD_REQUEST.value(), message: 'Bad Request'],
+                                [code: NOT_FOUND.value(), message: "Could not find ${domainName} with that Id"],
+                                [code: UNPROCESSABLE_ENTITY.value(), message: 'Malformed Entity received'],
+                        ]
+                ]
+            },
+            patch : { domainName ->
+                [
+                        swaggyAnnotation: SwaggyPatch,
+                        parameters      : [
+                                [name: 'id', description: "Id to patch", paramType: 'path', type: 'string', required: true],
+                                [name: 'body', description: "Description of ${domainName}", paramType: 'body', type: domainName, required: true],
+                        ],
+                        responseMessages: [
+                                [code: BAD_REQUEST.value(), message: 'Bad Request'],
+                                [code: NOT_FOUND.value(), message: "Could not find ${domainName} with that Id"],
+                                [code: UNPROCESSABLE_ENTITY.value(), message: 'Malformed Entity received'],
+                        ]
+                ]
+            },
+            delete: { domainName ->
+                [
+                        swaggyAnnotation: SwaggyDelete,
+                        parameters      : [
+                                [name: 'id', description: "Id to delete", paramType: 'path', type: 'string', required: true],
+                        ],
+                        responseMessages: [
+                                [code: NO_CONTENT.value(), message: 'Delete successful'],
+                                [code: BAD_REQUEST.value(), message: 'Bad Request'],
+                                [code: NOT_FOUND.value(), message: "Could not find ${domainName} with that Id"],
+                        ]
+                ]
+            }
     ]
 
     /**
@@ -116,7 +128,7 @@ class SwaggyDataService {
      * @param controllerName
      * @return Map
      */
-    Map apiDetails(controllerName) {
+    Map apiDetails(String controllerName) {
         ConfigObject config = grailsApplication.config.swaggydoc
         def theController = grailsApplication.controllerClasses.find {
             it.logicalPropertyName == controllerName
@@ -130,63 +142,64 @@ class SwaggyDataService {
         def resourcePath = grailsLinkGenerator.link(controller: theController.logicalPropertyName)
         def domainName = slugToDomain(controllerName)
 
-        def makePathParam = { pathParam ->
+        def makePathParam = { String pathParam ->
             [
-                name: pathParam,
-                description: pathParam + " identifier",
-                paramType: "path",
-                type: "string",
-                required: true
+                    name       : pathParam,
+                    description: "$pathParam identifier",
+                    paramType  : "path",
+                    type       : "string",
+                    required   : true
             ]
         }
 
         // These preserve the path components supporting hierarchical paths discovered through URL mappings
         List resourcePathParts
         List resourcePathParams
-        def apis = grailsUrlMappingsHolder.urlMappings.findAll {
-                it.controllerName == controllerName
-            }.
-            collectEntries { mapping ->
-                // Determine path and path arguments
-                List pathParams = []
-                List pathParts = []
-                def constraintIdx = 0
-                mapping.urlData.tokens.eachWithIndex { String token, idx ->
-                    if (token.matches(/^\(.*[\*\+]+.*\)$/)) {
-                        def param = (idx == mapping.urlData.tokens.size() - 1) ? 'id' : mapping.constraints[constraintIdx]?.propertyName
-                        constraintIdx++
-                        if (param != 'id')
+        def apis = grailsUrlMappingsHolder.urlMappings.
+                findAll {
+                    it.controllerName == controllerName
+                }.
+                collectEntries { mapping ->
+                    // Determine path and path arguments
+                    List pathParams = []
+                    List pathParts = []
+                    def constraintIdx = 0
+                    mapping.urlData.tokens.eachWithIndex { String token, idx ->
+                        if (token.matches(/^\(.*[\*\+]+.*\)$/)) {
+                            def param = (idx == mapping.urlData.tokens.size() - 1) ? 'id' : mapping.constraints[constraintIdx]?.propertyName
+                            constraintIdx++
+                            if (param != 'id')
                             // Don't push 'id' as it is one of the default pathParams
-                            pathParams.push(makePathParam(param))
-                        pathParts.push("{" + param + "}")
-                    } else {
-                        pathParts.push(token)
+                                pathParams.push(makePathParam(param))
+                            pathParts.push("{" + param + "}")
+                        } else {
+                            pathParts.push(token)
+                        }
                     }
+                    // Capture resource path candidates
+                    if (!resourcePathParts || resourcePathParts.size() > pathParts.size()) {
+                        resourcePathParts = pathParts
+                        resourcePathParams = pathParams
+                    }
+                    def defaults = (DefaultActionComponents.get(mapping.actionName) ?: { [:] })(domainName)
+                    def parameters = (defaults?.parameters?.clone() ?: []) + pathParams
+                    if (pathParts[-1] != "{id}") {
+                        // Special case: defaults may include 'id' for single resource paths
+                        parameters.removeAll { it.name == 'id' }
+                    }
+                    [
+                            mapping.actionName,
+                            defineAction(
+                                    '/' + pathParts.join('/'),
+                                    mapping.httpMethod,
+                                    domainName,
+                                    "${mapping.httpMethod.toLowerCase()}${controllerName}${mapping.actionName}",
+                                    parameters,
+                                    defaults?.responseMessages ?: [],
+                                    "${mapping.actionName} ${domainName}"
+                            )
+                    ]
                 }
-                // Capture resource path candidates
-                if (!resourcePathParts || resourcePathParts.size() > pathParts.size()) {
-                    resourcePathParts = pathParts
-                    resourcePathParams = pathParams
-                }
-                def defaults = (DefaultActionComponents.get(mapping.actionName) ?: {[:]})(domainName)
-                def parameters = (defaults?.parameters?.clone() ?: []) + pathParams
-                if (pathParts[-1] != "{id}") {
-                    // Special case: defaults may include 'id' for single resource paths
-                    parameters.removeAll { it.name == 'id' }
-                }
-                [
-                    mapping.actionName,
-                    defineAction(
-                        '/' + pathParts.join('/'),
-                        mapping.httpMethod,
-                        domainName,
-                        "${mapping.httpMethod.toLowerCase()}${controllerName}${mapping.actionName}",
-                        parameters,
-                        defaults?.responseMessages ?: [],
-                        "${mapping.actionName} ${domainName}"
-                    )
-                ]
-            }
         if (resourcePathParts?.size()) {
             // UrlMappings may override the resourcePath
             if (resourcePathParts[-1].matches(/^\{.+\}$/)) {
@@ -207,25 +220,26 @@ class SwaggyDataService {
         }?.clazz).grep()
         Map models = getModels(modelTypes)
 
-        def updateDocumentation = apis ?
-            // This code is used if UrlMappings were used
-            { action, documentation ->
-                if (apis.containsKey(action)) {
-                    // leave the path alone, update everything else
-                    apis[action].operations[0] << documentation.operations[0]
-                } else {
-                    documentation.path = documentation.path.replaceFirst(/^.+(?=\/)/, resourcePath)
-                    apis[action] = documentation
-                }
-                if (resourcePathParams) {
-                    // Add additional params needed to support hierarchical path mappings
-                    apis[action].operations[0].parameters.addAll(0, resourcePathParams)
-                }
-            } :
-            // This code is used if there were no matching UrlMappings
-            { action, documentation ->
+        def updateDocFromUrlMappings = { action, documentation ->
+            if (apis.containsKey(action)) {
+                // leave the path alone, update everything else
+                apis[action].operations[0] << documentation.operations[0]
+            } else {
+                documentation.path = documentation.path.replaceFirst(/^.+(?=\/)/, resourcePath)
                 apis[action] = documentation
             }
+            if (resourcePathParams) {
+                // Add additional params needed to support hierarchical path mappings
+                apis[action].operations[0].parameters.addAll(0, resourcePathParams)
+            }
+        }
+
+        def updateDocWithoutUrlMappings = { action, documentation ->
+            apis[action] = documentation
+        }
+
+        def updateDocumentation = apis ? updateDocFromUrlMappings : updateDocWithoutUrlMappings
+
         // Update APIs with low-level method annotations
         apiMethods.each { method ->
             updateDocumentation(method.name, documentMethod(method, theController))
@@ -235,7 +249,7 @@ class SwaggyDataService {
         DefaultActionComponents.collectEntries { action, defaultsFactory ->
             def defaults = defaultsFactory(domainName)
             methodsOfType(defaults.swaggyAnnotation, theControllerClazz).collectEntries {
-                [ it.name, generateMethod(action, it, theController) ]
+                [it.name, generateMethod(action, it, theController)]
             }
         }.each(updateDocumentation)
 
@@ -293,7 +307,7 @@ class SwaggyDataService {
      * @return
      */
     private static Api getApi(GrailsClass controller) {
-        controller.clazz.annotations.find { it.annotationType() == Api }
+        controller.clazz.annotations.find { it.annotationType() == Api } as Api
     }
 
     /**
@@ -304,7 +318,7 @@ class SwaggyDataService {
      * @return
      */
     private static <T> T findAnnotation(Class<T> clazz, AccessibleObject object) {
-        object.annotations.find { it.annotationType() == clazz }
+        object.annotations.find { it.annotationType() == clazz } as T
     }
 
     private static List<Method> methodsOfType(Class annotation, Class theControllerClazz) {
@@ -315,6 +329,7 @@ class SwaggyDataService {
      * Provides optional support for the "marshallers" grails plugin when building models from domains
      */
     private Map _marshallingConfig
+
     private def getMarshallingConfigForDomain(String domainName) {
         if (_marshallingConfig == null) {
             _marshallingConfig = [:]
@@ -348,8 +363,8 @@ class SwaggyDataService {
              * Interface for these two classes are similar enough to duck type for our purposes
              */
             def props = (domainClass ?
-                [domainClass.identifier, domainClass.version] + domainClass.persistentProperties.toList()
-                : model.declaredFields
+                    [domainClass.identifier, domainClass.version] + domainClass.persistentProperties.toList()
+                    : model.declaredFields
             ).findAll {
                 !it.toString().contains(' static ') &&
                         !it.toString().contains(' transient ') &&
@@ -370,7 +385,7 @@ class SwaggyDataService {
                     def processMarshallingConfig;
                     processMarshallingConfig = { config ->
                         if (config.name != "default")
-                            // Currently we only support default marshalling, as that is conventional pattern
+                        // Currently we only support default marshalling, as that is conventional pattern
                             return
                         // N.B. we are not checking config.type, so we will conflate json and xml together
                         // adding or suppressing fields for only one response type is an anti-pattern anyway
@@ -386,7 +401,7 @@ class SwaggyDataService {
                         config.ignore?.each { fn ->
                             props.removeAll { it.name == fn }
                         }
-                        config.virtual?.keySet().each(addProp)
+                        config.virtual?.keySet()?.each(addProp)
 //                        deepProps.addAll(config.deep ?: [])
                         config.children?.each(processMarshallingConfig)
                     }
@@ -402,9 +417,9 @@ class SwaggyDataService {
             def required = props.collect { f -> f.name } - optional*.key
 
             def modelDescription = [
-                id        : model.simpleName,
-                required  : required,
-                properties: props.collectEntries { f -> [f.name, getTypeDescriptor(f, domainClass)] }
+                    id        : model.simpleName,
+                    required  : required,
+                    properties: props.collectEntries { f -> [f.name, getTypeDescriptor(f, domainClass)] }
             ]
 
             models[model.simpleName] = modelDescription
@@ -433,9 +448,12 @@ class SwaggyDataService {
                 && findAnnotation(defaults.swaggyAnnotation, method).searchParam()) {
             parameters << [name: 'q', description: 'Query. Follows Lucene Query Syntax.', paramType: 'query', type: 'string']
         }
-        def pathParams = parameters.findAll { it.paramType == 'path' }.collect { it.name }.collectEntries {
-            [it, "{${it}}"]
-        }
+        def pathParams = parameters.
+                findAll { it.paramType == 'path' }.
+                collect { it.name }.
+                collectEntries {
+                    [it, "{${it}}"]
+                }
         def fullLink = grailsLinkGenerator.link(controller: slug, action: method.name, params: pathParams) as String
         def link = fullLink.replace('%7B', '{').replace('%7D', '}') - basePath
         def httpMethod = getHttpMethod(theController, method)
@@ -444,7 +462,7 @@ class SwaggyDataService {
     }
 
     private static LinkedHashMap<String, Serializable> defineAction(
-            String link, String httpMethod, domainName, GString inferredNickname,
+            String link, String httpMethod, String domainName, String inferredNickname,
             ArrayList<LinkedHashMap<String, Serializable>> parameters,
             ArrayList<LinkedHashMap<String, Serializable>> responseMessages,
             String summary) {
@@ -557,8 +575,10 @@ class SwaggyDataService {
     }
 
     private List<String> responseContentTypes(Class controller) {
-        GCU.getStaticPropertyValue(controller, 'responseFormats')?.collect {
-            grailsMimeUtility.getMimeTypeForExtension(it)?.name ?: it.contains('/') ? it : null
-        }.grep() as List<String> ?: DefaultResponseContentTypes
+        GCU.getStaticPropertyValue(controller, 'responseFormats')?.
+                collect {
+                    grailsMimeUtility.getMimeTypeForExtension(it)?.name ?: it.contains('/') ? it : null
+                }?.
+                grep() as List<String> ?: DefaultResponseContentTypes
     }
 }

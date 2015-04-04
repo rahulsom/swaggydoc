@@ -48,7 +48,7 @@ class ApiController {
                 op
             }.toArray()
             api
-        }.toArray()
+        }?.toArray()
         response.models.values().each { model ->
             model.required = model.required?.toArray()
         }
