@@ -1,6 +1,7 @@
 package com.github.rahulsom.swaggydoc
 
 import com.wordnik.swagger.annotations.ApiResponse
+import groovy.transform.CompileStatic
 import org.springframework.http.HttpStatus
 
 /**
@@ -8,6 +9,7 @@ import org.springframework.http.HttpStatus
  *
  * @author Rahul
  */
+@CompileStatic
 class ResponseMessage {
     int code
     String message
