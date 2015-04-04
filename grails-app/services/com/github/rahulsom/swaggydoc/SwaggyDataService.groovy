@@ -18,88 +18,89 @@ class SwaggyDataService {
     def grailsUrlMappingsHolder
     def grailsMimeUtility
 
-    static final ArrayList<String> DefaultResponseContentTypes = ['application/json', 'application/xml', 'text/html']
-    static
-    final ArrayList<String> DefaultRequestContentTypes = ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
+    static final List<String> DefaultResponseContentTypes = ['application/json', 'application/xml', 'text/html']
+    static final List<String> DefaultRequestContentTypes = [
+            'application/json', 'application/xml', 'application/x-www-form-urlencoded'
+    ]
     static final List knownTypes = [int, Integer, long, Long, float, Float, double, Double, String]
 
-    public static final Map<String, Closure<Map>> DefaultActionComponents = [
-            index : { domainName ->
-                [
+    public static final Map<String, Closure<DefaultAction>> DefaultActionComponents = [
+            index : { String domainName ->
+                new DefaultAction(
                         swaggyAnnotation: SwaggyList,
-                        parameters      : [
-                                [name: 'offset', description: 'Records to skip. Empty means 0.', paramType: 'query', type: 'int'],
-                                [name: 'max', description: 'Max records to return. Empty means 10.', paramType: 'query', type: 'int'],
-                                [name: 'sort', description: 'Field to sort by. Empty means id if q is empty. If q is provided, empty means relevance.', paramType: 'query', type: 'string'],
-                                [name: 'order', description: 'Order to sort by. Empty means asc if q is empty. If q is provided, empty means desc.', paramType: 'query', type: 'string'],
+                        parameters: [
+                                new Parameter('offset', 'Records to skip. Empty means 0.', 'query', 'int'),
+                                new Parameter('max', 'Max records to return. Empty means 10.', 'query', 'int'),
+                                new Parameter('sort', 'Field to sort by. Empty means id if q is empty. If q is provided, empty means relevance.', 'query', 'string'),
+                                new Parameter('order', 'Order to sort by. Empty means asc if q is empty. If q is provided, empty means desc.', 'query', 'string'),
                         ],
                         responseMessages: [],
-                ]
+                )
             },
-            show  : { domainName ->
-                [
+            show  : { String domainName ->
+                new DefaultAction(
                         swaggyAnnotation: SwaggyShow,
-                        parameters      : [
-                                [name: 'id', description: 'Identifier to look for', paramType: 'path', type: 'string', required: true],
+                        parameters: [
+                                new Parameter('id', 'Identifier to look for', 'path', 'string', true),
                         ],
                         responseMessages: [
-                                [code: BAD_REQUEST.value(), message: 'Bad Request'],
-                                [code: NOT_FOUND.value(), message: "Could not find ${domainName} with that Id"],
+                                new ResponseMessage(BAD_REQUEST.value(), 'Bad Request'),
+                                new ResponseMessage(NOT_FOUND.value(), "Could not find ${domainName} with that Id"),
                         ]
-                ]
+                )
             },
-            save  : { domainName ->
-                [
+            save  : { String domainName ->
+                new DefaultAction(
                         swaggyAnnotation: SwaggySave,
-                        parameters      : [
-                                [name: 'body', description: "Description of ${domainName}", paramType: 'body', type: domainName, required: true],
+                        parameters: [
+                                new Parameter('body', "Description of ${domainName}", 'body', domainName, true),
                         ],
                         responseMessages: [
-                                [code: CREATED.value(), message: "New ${domainName} created"],
-                                [code: UNPROCESSABLE_ENTITY.value(), message: 'Malformed Entity received'],
+                                new ResponseMessage(CREATED.value(), "New ${domainName} created"),
+                                new ResponseMessage(UNPROCESSABLE_ENTITY.value(), 'Malformed Entity received'),
                         ]
-                ]
+                )
             },
-            update: { domainName ->
-                [
+            update: { String domainName ->
+                new DefaultAction(
                         swaggyAnnotation: SwaggyUpdate,
-                        parameters      : [
-                                [name: 'id', description: "Id to update", paramType: 'path', type: 'string', required: true],
-                                [name: 'body', description: "Description of ${domainName}", paramType: 'body', type: domainName, required: true],
+                        parameters: [
+                                new Parameter('id', "Id to update", 'path', 'string', true),
+                                new Parameter('body', "Description of ${domainName}", 'body', domainName, true),
                         ],
                         responseMessages: [
-                                [code: BAD_REQUEST.value(), message: 'Bad Request'],
-                                [code: NOT_FOUND.value(), message: "Could not find ${domainName} with that Id"],
-                                [code: UNPROCESSABLE_ENTITY.value(), message: 'Malformed Entity received'],
+                                new ResponseMessage(BAD_REQUEST.value(), 'Bad Request'),
+                                new ResponseMessage(NOT_FOUND.value(), "Could not find ${domainName} with that Id"),
+                                new ResponseMessage(UNPROCESSABLE_ENTITY.value(), 'Malformed Entity received'),
                         ]
-                ]
+                )
             },
-            patch : { domainName ->
-                [
+            patch : { String domainName ->
+                new DefaultAction(
                         swaggyAnnotation: SwaggyPatch,
-                        parameters      : [
-                                [name: 'id', description: "Id to patch", paramType: 'path', type: 'string', required: true],
-                                [name: 'body', description: "Description of ${domainName}", paramType: 'body', type: domainName, required: true],
+                        parameters: [
+                                new Parameter('id', "Id to patch", 'path', 'string', true),
+                                new Parameter('body', "Description of ${domainName}", 'body', domainName, true),
                         ],
                         responseMessages: [
-                                [code: BAD_REQUEST.value(), message: 'Bad Request'],
-                                [code: NOT_FOUND.value(), message: "Could not find ${domainName} with that Id"],
-                                [code: UNPROCESSABLE_ENTITY.value(), message: 'Malformed Entity received'],
+                                new ResponseMessage(BAD_REQUEST.value(), 'Bad Request'),
+                                new ResponseMessage(NOT_FOUND.value(), "Could not find ${domainName} with that Id"),
+                                new ResponseMessage(UNPROCESSABLE_ENTITY.value(), 'Malformed Entity received'),
                         ]
-                ]
+                )
             },
-            delete: { domainName ->
-                [
+            delete: { String domainName ->
+                new DefaultAction(
                         swaggyAnnotation: SwaggyDelete,
-                        parameters      : [
-                                [name: 'id', description: "Id to delete", paramType: 'path', type: 'string', required: true],
+                        parameters: [
+                                new Parameter('id', "Id to delete", 'path', 'string', true),
                         ],
                         responseMessages: [
-                                [code: NO_CONTENT.value(), message: 'Delete successful'],
-                                [code: BAD_REQUEST.value(), message: 'Bad Request'],
-                                [code: NOT_FOUND.value(), message: "Could not find ${domainName} with that Id"],
+                                new ResponseMessage(NO_CONTENT.value(), 'Delete successful'),
+                                new ResponseMessage(BAD_REQUEST.value(), 'Bad Request'),
+                                new ResponseMessage(NOT_FOUND.value(), "Could not find ${domainName} with that Id"),
                         ]
-                ]
+                )
             }
     ]
 
@@ -143,13 +144,7 @@ class SwaggyDataService {
         def domainName = slugToDomain(controllerName)
 
         def makePathParam = { String pathParam ->
-            [
-                    name       : pathParam,
-                    description: "$pathParam identifier",
-                    paramType  : "path",
-                    type       : "string",
-                    required   : true
-            ]
+            new Parameter(pathParam, "$pathParam identifier", 'path', 'string', true)
         }
 
         // These preserve the path components supporting hierarchical paths discovered through URL mappings
@@ -446,7 +441,7 @@ class SwaggyDataService {
         def parameters = defaults.parameters.clone()
         if (defaults.swaggyAnnotation.metaClass.getMetaMethod('searchParam')
                 && findAnnotation(defaults.swaggyAnnotation, method).searchParam()) {
-            parameters << [name: 'q', description: 'Query. Follows Lucene Query Syntax.', paramType: 'query', type: 'string']
+            parameters << new Parameter('q', 'Query. Follows Lucene Query Syntax.', 'query', 'string')
         }
         def pathParams = parameters.
                 findAll { it.paramType == 'path' }.
@@ -508,9 +503,7 @@ class SwaggyDataService {
                                 nickname        : apiOperation.nickname() ?: inferredNickname,
                                 parameters      : parameters,
                                 type            : apiOperation.response() == Void ? 'void' : apiOperation.response().simpleName,
-                                responseMessages: apiResponses?.value()?.collect { ApiResponse apiResponse ->
-                                    [code: apiResponse.code(), message: apiResponse.message()]
-                                }
+                                responseMessages: apiResponses?.value()?.collect { new ResponseMessage(it) }
                         ]
                 ]
         ]
@@ -563,15 +556,15 @@ class SwaggyDataService {
      * @param apiParam
      * @return
      */
-    private static Map paramToMap(ApiImplicitParam apiParam) {
-        [
-                name        : apiParam.name(),
-                description : apiParam.value(),
-                required    : apiParam.required(),
-                type        : apiParam.dataType() ?: (apiParam.paramType() == 'body' ? 'demo' : 'string'),
-                paramType   : apiParam.paramType(),
-                defaultValue: apiParam.defaultValue()
-        ]
+    private static Parameter paramToMap(ApiImplicitParam apiParam) {
+        new Parameter(
+                apiParam.name(), apiParam.value(), apiParam.paramType(),
+                apiParam.dataType() ?: (apiParam.paramType() == 'body' ? 'demo' : 'string'), 
+                apiParam.required()
+        ).with {
+            defaultValue = apiParam.defaultValue()
+            it
+        }
     }
 
     private List<String> responseContentTypes(Class controller) {
