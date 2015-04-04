@@ -122,7 +122,6 @@ class SwaggyDataService {
      * @return Map
      */
     synchronized Map apiDetails(String controllerName) {
-        println controllerName
         def theController = grailsApplication.controllerClasses.find {
             it.logicalPropertyName == controllerName
         }
@@ -141,8 +140,6 @@ class SwaggyDataService {
         Map<String, MethodDocumentation> apis = grailsUrlMappingsHolder.urlMappings.
                 findAll { it.controllerName == controllerName }.
                 collectEntries { mapping ->
-                    println mapping
-
                     def (List pathParts, List pathParams) = populatePaths(mapping)
                     // Capture resource path candidates
                     if (!resourcePathParts || resourcePathParts.size() > pathParts.size()) {
@@ -189,7 +186,6 @@ class SwaggyDataService {
         Map models = getModels(modelTypes)
 
         def updateDocFromUrlMappings = { String action, MethodDocumentation documentation ->
-            println "     updateDocFromUrlMappings XXX"
             if (apis.containsKey(action)) {
                 // leave the path alone, update everything else
                 apis[action].operations[0] << documentation.operations[0]
@@ -205,7 +201,6 @@ class SwaggyDataService {
         }
 
         def updateDocWithoutUrlMappings = { String action, MethodDocumentation documentation ->
-            println "     updateDocWithoutUrlMappings YYY"
             if (apis.containsKey(action)) {
                 apis[action].operations = (apis[action].operations + documentation.operations).unique()
             } else {
@@ -218,7 +213,6 @@ class SwaggyDataService {
         // Update APIs with low-level method annotations
         apiMethods.each { method ->
             documentMethod(method, theController).each {
-                println "  -> 1 ${method.name} ${it.operations}"
                 updateDocumentation(method.name, it)
             }
         }
@@ -230,7 +224,6 @@ class SwaggyDataService {
                     methodsOfType(defaults.swaggyAnnotation, theControllerClazz).
                             collectMany { method ->
                                 generateMethod(action, method, theController).collect {
-                                    println "  -> 2 ${method.name} ${it.operations}"
                                     updateDocumentation(method.name, it)
                                 }
                             }
@@ -252,7 +245,7 @@ class SwaggyDataService {
         ]
     }
 
-    private List populatePaths(UrlMapping mapping) {
+    private static List populatePaths(UrlMapping mapping) {
         List pathParams = []
         List pathParts = []
         def constraintIdx = 0
@@ -499,7 +492,6 @@ class SwaggyDataService {
         def fullLink = grailsLinkGenerator.link(controller: slug, action: method.name, params: pathParams) as String
         def link = fullLink.replace('%7B', '{').replace('%7D', '}') - basePath
         def httpMethods = getHttpMethod(theController, method)
-        println "  ${method.name} - $httpMethods"
         httpMethods.collect { httpMethod ->
             List<Parameter> parameters = apiParams?.collect { new Parameter(it as ApiImplicitParam) } ?: []
             def inferredNickname = "${httpMethod.toLowerCase()}${slug}${method.name}"
@@ -521,7 +513,7 @@ class SwaggyDataService {
 
     }
 
-    private List<String> getHttpMethod(GrailsClass theController, Method method) {
+    private static List<String> getHttpMethod(GrailsClass theController, Method method) {
         try {
             def retval = theController.referenceInstance.allowedMethods[method.name] ?: 'GET'
             if (retval instanceof String) {
@@ -541,7 +533,7 @@ class SwaggyDataService {
      * @param f
      * @return
      */
-    private Map getTypeDescriptor(def f, GrailsDomainClass gdc) {
+    private static Map getTypeDescriptor(def f, GrailsDomainClass gdc) {
         if (f.type.isAssignableFrom(String)) {
             [type: 'string']
         } else if (f.type.isAssignableFrom(Double) || f.type.isAssignableFrom(Float)) {
@@ -565,7 +557,7 @@ class SwaggyDataService {
 
     }
 
-    private String slugToDomain(String slug) {
+    private static String slugToDomain(String slug) {
         slug.with { it.replaceFirst(it[0], it[0].toUpperCase()) }
     }
 
