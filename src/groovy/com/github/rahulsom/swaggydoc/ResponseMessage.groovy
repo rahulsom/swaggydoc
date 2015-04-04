@@ -1,9 +1,12 @@
 package com.github.rahulsom.swaggydoc
 
 import com.wordnik.swagger.annotations.ApiResponse
+import org.springframework.http.HttpStatus
 
 /**
- * Created by rahul on 4/3/15.
+ * A Response message based on http response codes
+ *
+ * @author Rahul
  */
 class ResponseMessage {
     int code
@@ -12,6 +15,10 @@ class ResponseMessage {
     ResponseMessage(int code, String message) {
         this.code = code
         this.message = message
+    }
+
+    ResponseMessage(HttpStatus code, String message) {
+        this(code.value(), message)
     }
 
     ResponseMessage(ApiResponse response) {

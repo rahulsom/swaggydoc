@@ -1,8 +1,13 @@
 package com.github.rahulsom.swaggydoc
 
+import groovy.transform.Canonical
+
 /**
- * Created by rahul on 4/3/15.
+ * Represents a default action from grails conventions
+ *
+ * @author Rahul
  */
+@Canonical
 class DefaultAction {
     Class swaggyAnnotation
     ArrayList<Parameter> parameters
