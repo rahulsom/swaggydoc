@@ -1,113 +1,118 @@
 package com.github.rahulsom.swaggydoc
 
-import grails.util.Holders
-import org.codehaus.groovy.grails.commons.GrailsClassUtils as GCU
-
-import static org.springframework.http.HttpStatus.*
-
 import com.wordnik.swagger.annotations.*
+import grails.util.Holders
+import org.codehaus.groovy.grails.commons.DefaultGrailsApplication
 import org.codehaus.groovy.grails.commons.GrailsClass
+import org.codehaus.groovy.grails.commons.GrailsClassUtils as GCU
 import org.codehaus.groovy.grails.commons.GrailsDomainClass
+import org.codehaus.groovy.grails.web.mapping.LinkGenerator
+import org.codehaus.groovy.grails.web.mapping.UrlMapping
+import org.codehaus.groovy.grails.web.mapping.UrlMappings
+import org.codehaus.groovy.grails.web.mime.MimeUtility
 
 import java.lang.reflect.AccessibleObject
 import java.lang.reflect.Method
 
+import static org.springframework.http.HttpStatus.*
+
 class SwaggyDataService {
 
-    def grailsApplication
-    def grailsLinkGenerator
-    def grailsUrlMappingsHolder
-    def grailsMimeUtility
+    DefaultGrailsApplication grailsApplication
+    LinkGenerator grailsLinkGenerator
+    UrlMappings grailsUrlMappingsHolder
+    MimeUtility grailsMimeUtility
 
-    static final ArrayList<String> DefaultResponseContentTypes = ['application/json', 'application/xml', 'text/html']
-    static final ArrayList<String> DefaultRequestContentTypes = ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
+    static final String SwaggerVersion = '1.2'
+    static final List<String> DefaultResponseContentTypes = ['application/json', 'application/xml', 'text/html']
+    static final List<String> DefaultRequestContentTypes = [
+            'application/json', 'application/xml', 'application/x-www-form-urlencoded'
+    ]
     static final List knownTypes = [int, Integer, long, Long, float, Float, double, Double, String]
 
-    public static final Map<String, Map> DefaultActionComponents = [
-        index: { domainName -> [
-            swaggyAnnotation: SwaggyList,
-            parameters: [
-                [name: 'offset', description: 'Records to skip. Empty means 0.', paramType: 'query', type: 'int'],
-                [name: 'max', description: 'Max records to return. Empty means 10.', paramType: 'query', type: 'int'],
-                [name: 'sort', description: 'Field to sort by. Empty means id if q is empty. If q is provided, empty means relevance.', paramType: 'query', type: 'string'],
-                [name: 'order', description: 'Order to sort by. Empty means asc if q is empty. If q is provided, empty means desc.', paramType: 'query', type: 'string'],
-            ],
-            responseMessages: [],
-        ]},
-        show: { domainName -> [
-            swaggyAnnotation: SwaggyShow,
-            parameters: [
-                [name: 'id', description: 'Identifier to look for', paramType: 'path', type: 'string', required: true],
-            ],
-            responseMessages: [
-                [code: BAD_REQUEST.value(), message: 'Bad Request'],
-                [code: NOT_FOUND.value(), message: "Could not find ${domainName} with that Id"],
-            ]
-        ]},
-        save: { domainName -> [
-            swaggyAnnotation: SwaggySave,
-            parameters: [
-                [name: 'body', description: "Description of ${domainName}", paramType: 'body', type: domainName, required: true],
-            ],
-            responseMessages: [
-                [code: CREATED.value(), message: "New ${domainName} created"],
-                [code: UNPROCESSABLE_ENTITY.value(), message: 'Malformed Entity received'],
-            ]
-        ]},
-        update: { domainName -> [
-            swaggyAnnotation: SwaggyUpdate,
-            parameters: [
-                [name: 'id', description: "Id to update", paramType: 'path', type: 'string', required: true],
-                [name: 'body', description: "Description of ${domainName}", paramType: 'body', type: domainName, required: true],
-            ],
-            responseMessages: [
-                [code: BAD_REQUEST.value(), message: 'Bad Request'],
-                [code: NOT_FOUND.value(), message: "Could not find ${domainName} with that Id"],
-                [code: UNPROCESSABLE_ENTITY.value(), message: 'Malformed Entity received'],
-            ]
-        ]},
-        patch: { domainName -> [
-            swaggyAnnotation: SwaggyPatch,
-            parameters: [
-                [name: 'id', description: "Id to patch", paramType: 'path', type: 'string', required: true],
-                [name: 'body', description: "Description of ${domainName}", paramType: 'body', type: domainName, required: true],
-            ],
-            responseMessages: [
-                [code: BAD_REQUEST.value(), message: 'Bad Request'],
-                [code: NOT_FOUND.value(), message: "Could not find ${domainName} with that Id"],
-                [code: UNPROCESSABLE_ENTITY.value(), message: 'Malformed Entity received'],
-            ]
-        ]},
-        delete: { domainName -> [
-            swaggyAnnotation: SwaggyDelete,
-            parameters: [
-                [name: 'id', description: "Id to delete", paramType: 'path', type: 'string', required: true],
-            ],
-            responseMessages: [
-                [code: NO_CONTENT.value(), message: 'Delete successful'],
-                [code: BAD_REQUEST.value(), message: 'Bad Request'],
-                [code: NOT_FOUND.value(), message: "Could not find ${domainName} with that Id"],
-            ]
-        ]}
+    @Newify([Parameter, ResponseMessage, DefaultAction])
+    public static final Map<String, Closure<DefaultAction>> DefaultActionComponents = [
+            index : { String domainName ->
+                DefaultAction(SwaggyList, [
+                        Parameter('offset', 'Records to skip. Empty means 0.', 'query', 'int'),
+                        Parameter('max', 'Max records to return. Empty means 10.', 'query', 'int'),
+                        Parameter('sort', 'Field to sort by. Empty means id if q is empty. If q is provided, empty means relevance.', 'query', 'string'),
+                        Parameter('order', 'Order to sort by. Empty means asc if q is empty. If q is provided, empty means desc.', 'query', 'string'),
+                ], [])
+            },
+            show  : { String domainName ->
+                DefaultAction(SwaggyShow, [Parameter('id', 'Identifier to look for', 'path', 'string', true)],
+                        [
+                                ResponseMessage(BAD_REQUEST, 'Bad Request'),
+                                ResponseMessage(NOT_FOUND, "Could not find ${domainName} with that Id"),
+                        ]
+                )
+            },
+            save  : { String domainName ->
+                DefaultAction(SwaggySave, [Parameter('body', "Description of ${domainName}", 'body', domainName, true)],
+                        [
+                                ResponseMessage(CREATED, "New ${domainName} created"),
+                                ResponseMessage(UNPROCESSABLE_ENTITY, 'Malformed Entity received'),
+                        ]
+                )
+            },
+            update: { String domainName ->
+                DefaultAction(SwaggyUpdate,
+                        [
+                                Parameter('id', "Id to update", 'path', 'string', true),
+                                Parameter('body', "Description of ${domainName}", 'body', domainName, true),
+                        ],
+                        [
+                                ResponseMessage(BAD_REQUEST, 'Bad Request'),
+                                ResponseMessage(NOT_FOUND, "Could not find ${domainName} with that Id"),
+                                ResponseMessage(UNPROCESSABLE_ENTITY, 'Malformed Entity received'),
+                        ]
+                )
+            },
+            patch : { String domainName ->
+                DefaultAction(SwaggyPatch,
+                        [
+                                Parameter('id', "Id to patch", 'path', 'string', true),
+                                Parameter('body', "Description of ${domainName}", 'body', domainName, true),
+                        ],
+                        [
+                                ResponseMessage(BAD_REQUEST, 'Bad Request'),
+                                ResponseMessage(NOT_FOUND, "Could not find ${domainName} with that Id"),
+                                ResponseMessage(UNPROCESSABLE_ENTITY, 'Malformed Entity received'),
+                        ]
+                )
+            },
+            delete: { String domainName ->
+                DefaultAction(SwaggyDelete, [Parameter('id', "Id to delete", 'path', 'string', true)],
+                        [
+                                ResponseMessage(NO_CONTENT, 'Delete successful'),
+                                ResponseMessage(BAD_REQUEST, 'Bad Request'),
+                                ResponseMessage(NOT_FOUND, "Could not find ${domainName} with that Id"),
+                        ]
+                )
+            }
     ]
+
+    private static Parameter makePathParam(String pathParam) {
+        new Parameter(pathParam, "$pathParam identifier", 'path', 'string', true)
+    }
+
+    private ConfigObject getConfig() { grailsApplication.config.swaggydoc }
+    private String getApiVersion() {config.apiVersion ?: grailsApplication.metadata['app.version']}
 
     /**
      * Generates map of Swagger Resources.
      * @return Map
      */
     Map resources() {
-        def apis = grailsApplication.controllerClasses.
-                findAll { getApi(it) }.
-                sort { getApi(it).position() }.
-                collect { controllerToApi(it) }
-
-        ConfigObject config = grailsApplication.config.swaggydoc
-
-        return [
-                apiVersion    : config.apiVersion ?: grailsApplication.metadata['app.version'],
-                swaggerVersion: '1.2',
-                apis          : apis,
-                info          : infoObject
+        [
+                apiVersion    : apiVersion,
+                swaggerVersion: SwaggerVersion,
+                info          : infoObject,
+                apis          : grailsApplication.controllerClasses.
+                        findAll { getApi(it) }.
+                        sort { getApi(it).position() }.
+                        collect { controllerToApi(it) },
         ]
     }
 
@@ -116,8 +121,7 @@ class SwaggyDataService {
      * @param controllerName
      * @return Map
      */
-    Map apiDetails(controllerName) {
-        ConfigObject config = grailsApplication.config.swaggydoc
+    synchronized Map apiDetails(String controllerName) {
         def theController = grailsApplication.controllerClasses.find {
             it.logicalPropertyName == controllerName
         }
@@ -130,63 +134,33 @@ class SwaggyDataService {
         def resourcePath = grailsLinkGenerator.link(controller: theController.logicalPropertyName)
         def domainName = slugToDomain(controllerName)
 
-        def makePathParam = { pathParam ->
-            [
-                name: pathParam,
-                description: pathParam + " identifier",
-                paramType: "path",
-                type: "string",
-                required: true
-            ]
-        }
-
         // These preserve the path components supporting hierarchical paths discovered through URL mappings
         List resourcePathParts
         List resourcePathParams
-        def apis = grailsUrlMappingsHolder.urlMappings.findAll {
-                it.controllerName == controllerName
-            }.
-            collectEntries { mapping ->
-                // Determine path and path arguments
-                List pathParams = []
-                List pathParts = []
-                def constraintIdx = 0
-                mapping.urlData.tokens.eachWithIndex { String token, idx ->
-                    if (token.matches(/^\(.*[\*\+]+.*\)$/)) {
-                        def param = (idx == mapping.urlData.tokens.size() - 1) ? 'id' : mapping.constraints[constraintIdx]?.propertyName
-                        constraintIdx++
-                        if (param != 'id')
-                            // Don't push 'id' as it is one of the default pathParams
-                            pathParams.push(makePathParam(param))
-                        pathParts.push("{" + param + "}")
-                    } else {
-                        pathParts.push(token)
+        Map<String, MethodDocumentation> apis = grailsUrlMappingsHolder.urlMappings.
+                findAll { it.controllerName == controllerName }.
+                collectEntries { mapping ->
+                    def (List pathParts, List pathParams) = populatePaths(mapping)
+                    // Capture resource path candidates
+                    if (!resourcePathParts || resourcePathParts.size() > pathParts.size()) {
+                        resourcePathParts = pathParts
+                        resourcePathParams = pathParams
                     }
+                    DefaultAction defaults = (DefaultActionComponents.get(mapping.actionName) ?:
+                            { new DefaultAction() })(domainName)
+                    List<Parameter> parameters = (defaults?.parameters?.clone() ?: []) + pathParams
+                    if (pathParts[-1] != "{id}") {
+                        // Special case: defaults may include 'id' for single resource paths
+                        parameters.removeAll { it.name == 'id' }
+                    }
+                    [
+                            mapping.actionName,
+                            defineAction('/' + pathParts.join('/'), mapping.httpMethod, domainName,
+                                    "${mapping.httpMethod.toLowerCase()}${controllerName}${mapping.actionName}",
+                                    parameters, defaults?.responseMessages ?: [], "${mapping.actionName} ${domainName}"
+                            )
+                    ]
                 }
-                // Capture resource path candidates
-                if (!resourcePathParts || resourcePathParts.size() > pathParts.size()) {
-                    resourcePathParts = pathParts
-                    resourcePathParams = pathParams
-                }
-                def defaults = (DefaultActionComponents.get(mapping.actionName) ?: {[:]})(domainName)
-                def parameters = (defaults?.parameters?.clone() ?: []) + pathParams
-                if (pathParts[-1] != "{id}") {
-                    // Special case: defaults may include 'id' for single resource paths
-                    parameters.removeAll { it.name == 'id' }
-                }
-                [
-                    mapping.actionName,
-                    defineAction(
-                        '/' + pathParts.join('/'),
-                        mapping.httpMethod,
-                        domainName,
-                        "${mapping.httpMethod.toLowerCase()}${controllerName}${mapping.actionName}",
-                        parameters,
-                        defaults?.responseMessages ?: [],
-                        "${mapping.actionName} ${domainName}"
-                    )
-                ]
-            }
         if (resourcePathParts?.size()) {
             // UrlMappings may override the resourcePath
             if (resourcePathParts[-1].matches(/^\{.+\}$/)) {
@@ -199,53 +173,69 @@ class SwaggyDataService {
         def apiMethods = methodsOfType(ApiOperation, theControllerClazz)
 
         def allAnnotations = apiMethods*.annotations.flatten()
-        List<ApiOperation> apiOperationAnnotations = allAnnotations.findAll {
-            it.annotationType() == ApiOperation
-        } as List<ApiOperation>
-        def modelTypes = (apiOperationAnnotations*.response() + grailsApplication.domainClasses.find {
-            it.logicalPropertyName == theController.logicalPropertyName
-        }?.clazz).grep()
+        List<ApiOperation> apiOperationAnnotations = allAnnotations.
+                findAll { it.annotationType() == ApiOperation } as List<ApiOperation>
+
+        def modelTypes = (
+                apiOperationAnnotations*.response() +
+                        grailsApplication.domainClasses.
+                                find { it.logicalPropertyName == theController.logicalPropertyName }?.
+                                clazz
+        ).grep()
+
         Map models = getModels(modelTypes)
 
-        def updateDocumentation = apis ?
-            // This code is used if UrlMappings were used
-            { action, documentation ->
-                if (apis.containsKey(action)) {
-                    // leave the path alone, update everything else
-                    apis[action].operations[0] << documentation.operations[0]
-                } else {
-                    documentation.path = documentation.path.replaceFirst(/^.+(?=\/)/, resourcePath)
-                    apis[action] = documentation
-                }
-                if (resourcePathParams) {
-                    // Add additional params needed to support hierarchical path mappings
-                    apis[action].operations[0].parameters.addAll(0, resourcePathParams)
-                }
-            } :
-            // This code is used if there were no matching UrlMappings
-            { action, documentation ->
+        def updateDocFromUrlMappings = { String action, MethodDocumentation documentation ->
+            if (apis.containsKey(action)) {
+                // leave the path alone, update everything else
+                apis[action].operations[0] << documentation.operations[0]
+            } else {
+                documentation.path = documentation.path.replaceFirst(/^.+(?=\/)/, resourcePath)
                 apis[action] = documentation
             }
+
+            if (resourcePathParams) {
+                // Add additional params needed to support hierarchical path mappings
+                apis[action].operations[0].parameters.addAll(0, resourcePathParams)
+            }
+        }
+
+        def updateDocWithoutUrlMappings = { String action, MethodDocumentation documentation ->
+            if (apis.containsKey(action)) {
+                apis[action].operations = (apis[action].operations + documentation.operations).unique()
+            } else {
+                apis[action] = documentation
+            }
+        }
+
+        def updateDocumentation = apis ? updateDocFromUrlMappings : updateDocWithoutUrlMappings
+
         // Update APIs with low-level method annotations
         apiMethods.each { method ->
-            updateDocumentation(method.name, documentMethod(method, theController))
+            documentMethod(method, theController).each {
+                updateDocumentation(method.name, it)
+            }
         }
 
         // Update APIs with swaggydoc method annotations
-        DefaultActionComponents.collectEntries { action, defaultsFactory ->
-            def defaults = defaultsFactory(domainName)
-            methodsOfType(defaults.swaggyAnnotation, theControllerClazz).collectEntries {
-                [ it.name, generateMethod(action, it, theController) ]
-            }
-        }.each(updateDocumentation)
+        DefaultActionComponents.
+                each { action, defaultsFactory ->
+                    def defaults = defaultsFactory(domainName)
+                    methodsOfType(defaults.swaggyAnnotation, theControllerClazz).
+                            collectMany { method ->
+                                generateMethod(action, method, theController).collect {
+                                    updateDocumentation(method.name, it)
+                                }
+                            }
+                }
 
         def groupedApis = apis.values().
-                groupBy { Map it -> it.path }.
-                collect { p, a -> [path: p, operations: (a as List<Map>).collect { it.operations }.flatten().unique()] }
+                groupBy { MethodDocumentation it -> it.path }.
+                collect { path, methodDocs -> new MethodDocumentation(path, methodDocs*.operations.flatten().unique()) }
 
         return [
-                apiVersion    : config.apiVersion ?: grailsApplication.metadata['app.version'],
-                swaggerVersion: '1.2',
+                apiVersion    : apiVersion,
+                swaggerVersion: SwaggerVersion,
                 basePath      : api?.basePath() ?: absoluteBasePath,
                 resourcePath  : resourcePath - basePath,
                 produces      : api?.produces()?.tokenize(',') ?: responseContentTypes(theControllerClazz),
@@ -253,6 +243,25 @@ class SwaggyDataService {
                 apis          : groupedApis,
                 models        : models
         ]
+    }
+
+    private static List populatePaths(UrlMapping mapping) {
+        List pathParams = []
+        List pathParts = []
+        def constraintIdx = 0
+        mapping.urlData.tokens.eachWithIndex { String token, idx ->
+            if (token.matches(/^\(.*[\*\+]+.*\)$/)) {
+                def param = (idx == mapping.urlData.tokens.size() - 1) ? 'id' : mapping.constraints[constraintIdx]?.propertyName
+                constraintIdx++
+                if (param != 'id')
+                // Don't push 'id' as it is one of the default pathParams
+                    pathParams.push(makePathParam(param))
+                pathParts.push("{" + param + "}")
+            } else {
+                pathParts.push(token)
+            }
+        }
+        [pathParts, pathParams]
     }
 
     /**
@@ -273,7 +282,6 @@ class SwaggyDataService {
      * @return
      */
     private Map<String, Object> getInfoObject() {
-        ConfigObject config = grailsApplication.config.swaggydoc
         [
                 contact          : config.contact,
                 description      : config.description,
@@ -293,7 +301,7 @@ class SwaggyDataService {
      * @return
      */
     private static Api getApi(GrailsClass controller) {
-        controller.clazz.annotations.find { it.annotationType() == Api }
+        controller.clazz.annotations.find { it.annotationType() == Api } as Api
     }
 
     /**
@@ -304,7 +312,7 @@ class SwaggyDataService {
      * @return
      */
     private static <T> T findAnnotation(Class<T> clazz, AccessibleObject object) {
-        object.annotations.find { it.annotationType() == clazz }
+        object.annotations.find { it.annotationType() == clazz } as T
     }
 
     private static List<Method> methodsOfType(Class annotation, Class theControllerClazz) {
@@ -315,6 +323,7 @@ class SwaggyDataService {
      * Provides optional support for the "marshallers" grails plugin when building models from domains
      */
     private Map _marshallingConfig
+
     private def getMarshallingConfigForDomain(String domainName) {
         if (_marshallingConfig == null) {
             _marshallingConfig = [:]
@@ -322,10 +331,11 @@ class SwaggyDataService {
                 def MarshallingConfigBuilder = grailsApplication.getClassLoader().loadClass("org.grails.plugins.marshallers.config.MarshallingConfigBuilder")
                 grailsApplication.domainClasses.each {
                     def clazz = it.clazz
-                    Closure mc = GCU.getStaticPropertyValue(clazz, 'marshalling')
+                    Closure mc = GCU.getStaticPropertyValue(clazz, 'marshalling') as Closure
                     if (mc) {
                         def builder = MarshallingConfigBuilder.newInstance(clazz)
                         mc.delegate = builder
+                        //noinspection UnnecessaryQualifiedReference
                         mc.resolveStrategy = Closure.DELEGATE_FIRST
                         mc()
                         _marshallingConfig[clazz.name] = builder.config
@@ -347,14 +357,16 @@ class SwaggyDataService {
              * otherwise props will be a list of Field objects
              * Interface for these two classes are similar enough to duck type for our purposes
              */
-            def props = (domainClass ?
-                [domainClass.identifier, domainClass.version] + domainClass.persistentProperties.toList()
-                : model.declaredFields
-            ).findAll {
-                !it.toString().contains(' static ') &&
-                        !it.toString().contains(' transient ') &&
-                        it.name != 'errors'
-            }
+            def fieldSource = domainClass ?
+                    [domainClass.identifier, domainClass.version] + domainClass.persistentProperties.toList()
+                    : model.declaredFields
+
+            def props = fieldSource.
+                    findAll {
+                        !it.toString().contains(' static ') &&
+                                !it.toString().contains(' transient ') &&
+                                it.name != 'errors'
+                    }
 
             def optional = domainClass?.constrainedProperties?.findAll { k, v -> v.isNullable() }
 
@@ -367,10 +379,10 @@ class SwaggyDataService {
                         props.add([name: fn, type: String])
                         optional[fn] = true
                     }
-                    def processMarshallingConfig;
+                    Closure processMarshallingConfig;
                     processMarshallingConfig = { config ->
                         if (config.name != "default")
-                            // Currently we only support default marshalling, as that is conventional pattern
+                        // Currently we only support default marshalling, as that is conventional pattern
                             return
                         // N.B. we are not checking config.type, so we will conflate json and xml together
                         // adding or suppressing fields for only one response type is an anti-pattern anyway
@@ -386,7 +398,7 @@ class SwaggyDataService {
                         config.ignore?.each { fn ->
                             props.removeAll { it.name == fn }
                         }
-                        config.virtual?.keySet().each(addProp)
+                        config.virtual?.keySet()?.each(addProp)
 //                        deepProps.addAll(config.deep ?: [])
                         config.children?.each(processMarshallingConfig)
                     }
@@ -402,9 +414,9 @@ class SwaggyDataService {
             def required = props.collect { f -> f.name } - optional*.key
 
             def modelDescription = [
-                id        : model.simpleName,
-                required  : required,
-                properties: props.collectEntries { f -> [f.name, getTypeDescriptor(f, domainClass)] }
+                    id        : model.simpleName,
+                    required  : required,
+                    properties: props.collectEntries { f -> [f.name, getTypeDescriptor(f, domainClass)] }
             ]
 
             models[model.simpleName] = modelDescription
@@ -423,47 +435,50 @@ class SwaggyDataService {
         models
     }
 
-    private Map generateMethod(String action, Method method, GrailsClass theController) {
+    private List<MethodDocumentation> generateMethod(String action, Method method, GrailsClass theController) {
         def basePath = grailsLinkGenerator.link(uri: '')
         def slug = theController.logicalPropertyName
         def domainName = slugToDomain(slug)
-        def defaults = DefaultActionComponents[action](domainName)
-        def parameters = defaults.parameters.clone()
+        DefaultAction defaults = DefaultActionComponents[action](domainName)
+        List<Parameter> parameters = defaults.parameters.clone() as List<Parameter>
         if (defaults.swaggyAnnotation.metaClass.getMetaMethod('searchParam')
                 && findAnnotation(defaults.swaggyAnnotation, method).searchParam()) {
-            parameters << [name: 'q', description: 'Query. Follows Lucene Query Syntax.', paramType: 'query', type: 'string']
+            parameters << new Parameter('q', 'Query. Follows Lucene Query Syntax.', 'query', 'string')
         }
-        def pathParams = parameters.findAll { it.paramType == 'path' }.collect { it.name }.collectEntries {
-            [it, "{${it}}"]
-        }
+        def pathParams = parameters.
+                findAll { it.paramType == 'path' }.
+                collect { it.name }.
+                collectEntries {
+                    [it, "{${it}}"]
+                }
         def fullLink = grailsLinkGenerator.link(controller: slug, action: method.name, params: pathParams) as String
         def link = fullLink.replace('%7B', '{').replace('%7D', '}') - basePath
-        def httpMethod = getHttpMethod(theController, method)
-        def inferredNickname = "${httpMethod.toLowerCase()}${slug}${method.name}"
-        defineAction(link, httpMethod, domainName, inferredNickname, parameters, defaults.responseMessages, "${action} ${domainName}")
+        def httpMethods = getHttpMethod(theController, method)
+        httpMethods.collect { httpMethod ->
+            def inferredNickname = "${httpMethod.toLowerCase()}${slug}${method.name}"
+            defineAction(link, httpMethod, domainName, inferredNickname, parameters, defaults.responseMessages, "${action} ${domainName}")
+        }
     }
 
-    private static LinkedHashMap<String, Serializable> defineAction(
-            String link, String httpMethod, domainName, GString inferredNickname,
-            ArrayList<LinkedHashMap<String, Serializable>> parameters,
-            ArrayList<LinkedHashMap<String, Serializable>> responseMessages,
-            String summary) {
-        [
-                path      : link,
-                operations: [
-                        [
-                                method          : httpMethod,
-                                summary         : summary,
-                                nickname        : inferredNickname,
-                                parameters      : parameters,
-                                type            : domainName,
+    private static MethodDocumentation defineAction(
+            String link, String httpMethod, String domainName, String inferredNickname,
+            List<Parameter> parameters, List<ResponseMessage> responseMessages, String summary) {
+        new MethodDocumentation(
+                link,
+                [
+                        new Operation(
+                                method: httpMethod,
+                                summary: summary,
+                                nickname: inferredNickname,
+                                parameters: parameters,
+                                type: domainName,
                                 responseMessages: responseMessages,
-                        ]
+                        )
                 ]
-        ]
+        )
     }
 
-    private Map documentMethod(Method method, GrailsClass theController) {
+    private List<MethodDocumentation> documentMethod(Method method, GrailsClass theController) {
         def basePath = grailsLinkGenerator.link(uri: '')
         def apiOperation = findAnnotation(ApiOperation, method)
         def apiResponses = findAnnotation(ApiResponses, method)
@@ -476,33 +491,40 @@ class SwaggyDataService {
 
         def fullLink = grailsLinkGenerator.link(controller: slug, action: method.name, params: pathParams) as String
         def link = fullLink.replace('%7B', '{').replace('%7D', '}') - basePath
-        def httpMethod = getHttpMethod(theController, method)
-        def parameters = apiParams?.collect { ApiImplicitParam it -> paramToMap(it) } ?: []
-        def inferredNickname = "${httpMethod.toLowerCase()}${slug}${method.name}"
+        def httpMethods = getHttpMethod(theController, method)
+        httpMethods.collect { httpMethod ->
+            List<Parameter> parameters = apiParams?.collect { new Parameter(it as ApiImplicitParam) } ?: []
+            def inferredNickname = "${httpMethod.toLowerCase()}${slug}${method.name}"
 
-        [
-                path      : link,
-                operations: [
-                        [
-                                method          : httpMethod,
-                                summary         : apiOperation.value(),
-                                notes           : apiOperation.notes(),
-                                nickname        : apiOperation.nickname() ?: inferredNickname,
-                                parameters      : parameters,
-                                type            : apiOperation.response() == Void ? 'void' : apiOperation.response().simpleName,
-                                responseMessages: apiResponses?.value()?.collect { ApiResponse apiResponse ->
-                                    [code: apiResponse.code(), message: apiResponse.message()]
-                                }
-                        ]
-                ]
-        ]
+            new MethodDocumentation(link,
+                    [
+                            new Operation(
+                                    method: httpMethod,
+                                    summary: apiOperation.value(),
+                                    notes: apiOperation.notes(),
+                                    nickname: apiOperation.nickname() ?: inferredNickname,
+                                    parameters: parameters,
+                                    type: apiOperation.response() == Void ? 'void' : apiOperation.response().simpleName,
+                                    responseMessages: apiResponses?.value()?.collect { new ResponseMessage(it) }
+                            )
+                    ]
+            )
+        }
+
     }
 
-    private static String getHttpMethod(GrailsClass theController, Method method) {
+    private static List<String> getHttpMethod(GrailsClass theController, Method method) {
         try {
-            theController.referenceInstance.allowedMethods[method.name] ?: 'GET'
+            def retval = theController.referenceInstance.allowedMethods[method.name] ?: 'GET'
+            if (retval instanceof String) {
+                [retval]
+            } else if (retval instanceof Collection<String>) {
+                retval.toList()
+            } else {
+                ['GET']
+            }
         } catch (Exception ignored) {
-            'GET'
+            ['GET']
         }
     }
 
@@ -539,26 +561,11 @@ class SwaggyDataService {
         slug.with { it.replaceFirst(it[0], it[0].toUpperCase()) }
     }
 
-    /**
-     * Converts a param to a map for rendering
-     *
-     * @param apiParam
-     * @return
-     */
-    private static Map paramToMap(ApiImplicitParam apiParam) {
-        [
-                name        : apiParam.name(),
-                description : apiParam.value(),
-                required    : apiParam.required(),
-                type        : apiParam.dataType() ?: (apiParam.paramType() == 'body' ? 'demo' : 'string'),
-                paramType   : apiParam.paramType(),
-                defaultValue: apiParam.defaultValue()
-        ]
-    }
-
     private List<String> responseContentTypes(Class controller) {
-        GCU.getStaticPropertyValue(controller, 'responseFormats')?.collect {
-            grailsMimeUtility.getMimeTypeForExtension(it)?.name ?: it.contains('/') ? it : null
-        }.grep() as List<String> ?: DefaultResponseContentTypes
+        GCU.getStaticPropertyValue(controller, 'responseFormats')?.
+                collect { String it ->
+                    grailsMimeUtility.getMimeTypeForExtension(it)?.name ?: it.contains('/') ? it : null
+                }?.
+                grep() as List<String> ?: DefaultResponseContentTypes
     }
 }

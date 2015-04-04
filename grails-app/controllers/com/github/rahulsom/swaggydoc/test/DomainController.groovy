@@ -21,6 +21,11 @@ import grails.transaction.Transactional
 class DomainController extends RestfulController {
 
     static responseFormats = ['json', 'xml']
+    static allowedMethods = [
+            delete: ['POST', 'DELETE'],
+            update: ['POST', 'PUT'],
+            patch: ['POST', 'PATCH'],
+    ]
 
     DomainController() {
         super(Domain)

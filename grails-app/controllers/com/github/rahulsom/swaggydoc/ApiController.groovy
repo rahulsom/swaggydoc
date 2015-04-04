@@ -6,15 +6,8 @@ class ApiController {
 
     def swaggyDataService
 
-    /**
-     * Empty Method. Needed for rendering GSP as HTML.
-     */
-    def index() {
-    }
+    def index() { /* Render GSP as HTML */ }
 
-    /**
-     * Empty Method. Needed for rendering GSP as HTML.
-     */
     def images() {
         response.sendRedirect(g.resource(dir: 'images', file: 'throbber.gif').toString())
     }
@@ -35,12 +28,12 @@ class ApiController {
     }
 
 
-    def show() {
+    def show(String id) {
         header 'Access-Control-Allow-Origin', '*'
         //// START hacky workaround
         // Fix for awful rendering bug in Grails 2.4.4.
         // Keeping the code here as to not muddy up the service code
-        Map response = swaggyDataService.apiDetails(params.id)
+        Map response = swaggyDataService.apiDetails(id)
         response.apis = response.apis?.collect { api ->
             api.operations = api.operations.collect { op ->
                 op.parameters = op.parameters?.toArray()
@@ -48,7 +41,7 @@ class ApiController {
                 op
             }.toArray()
             api
-        }.toArray()
+        }?.toArray()
         response.models.values().each { model ->
             model.required = model.required?.toArray()
         }

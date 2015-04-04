@@ -61,13 +61,13 @@ class ApiControllerSpec extends Specification {
         json.apis.find {it.path == '/domain/show/{id}'}.operations.size() == 1
 
         json.apis.find {it.path == '/domain/delete/{id}'}
-        json.apis.find {it.path == '/domain/delete/{id}'}.operations.size() == 1
+        json.apis.find {it.path == '/domain/delete/{id}'}.operations.size() == 2
 
         json.apis.find {it.path == '/domain/update/{id}'}
-        json.apis.find {it.path == '/domain/update/{id}'}.operations.size() == 1
+        json.apis.find {it.path == '/domain/update/{id}'}.operations.size() == 2
 
         json.apis.find {it.path == '/domain/patch/{id}'}
-        json.apis.find {it.path == '/domain/patch/{id}'}.operations.size() == 1
+        json.apis.find {it.path == '/domain/patch/{id}'}.operations.size() == 2
 
         json.apis.find {it.path == '/domain/save'}
         json.apis.find {it.path == '/domain/save'}.operations.size() == 1

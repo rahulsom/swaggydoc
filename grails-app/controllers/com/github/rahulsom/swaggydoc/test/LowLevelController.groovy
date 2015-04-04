@@ -14,6 +14,12 @@ import grails.transaction.Transactional
 )
 class LowLevelController extends RestfulController {
 
+    static allowedMethods = [
+            delete: ['POST', 'DELETE'],
+            update: ['POST', 'PUT'],
+            patch: ['POST', 'PATCH'],
+    ]
+
     static responseFormats = ['json', 'xml']
 
     LowLevelController() {
