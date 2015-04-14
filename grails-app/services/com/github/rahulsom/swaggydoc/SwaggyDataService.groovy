@@ -512,27 +512,44 @@ class SwaggyDataService {
      * @return
      */
     private static Map getTypeDescriptor(def f, GrailsDomainClass gdc) {
+        Map descriptor = getConstraintsInformation(gdc, f.name)
+
         if (f.type.isAssignableFrom(String)) {
-            [type: 'string']
+            descriptor << [type: 'string']
         } else if (f.type.isAssignableFrom(Double) || f.type.isAssignableFrom(Float)) {
-            [type: 'number', format: 'double']
+            descriptor << [type: 'number', format: 'double']
         } else if (f.type.isAssignableFrom(Long) || f.type.isAssignableFrom(Integer)) {
-            [type: 'integer', format: 'int64']
+            descriptor << [type: 'integer', format: 'int64']
         } else if (f.type.isAssignableFrom(Date)) {
-            [type: 'string', format: 'date-time']
+            descriptor << [type: 'string', format: 'date-time']
         } else if (f.type.isAssignableFrom(Boolean)) {
-            [type: 'boolean']
+            descriptor << [type: 'boolean']
         } else if (f.type.isAssignableFrom(Set) || f.type.isAssignableFrom(List)) {
             def genericType = gdc?.associationMap?.getAt(f.name) ?: f.genericType.actualTypeArguments[0]
             def clazzName = genericType.simpleName
-            [
+            descriptor << [
                     type : 'array',
                     items: ['$ref': clazzName]
             ]
         } else {
-            ['$ref': f.type.simpleName]
+            descriptor << ['$ref': f.type.simpleName]
         }
 
+        return descriptor
+    }
+
+    private static Map getConstraintsInformation(GrailsDomainClass gdc, String propertyName){
+        Map constraintsInfo = [:]
+        def constraintName
+
+        if(gdc && gdc.constraints && gdc.constraints[propertyName]){
+            gdc.constraints[propertyName].appliedConstraints.each { constraint ->
+                constraintName = Introspector.decapitalize(constraint.class.simpleName - "Constraint")
+                constraintsInfo << ["$constraintName": constraint.constraintParameter]
+            }
+        }
+
+        return constraintsInfo
     }
 
     private static String slugToDomain(String slug) {
