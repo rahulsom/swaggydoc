@@ -6,6 +6,7 @@ import org.codehaus.groovy.grails.commons.DefaultGrailsApplication
 import org.codehaus.groovy.grails.commons.GrailsClass
 import org.codehaus.groovy.grails.commons.GrailsClassUtils as GCU
 import org.codehaus.groovy.grails.commons.GrailsDomainClass
+import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty
 import org.codehaus.groovy.grails.web.mapping.LinkGenerator
 import org.codehaus.groovy.grails.web.mapping.UrlMapping
 import org.codehaus.groovy.grails.web.mapping.UrlMappings
@@ -351,6 +352,7 @@ class SwaggyDataService {
         def models = [:]
         while (m.size()) {
             Class model = m.poll()
+            log.debug "Getting model for class ${model}"
             def domainClass = grailsApplication.domainClasses.find { it.clazz == model } as GrailsDomainClass
             /** Duck typing here:
              * if model has a GrailsDomainClass then props will be list of GrailsDomainClassProperty objects
@@ -545,7 +547,12 @@ class SwaggyDataService {
         } else if (f.type.isAssignableFrom(Boolean)) {
             [type: 'boolean']
         } else if (f.type.isAssignableFrom(Set) || f.type.isAssignableFrom(List)) {
-            def genericType = gdc?.associationMap?.getAt(f.name) ?: f.genericType.actualTypeArguments[0]
+            def genericType = null
+            if(f instanceof GrailsDomainClassProperty) {
+                genericType = gdc?.associationMap?.getAt(f.name)
+                assert genericType, "Unknown type for property ${f.name}, please specify it in the domain's class hasMany"
+            }
+            genericType = genericType ?: f.genericType.actualTypeArguments[0]
             def clazzName = genericType.simpleName
             [
                     type : 'array',
