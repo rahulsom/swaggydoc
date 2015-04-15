@@ -6,6 +6,7 @@ import org.codehaus.groovy.grails.commons.DefaultGrailsApplication
 import org.codehaus.groovy.grails.commons.GrailsClass
 import org.codehaus.groovy.grails.commons.GrailsClassUtils as GCU
 import org.codehaus.groovy.grails.commons.GrailsDomainClass
+import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty
 import org.codehaus.groovy.grails.web.mapping.LinkGenerator
 import org.codehaus.groovy.grails.web.mapping.UrlMapping
 import org.codehaus.groovy.grails.web.mapping.UrlMappings
@@ -98,21 +99,24 @@ class SwaggyDataService {
     }
 
     private ConfigObject getConfig() { grailsApplication.config.swaggydoc }
-    private String getApiVersion() {config.apiVersion ?: grailsApplication.metadata['app.version']}
+
+    private String getApiVersion() { config.apiVersion ?: grailsApplication.metadata['app.version'] }
 
     /**
      * Generates map of Swagger Resources.
      * @return Map
      */
     Map resources() {
+        def apis = grailsApplication.controllerClasses.
+                findAll { getApi(it) }.
+                sort { getApi(it).position() }.
+                collect { controllerToApi(it) }
+
         [
                 apiVersion    : apiVersion,
                 swaggerVersion: SwaggerVersion,
                 info          : infoObject,
-                apis          : grailsApplication.controllerClasses.
-                        findAll { getApi(it) }.
-                        sort { getApi(it).position() }.
-                        collect { controllerToApi(it) },
+                apis          : apis,
         ]
     }
 
@@ -135,12 +139,12 @@ class SwaggyDataService {
         def domainName = slugToDomain(controllerName)
 
         // These preserve the path components supporting hierarchical paths discovered through URL mappings
-        List resourcePathParts
-        List resourcePathParams
+        List<String> resourcePathParts
+        List<Parameter> resourcePathParams
         Map<String, MethodDocumentation> apis = grailsUrlMappingsHolder.urlMappings.
                 findAll { it.controllerName == controllerName }.
                 collectEntries { mapping ->
-                    def (List pathParts, List pathParams) = populatePaths(mapping)
+                    def (List<String> pathParts, List<Parameter> pathParams) = populatePaths(mapping)
                     // Capture resource path candidates
                     if (!resourcePathParts || resourcePathParts.size() > pathParts.size()) {
                         resourcePathParts = pathParts
@@ -246,8 +250,8 @@ class SwaggyDataService {
     }
 
     private static List populatePaths(UrlMapping mapping) {
-        List pathParams = []
-        List pathParts = []
+        List<Parameter> pathParams = []
+        List<String> pathParts = []
         def constraintIdx = 0
         mapping.urlData.tokens.eachWithIndex { String token, idx ->
             if (token.matches(/^\(.*[\*\+]+.*\)$/)) {
@@ -289,9 +293,7 @@ class SwaggyDataService {
                 licenseUrl       : config.licenseUrl,
                 termsOfServiceUrl: config.termsOfServiceUrl,
                 title            : config.title
-        ].findAll { k, v ->
-            v
-        }
+        ].findAll { k, v -> v }
     }
 
     /**
@@ -351,6 +353,7 @@ class SwaggyDataService {
         def models = [:]
         while (m.size()) {
             Class model = m.poll()
+            log.debug "Getting model for class ${model}"
             def domainClass = grailsApplication.domainClasses.find { it.clazz == model } as GrailsDomainClass
             /** Duck typing here:
              * if model has a GrailsDomainClass then props will be list of GrailsDomainClassProperty objects
@@ -423,8 +426,16 @@ class SwaggyDataService {
             props.each { f ->
                 if (!models.containsKey(f.type.simpleName) && !m.contains(f.type) && !knownTypes.contains(f.type)) {
                     if (f.type.isAssignableFrom(List) || f.type.isAssignableFrom(Set)) {
-                        def typeArgs = domainClass?.associationMap?.getAt(f.name) ?: f.genericType.actualTypeArguments[0]
-                        m.add(typeArgs)
+                        if (f instanceof GrailsDomainClassProperty) {
+                            def genericType = domainClass?.associationMap?.getAt(f.name)
+                            if (genericType) {
+                                m.add(genericType)
+                            } else {
+                                log.warn "No type args found for ${f.name}"
+                            }
+                        } else {
+                            m.add(f.genericType.actualTypeArguments[0])
+                        }
                     } else {
                         m.add(f.type)
                     }
@@ -533,7 +544,8 @@ class SwaggyDataService {
      * @param f
      * @return
      */
-    private static Map getTypeDescriptor(def f, GrailsDomainClass gdc) {
+    @SuppressWarnings("GrMethodMayBeStatic")
+    private Map getTypeDescriptor(def f, GrailsDomainClass gdc) {
         if (f.type.isAssignableFrom(String)) {
             [type: 'string']
         } else if (f.type.isAssignableFrom(Double) || f.type.isAssignableFrom(Float)) {
@@ -545,12 +557,26 @@ class SwaggyDataService {
         } else if (f.type.isAssignableFrom(Boolean)) {
             [type: 'boolean']
         } else if (f.type.isAssignableFrom(Set) || f.type.isAssignableFrom(List)) {
-            def genericType = gdc?.associationMap?.getAt(f.name) ?: f.genericType.actualTypeArguments[0]
-            def clazzName = genericType.simpleName
-            [
-                    type : 'array',
-                    items: ['$ref': clazzName]
-            ]
+            def genericType = null
+            if (f instanceof GrailsDomainClassProperty) {
+                genericType = gdc?.associationMap?.getAt(f.name)
+                if (!genericType) {
+                    log.warn "Unknown type for property ${f.name}, please specify it in the domain's class hasMany"
+                    [ type : 'array' ]
+                } else {
+                    [
+                            type : 'array',
+                            items: ['$ref': genericType.simpleName]
+                    ]
+                }
+            } else {
+                genericType = genericType ?: f.genericType.actualTypeArguments[0]
+                def clazzName = genericType.simpleName
+                [
+                        type : 'array',
+                        items: ['$ref': clazzName]
+                ]
+            }
         } else {
             ['$ref': f.type.simpleName]
         }
