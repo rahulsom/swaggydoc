@@ -2,6 +2,9 @@ package com.github.rahulsom.swaggydoc
 
 import grails.util.Holders
 import org.codehaus.groovy.grails.commons.GrailsClassUtils as GCU
+import org.codehaus.groovy.grails.validation.ConstrainedProperty
+
+import java.beans.Introspector
 
 import static org.springframework.http.HttpStatus.*
 
@@ -538,14 +541,15 @@ class SwaggyDataService {
         return descriptor
     }
 
-    private static Map getConstraintsInformation(GrailsDomainClass gdc, String propertyName){
+    private static Map getConstraintsInformation(def domain, String propertyName){
         Map constraintsInfo = [:]
         def constraintName
 
-        if(gdc && gdc.constraints && gdc.constraints[propertyName]){
-            gdc.constraints[propertyName].appliedConstraints.each { constraint ->
+        if(domain && domain.constraints && domain.constraints[propertyName]
+                && (domain.constraints[propertyName] instanceof ConstrainedProperty)){
+            domain.constraints[propertyName].appliedConstraints.each { constraint ->
                 constraintName = Introspector.decapitalize(constraint.class.simpleName - "Constraint")
-                constraintsInfo << ["$constraintName": constraint.constraintParameter]
+                constraintsInfo << [("$constraintName".toString()): constraint.constraintParameter]
             }
         }
 
