@@ -1,4 +1,4 @@
-![https://travis-ci.org/rahulsom/swaggydoc.svg](https://travis-ci.org/rahulsom/swaggydoc.svg)
+[![Build Status](https://travis-ci.org/rahulsom/swaggydoc.svg?branch=develop)](https://travis-ci.org/rahulsom/swaggydoc)
 
 Configuration
 ----

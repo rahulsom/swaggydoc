@@ -3,6 +3,7 @@ package com.github.rahulsom.swaggydoc
 import com.wordnik.swagger.annotations.ApiImplicitParam
 import groovy.transform.CompileStatic
 import groovy.transform.EqualsAndHashCode
+import groovy.transform.ToString
 
 /**
  * A parameter that could be serialized in swagger json spec
@@ -11,6 +12,7 @@ import groovy.transform.EqualsAndHashCode
  */
 @CompileStatic
 @EqualsAndHashCode(includes = ['name'])
+@ToString(includePackage = false, includes = ['name', 'paramType', 'required'])
 class Parameter {
     String name
     String description
@@ -27,10 +29,8 @@ class Parameter {
         this.required = required
     }
 
-    Parameter(ApiImplicitParam apiParam) {
-        this(apiParam.name(), apiParam.value(), apiParam.paramType(),
-                apiParam.dataType() ?: (apiParam.paramType() == 'body' ? 'demo' : 'string'),
-                apiParam.required())
-        defaultValue = apiParam.defaultValue()
+    Parameter(ApiImplicitParam param) {
+        this(param.name(), param.value(), param.paramType(), param.dataType() ?: 'string', param.required())
+        defaultValue = param.defaultValue()
     }
 }
