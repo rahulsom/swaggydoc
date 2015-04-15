@@ -6,6 +6,9 @@
 .idea
 classes
 out/
+.classpath
+.project
+.DS_Store
 
 # Grails Stuff
 target/
@@ -22,3 +25,6 @@ web-app/js/
 grails-swaggydoc-*.zip
 grails-swaggydoc-*.zip.sha1
 plugin.xml
+
+# NPM stuff
+node_modules/
