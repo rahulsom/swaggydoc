@@ -5,11 +5,13 @@ import grails.compiler.GrailsCompileStatic
 import grails.util.Holders
 import org.codehaus.groovy.grails.commons.*
 import org.codehaus.groovy.grails.commons.GrailsClassUtils as GCU
+import org.codehaus.groovy.grails.validation.ConstrainedProperty
 import org.codehaus.groovy.grails.web.mapping.LinkGenerator
 import org.codehaus.groovy.grails.web.mapping.UrlMapping
 import org.codehaus.groovy.grails.web.mapping.UrlMappings
 import org.codehaus.groovy.grails.web.mime.MimeUtility
 
+import java.beans.Introspector
 import java.lang.reflect.AccessibleObject
 import java.lang.reflect.Method
 
@@ -569,25 +571,27 @@ class SwaggyDataService {
      */
     @SuppressWarnings("GrMethodMayBeStatic")
     private Map getTypeDescriptor(def f, GrailsDomainClass gdc) {
+        Map descriptor = getConstraintsInformation(gdc, f.name)
+
         if (f.type.isAssignableFrom(String)) {
-            [type: 'string']
+            descriptor << [type: 'string']
         } else if (f.type.isAssignableFrom(Double) || f.type.isAssignableFrom(Float)) {
-            [type: 'number', format: 'double']
+            descriptor << [type: 'number', format: 'double']
         } else if (f.type.isAssignableFrom(Long) || f.type.isAssignableFrom(Integer)) {
-            [type: 'integer', format: 'int64']
+            descriptor << [type: 'integer', format: 'int64']
         } else if (f.type.isAssignableFrom(Date)) {
-            [type: 'string', format: 'date-time']
+            descriptor << [type: 'string', format: 'date-time']
         } else if (f.type.isAssignableFrom(Boolean)) {
-            [type: 'boolean']
+            descriptor << [type: 'boolean']
         } else if (f.type.isAssignableFrom(Set) || f.type.isAssignableFrom(List)) {
             Class genericType = null
             if (f instanceof GrailsDomainClassProperty) {
                 genericType = gdc?.associationMap?.getAt(f.name)
                 if (!genericType) {
                     log.warn "Unknown type for property ${f.name}, please specify it in the domain's class hasMany"
-                    [type: 'array']
+                    descriptor << [type: 'array']
                 } else {
-                    [
+                    descriptor << [
                             type : 'array',
                             items: ['$ref': genericType.simpleName]
                     ]
@@ -595,15 +599,31 @@ class SwaggyDataService {
             } else {
                 genericType = genericType ?: f.genericType.actualTypeArguments[0]
                 def clazzName = genericType.simpleName
-                [
+                descriptor << [
                         type : 'array',
                         items: ['$ref': clazzName]
                 ]
             }
         } else {
-            ['$ref': f.type.simpleName]
+            descriptor << ['$ref': f.type.simpleName]
         }
 
+        return descriptor
+    }
+
+    private static Map getConstraintsInformation(def domain, String propertyName){
+        Map constraintsInfo = [:]
+        def constraintName
+
+        if(domain && domain.constraints && domain.constraints[propertyName]
+                && (domain.constraints[propertyName] instanceof ConstrainedProperty)){
+            domain.constraints[propertyName].appliedConstraints.each { constraint ->
+                constraintName = Introspector.decapitalize(constraint.class.simpleName - "Constraint")
+                constraintsInfo << [("$constraintName".toString()): constraint.constraintParameter]
+            }
+        }
+
+        return constraintsInfo
     }
 
     private static String slugToDomain(String slug) {
