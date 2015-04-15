@@ -98,7 +98,7 @@ class SwaggyDataService {
     }
 
     @GrailsCompileStatic
-    private ConfigObject getConfig() { grailsApplication.config.get('swaggydoc') as ConfigObject }
+    private ConfigObject getConfig() { grailsApplication.config['swaggydoc'] as ConfigObject ?: new ConfigObject()}
 
     @GrailsCompileStatic
     private String getApiVersion() { config.apiVersion ?: grailsApplication.metadata['app.version'] }
@@ -221,7 +221,7 @@ class SwaggyDataService {
 
         // Update APIs with low-level method annotations
         apiMethods.each { method ->
-            documentMethod(method, theController).each {
+            documentMethodWithSwaggerAnnotations(method, theController).each {
                 updateDocumentation(method.name, it)
             }
         }
@@ -232,9 +232,8 @@ class SwaggyDataService {
                     def defaults = defaultsFactory(domainName)
                     methodsOfType(defaults.swaggyAnnotation, theControllerClazz).
                             collectMany { method ->
-                                generateMethod(action, method, theController).collect {
-                                    updateDocumentation(method.name, it)
-                                }
+                                generateMethodFromSwaggyAnnotations(action, method, theController).
+                                        collect { updateDocumentation(method.name, it) }
                             }
                 }
 
@@ -360,6 +359,29 @@ class SwaggyDataService {
         return _marshallingConfig[domainName]
     }
 
+    private def processMarshallingConfig(mConfig, props, addProp, domainClass){
+        if (mConfig.name != "default")
+        // Currently we only support default marshalling, as that is conventional pattern
+            return
+        // N.B. we are not checking config.type, so we will conflate json and xml together
+        // adding or suppressing fields for only one response type is an anti-pattern anyway
+        if (!mConfig.shouldOutputIdentifier) {
+            props.remove(domainClass.identifier)
+        }
+        if (!mConfig.shouldOutputVersion) {
+            props.remove(domainClass.version)
+        }
+        if (mConfig.shouldOutputClass) {
+            addProp("class")
+        }
+        mConfig.ignore?.each { fn ->
+            props.removeAll { it.name == fn }
+        }
+        mConfig.virtual?.keySet()?.each(addProp)
+//                        deepProps.addAll(config.deep ?: [])
+        mConfig.children?.each{processMarshallingConfig(it, props, addProp, domainClass)}
+    }
+
     private Map getModels(Collection<Class<?>> modelTypes) {
         Queue m = modelTypes as Queue
         def models = [:]
@@ -394,30 +416,7 @@ class SwaggyDataService {
                         props.add([name: fn, type: String])
                         optional[fn] = true
                     }
-                    Closure processMarshallingConfig;
-                    processMarshallingConfig = { config ->
-                        if (config.name != "default")
-                        // Currently we only support default marshalling, as that is conventional pattern
-                            return
-                        // N.B. we are not checking config.type, so we will conflate json and xml together
-                        // adding or suppressing fields for only one response type is an anti-pattern anyway
-                        if (!config.shouldOutputIdentifier) {
-                            props.remove(domainClass.identifier)
-                        }
-                        if (!config.shouldOutputVersion) {
-                            props.remove(domainClass.version)
-                        }
-                        if (config.shouldOutputClass) {
-                            addProp("class")
-                        }
-                        config.ignore?.each { fn ->
-                            props.removeAll { it.name == fn }
-                        }
-                        config.virtual?.keySet()?.each(addProp)
-//                        deepProps.addAll(config.deep ?: [])
-                        config.children?.each(processMarshallingConfig)
-                    }
-                    processMarshallingConfig(marshallingConfig)
+                    processMarshallingConfig(marshallingConfig, props, addProp, domainClass)
                     // FIXME: Handle "deep" the way marshallers does (may be a bit tricky)
 //                    props.findAll { f ->
 //                        !(deepProps.contains(f.name) || knownTypes.contains(f.type))
@@ -458,7 +457,7 @@ class SwaggyDataService {
         models
     }
 
-    private List<MethodDocumentation> generateMethod(String action, Method method, GrailsClass theController) {
+    private List<MethodDocumentation> generateMethodFromSwaggyAnnotations(String action, Method method, GrailsClass theController) {
         def basePath = grailsLinkGenerator.link(uri: '')
         def slug = theController.logicalPropertyName
         def domainName = slugToDomain(slug)
@@ -471,14 +470,14 @@ class SwaggyDataService {
         def pathParams = parameters.
                 findAll { it.paramType == 'path' }.
                 collect { it.name }.
-                collectEntries {
-                    [it, "{${it}}"]
-                }
+                collectEntries { [it, "{${it}}"] }
         def fullLink = grailsLinkGenerator.link(controller: slug, action: method.name, params: pathParams) as String
         def link = fullLink.replace('%7B', '{').replace('%7D', '}') - basePath
         def httpMethods = getHttpMethod(theController, method)
+        log.debug "Link: $link - ${httpMethods}"
         httpMethods.collect { httpMethod ->
             def inferredNickname = "${httpMethod.toLowerCase()}${slug}${method.name}"
+            log.debug "Generating ${inferredNickname}"
             defineAction(link, httpMethod, domainName, inferredNickname, parameters, defaults.responseMessages, "${action} ${domainName}")
         }
     }
@@ -499,7 +498,7 @@ class SwaggyDataService {
         ])
     }
 
-    private List<MethodDocumentation> documentMethod(Method method, GrailsClass theController) {
+    private List<MethodDocumentation> documentMethodWithSwaggerAnnotations(Method method, GrailsClass theController) {
         def basePath = grailsLinkGenerator.link(uri: '')
         def apiOperation = findAnnotation(ApiOperation, method)
         def apiResponses = findAnnotation(ApiResponses, method)
@@ -513,9 +512,11 @@ class SwaggyDataService {
         def fullLink = grailsLinkGenerator.link(controller: slug, action: method.name, params: pathParams) as String
         def link = fullLink.replace('%7B', '{').replace('%7D', '}') - basePath
         def httpMethods = getHttpMethod(theController, method)
+        log.debug "Link: $link - ${httpMethods}"
         httpMethods.collect { httpMethod ->
             List<Parameter> parameters = apiParams?.collect { new Parameter(it as ApiImplicitParam) } ?: []
             def inferredNickname = "${httpMethod.toLowerCase()}${slug}${method.name}"
+            log.debug "Generating ${inferredNickname}"
 
             new MethodDocumentation(link, [
                     new Operation(
@@ -532,19 +533,33 @@ class SwaggyDataService {
 
     }
 
-    private static List<String> getHttpMethod(GrailsClass theController, Method method) {
+    private List<String> getHttpMethod(GrailsClass theController, Method method) {
         try {
             def retval = theController.referenceInstance.allowedMethods[method.name] ?: 'GET'
             if (retval instanceof String) {
+                log.debug "[Returned] ${method.name} supports [$retval]"
                 [retval]
             } else if (retval instanceof Collection<String>) {
-                retval.toList()
+                def list = removeBoringMethods(retval.toList(), ['GET', 'POST'])
+                log.debug "[Returned] ${method.name} supports $list"
+                list
             } else {
+                log.debug "[Fallback] ${method.name} supports ['GET']"
                 ['GET']
             }
         } catch (Exception ignored) {
+            log.debug "[Exception] ${method.name} supports ['GET']"
             ['GET']
         }
+    }
+
+    private static List<String> removeBoringMethods(List<String> methods, List<String> boringMethods) {
+        boringMethods.each { method ->
+            if (methods.size() > 1 && methods.contains(method)) {
+                methods.remove(method)
+            }
+        }
+        methods
     }
 
     /**
