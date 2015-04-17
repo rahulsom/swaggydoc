@@ -607,8 +607,7 @@ class SwaggyDataService {
                 }
             } else {
                 genericType = genericType ?: f.genericType.actualTypeArguments[0]
-                def clazzName = genericType.simpleName
-                new ContainerField(new RefItem(clazzName))
+                new ContainerField(new RefItem(genericType.simpleName))
             }
         } else {
             new RefField(type.simpleName)
