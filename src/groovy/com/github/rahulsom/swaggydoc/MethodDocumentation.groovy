@@ -12,5 +12,5 @@ import groovy.transform.TupleConstructor
 @ToString(includePackage = false)
 class MethodDocumentation {
     String path
-    List<Operation> operations
+    Operation[] operations
 }
