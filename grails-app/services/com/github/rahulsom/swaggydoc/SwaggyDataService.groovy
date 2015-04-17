@@ -29,7 +29,13 @@ class SwaggyDataService {
     static final List<String> DefaultRequestContentTypes = [
             'application/json', 'application/xml', 'application/x-www-form-urlencoded'
     ]
-    static final List knownTypes = [int, Integer, long, Long, float, Float, double, Double, String]
+    /*
+     * These don't get documented in the listing of models.
+     */
+    static final List knownTypes = [
+            int, Integer, long, Long, float, Float, double, Double, BigInteger, BigDecimal,
+            String, boolean, Boolean, Date,
+    ]
 
     @Newify([Parameter, ResponseMessage, DefaultAction])
     public static final Map<String, Closure<DefaultAction>> DefaultActionComponents = [
@@ -578,9 +584,9 @@ class SwaggyDataService {
             constrainedProperty?.inList ? new StringField(constrainedProperty.inList as String[]) : new StringField()
         } else if (type.isEnum()) {
             new StringField(type.values()*.name() as String[])
-        } else if (type.isAssignableFrom(Double) || type.isAssignableFrom(Float)) {
+        } else if (type.isAssignableFrom(Double) || type.isAssignableFrom(Float) || type.isAssignableFrom(double) || type.isAssignableFrom(float) || type.isAssignableFrom(BigDecimal)) {
             new NumberField('double')
-        } else if (type.isAssignableFrom(Long) || type.isAssignableFrom(Integer)) {
+        } else if (type.isAssignableFrom(Long) || type.isAssignableFrom(Integer) || type.isAssignableFrom(long) || type.isAssignableFrom(int) || type.isAssignableFrom(BigInteger)) {
             def retval = new IntegerField('int64')
             if (constrainedProperty?.range) {
                 retval.maximum = constrainedProperty.range.to as int
@@ -593,7 +599,7 @@ class SwaggyDataService {
             retval
         } else if (type.isAssignableFrom(Date)) {
             new StringField('date-time')
-        } else if (type.isAssignableFrom(Boolean)) {
+        } else if (type.isAssignableFrom(Boolean) || type.isAssignableFrom(boolean)) {
             new BooleanField()
         } else if (type.isAssignableFrom(Set) || type.isAssignableFrom(List)) {
             Class genericType = null
