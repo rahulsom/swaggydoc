@@ -169,6 +169,8 @@ class SwaggyDataService {
 
                     def actionMethod = DefaultActionComponents.get(mapping.actionName)
                     DefaultAction defaults = (actionMethod ?: actionFallback)(domainName)
+                    log.debug "defaults?.parameters: ${defaults?.parameters}"
+                    log.debug "pathParams: ${pathParams}"
                     List<Parameter> parameters = (defaults?.parameters?.clone() ?: []) + pathParams
                     if (pathParts[-1] != "{id}") {
                         // Special case: defaults may include 'id' for single resource paths
@@ -219,7 +221,11 @@ class SwaggyDataService {
             if (resourcePathParams) {
                 // Add additional params needed to support hierarchical path mappings
                 def parameters = apis[action].operations[0].parameters.toList()
-                parameters.addAll(0, resourcePathParams)
+                int idx = 0
+                resourcePathParams.each { rpp ->
+                    if (!parameters.find { it.name == rpp.name })
+                        parameters.add(idx ++, rpp)
+                }
                 apis[action].operations[0].parameters = parameters as Parameter[]
             }
         }
@@ -527,9 +533,10 @@ class SwaggyDataService {
         def apiOperation = findAnnotation(ApiOperation, method)
         def apiResponses = findAnnotation(ApiResponses, method)
         def apiParams = findAnnotation(ApiImplicitParams, method)?.value() ?: []
-
         def pathParamsAnnotations = apiParams.findAll { it.paramType() == 'path' } as List<ApiImplicitParam>
         def pathParams = pathParamsAnnotations*.name().collectEntries { [it, "{${it}}"] }
+
+        log.debug "## pathParams: ${pathParams}"
 
         def slug = theController.logicalPropertyName
 
@@ -539,6 +546,7 @@ class SwaggyDataService {
         log.debug "Link: $link - ${httpMethods}"
         httpMethods.collect { httpMethod ->
             List<Parameter> parameters = apiParams?.collect { new Parameter(it as ApiImplicitParam) } ?: []
+            log.debug "## parameters: ${parameters}"
             def inferredNickname = "${httpMethod.toLowerCase()}${slug}${method.name}"
             log.debug "Generating ${inferredNickname}"
 
