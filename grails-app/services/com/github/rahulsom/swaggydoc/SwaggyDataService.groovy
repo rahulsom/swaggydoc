@@ -4,14 +4,12 @@ import com.wordnik.swagger.annotations.*
 import grails.compiler.GrailsCompileStatic
 import grails.util.Holders
 import org.codehaus.groovy.grails.commons.*
-import org.codehaus.groovy.grails.commons.GrailsClassUtils as GCU
 import org.codehaus.groovy.grails.validation.ConstrainedProperty
 import org.codehaus.groovy.grails.web.mapping.LinkGenerator
 import org.codehaus.groovy.grails.web.mapping.UrlMapping
 import org.codehaus.groovy.grails.web.mapping.UrlMappings
 import org.codehaus.groovy.grails.web.mime.MimeUtility
 
-import java.beans.Introspector
 import java.lang.reflect.AccessibleObject
 import java.lang.reflect.Method
 
@@ -19,6 +17,7 @@ import static org.springframework.http.HttpStatus.*
 
 class SwaggyDataService {
 
+    public static final Closure<DefaultAction> actionFallback = { new DefaultAction() }
     DefaultGrailsApplication grailsApplication
     LinkGenerator grailsLinkGenerator
     UrlMappings grailsUrlMappingsHolder
@@ -29,7 +28,13 @@ class SwaggyDataService {
     static final List<String> DefaultRequestContentTypes = [
             'application/json', 'application/xml', 'application/x-www-form-urlencoded'
     ]
-    static final List knownTypes = [int, Integer, long, Long, float, Float, double, Double, String]
+    /*
+     * These don't get documented in the listing of models.
+     */
+    static final List knownTypes = [
+            int, Integer, long, Long, float, Float, double, Double, BigInteger, BigDecimal,
+            String, boolean, Boolean, Date, byte, Byte, void
+    ]
 
     @Newify([Parameter, ResponseMessage, DefaultAction])
     public static final Map<String, Closure<DefaultAction>> DefaultActionComponents = [
@@ -37,8 +42,10 @@ class SwaggyDataService {
                 DefaultAction(SwaggyList, [
                         Parameter('offset', 'Records to skip. Empty means 0.', 'query', 'int'),
                         Parameter('max', 'Max records to return. Empty means 10.', 'query', 'int'),
-                        Parameter('sort', 'Field to sort by. Empty means id if q is empty. If q is provided, empty means relevance.', 'query', 'string'),
-                        Parameter('order', 'Order to sort by. Empty means asc if q is empty. If q is provided, empty means desc.', 'query', 'string'),
+                        Parameter('sort', 'Field to sort by. Empty means id if q is empty. If q is provided, empty ' +
+                                'means relevance.', 'query', 'string'),
+                        Parameter('order', 'Order to sort by. Empty means asc if q is empty. If q is provided, empty ' +
+                                'means desc.', 'query', 'string'),
                 ], [])
             },
             show  : { String domainName ->
@@ -100,7 +107,7 @@ class SwaggyDataService {
     }
 
     @GrailsCompileStatic
-    private ConfigObject getConfig() { grailsApplication.config['swaggydoc'] as ConfigObject ?: new ConfigObject()}
+    private ConfigObject getConfig() { grailsApplication.config['swaggydoc'] as ConfigObject ?: new ConfigObject() }
 
     @GrailsCompileStatic
     private String getApiVersion() { config.apiVersion ?: grailsApplication.metadata['app.version'] }
@@ -109,18 +116,19 @@ class SwaggyDataService {
      * Generates map of Swagger Resources.
      * @return Map
      */
-    Map resources() {
-        def apis = grailsApplication.controllerClasses.
+    Resources resources() {
+        ApiDeclaration[] apis = grailsApplication.controllerClasses.
                 findAll { getApi(it) }.
                 sort { getApi(it).position() }.
-                collect { controllerToApi(it) }
+                collect { controllerToApi(it) }.
+                toArray([] as ApiDeclaration[])
 
-        [
-                apiVersion    : apiVersion,
+        new Resources(
+                apiVersion: apiVersion,
                 swaggerVersion: SwaggerVersion,
-                info          : infoObject,
-                apis          : apis,
-        ]
+                info: infoObject,
+                apis: apis,
+        )
     }
 
     /**
@@ -128,10 +136,10 @@ class SwaggyDataService {
      * @param controllerName
      * @return Map
      */
-    Map apiDetails(String controllerName) {
+    ControllerDefinition apiDetails(String controllerName) {
         GrailsControllerClass theController = grailsApplication.controllerClasses.find {
             it.logicalPropertyName == controllerName
-        }
+        } as GrailsControllerClass
         Class theControllerClazz = theController.referenceInstance.class
 
         Api api = getApi(theController)
@@ -144,10 +152,12 @@ class SwaggyDataService {
         // These preserve the path components supporting hierarchical paths discovered through URL mappings
         List<String> resourcePathParts
         List<Parameter> resourcePathParams
-        Map<String, MethodDocumentation> apis = grailsUrlMappingsHolder.urlMappings.
+        Map<String, MethodDocumentation> apis = grailsUrlMappingsHolder.
+                urlMappings.
                 findAll { it.controllerName == controllerName }.
                 collectEntries { mapping ->
 
+                    log.debug("Mapping: $mapping")
                     def paths = populatePaths(mapping)
                     List<String> pathParts = paths.left
                     List<Parameter> pathParams = paths.right
@@ -156,8 +166,11 @@ class SwaggyDataService {
                         resourcePathParts = pathParts
                         resourcePathParams = pathParams
                     }
-                    DefaultAction defaults = (DefaultActionComponents.get(mapping.actionName) ?:
-                            { new DefaultAction() })(domainName)
+
+                    def actionMethod = DefaultActionComponents.get(mapping.actionName)
+                    DefaultAction defaults = (actionMethod ?: actionFallback)(domainName)
+                    log.debug "defaults?.parameters: ${defaults?.parameters}"
+                    log.debug "pathParams: ${pathParams}"
                     List<Parameter> parameters = (defaults?.parameters?.clone() ?: []) + pathParams
                     if (pathParts[-1] != "{id}") {
                         // Special case: defaults may include 'id' for single resource paths
@@ -207,13 +220,21 @@ class SwaggyDataService {
 
             if (resourcePathParams) {
                 // Add additional params needed to support hierarchical path mappings
-                apis[action].operations[0].parameters.addAll(0, resourcePathParams)
+                def parameters = apis[action].operations[0].parameters.toList()
+                int idx = 0
+                resourcePathParams.each { rpp ->
+                    if (!parameters.find { it.name == rpp.name })
+                        parameters.add(idx ++, rpp)
+                }
+                apis[action].operations[0].parameters = parameters as Parameter[]
             }
         }
 
         def updateDocWithoutUrlMappings = { String action, MethodDocumentation documentation ->
             if (apis.containsKey(action)) {
-                apis[action].operations = (apis[action].operations + documentation.operations).unique()
+                apis[action].operations = (
+                        apis[action].operations.toList() +
+                                documentation.operations.toList()).unique() as Operation[]
             } else {
                 apis[action] = documentation
             }
@@ -239,31 +260,39 @@ class SwaggyDataService {
                             }
                 }
 
-        def groupedApis = apis.values().
-                groupBy { MethodDocumentation it -> it.path }.
-                collect { path, methodDocs -> new MethodDocumentation(path, methodDocs*.operations.flatten().unique()) }
+        log.debug("Apis: $apis")
 
-        return [
-                apiVersion    : apiVersion,
+        def groupedApis = apis.
+                findAll { k, v -> k && v && v.operations.any { op -> op.method != '*' } }.
+                values().
+                groupBy { MethodDocumentation it -> it.path }.
+                collect { path, methodDocs ->
+                    new MethodDocumentation(path, null, methodDocs*.operations.flatten().unique() as Operation[])
+                }
+
+        return new ControllerDefinition(
+                apiVersion: apiVersion,
                 swaggerVersion: SwaggerVersion,
-                basePath      : api?.basePath() ?: absoluteBasePath,
-                resourcePath  : resourcePath - basePath,
-                produces      : api?.produces()?.tokenize(',') ?: responseContentTypes(theControllerClazz),
-                consumes      : api?.consumes()?.tokenize(',') ?: DefaultRequestContentTypes,
-                apis          : groupedApis,
-                models        : models
-        ]
+                basePath: api?.basePath() ?: absoluteBasePath,
+                resourcePath: resourcePath - basePath,
+                produces: api?.produces()?.tokenize(',') ?: responseContentTypes(theControllerClazz),
+                consumes: api?.consumes()?.tokenize(',') ?: DefaultRequestContentTypes,
+                apis: groupedApis,
+                models: models
+        )
     }
 
     @GrailsCompileStatic
-    private Pair<List<String>,List<Parameter>> populatePaths(UrlMapping mapping) {
+    @SuppressWarnings("GrMethodMayBeStatic")
+    private Pair<List<String>, List<Parameter>> populatePaths(UrlMapping mapping) {
         List<Parameter> pathParams = []
         List<String> pathParts = []
         def constraintIdx = 0
         log.debug "Tokens for mapping: ${mapping.urlData.tokens}"
         mapping.urlData.tokens.eachWithIndex { String token, int idx ->
             if (token.matches(/^\(.*[\*\+]+.*\)$/)) {
-                def param = (idx == mapping.urlData.tokens.size() - 1) ? 'id' : mapping.constraints[constraintIdx]?.propertyName
+                def param = (idx == mapping.urlData.tokens.size() - 1) ? 'id' :
+                        mapping.constraints[constraintIdx]?.propertyName
                 constraintIdx++
                 if (param != 'id') {
                     // Don't push 'id' as it is one of the default pathParams
@@ -285,28 +314,20 @@ class SwaggyDataService {
      */
     @GrailsCompileStatic
     @SuppressWarnings("GrMethodMayBeStatic")
-    private Map controllerToApi(GrailsClass controller) {
+    private ApiDeclaration controllerToApi(GrailsClass controller) {
         def name = controller.logicalPropertyName
-        [
-                path       : grailsLinkGenerator.link(controller: 'api', action: 'show', id: name, absolute: true),
+        new ApiDeclaration(
+                path: grailsLinkGenerator.link(controller: 'api', action: 'show', id: name, absolute: true),
                 description: getApi(controller).description() ?: controller.naturalName
-        ]
+        )
     }
 
     /**
      * Provides an Info Object for Swagger
      * @return
      */
-    @GrailsCompileStatic
-    private Map<String, Object> getInfoObject() {
-        [
-                contact          : config.contact,
-                description      : config.description,
-                license          : config.license,
-                licenseUrl       : config.licenseUrl,
-                termsOfServiceUrl: config.termsOfServiceUrl,
-                title            : config.title
-        ].findAll { k, v -> v }
+    private ApiInfo getInfoObject() {
+        config.with { new ApiInfo(contact, description, license, licenseUrl, termsOfServiceUrl, title) }
     }
 
     /**
@@ -343,10 +364,11 @@ class SwaggyDataService {
         if (_marshallingConfig == null) {
             _marshallingConfig = [:]
             if (Holders.pluginManager.hasGrailsPlugin('marshallers')) {
-                def MarshallingConfigBuilder = grailsApplication.getClassLoader().loadClass("org.grails.plugins.marshallers.config.MarshallingConfigBuilder")
+                def MarshallingConfigBuilder = grailsApplication.getClassLoader().
+                        loadClass("org.grails.plugins.marshallers.config.MarshallingConfigBuilder")
                 grailsApplication.domainClasses.each {
                     def clazz = it.clazz
-                    Closure mc = GCU.getStaticPropertyValue(clazz, 'marshalling') as Closure
+                    Closure mc = GrailsClassUtils.getStaticPropertyValue(clazz, 'marshalling') as Closure
                     if (mc) {
                         def builder = MarshallingConfigBuilder.newInstance(clazz)
                         mc.delegate = builder
@@ -361,7 +383,7 @@ class SwaggyDataService {
         return _marshallingConfig[domainName]
     }
 
-    private def processMarshallingConfig(mConfig, props, addProp, domainClass){
+    private def processMarshallingConfig(mConfig, props, addProp, domainClass) {
         if (mConfig.name != "default")
         // Currently we only support default marshalling, as that is conventional pattern
             return
@@ -381,16 +403,18 @@ class SwaggyDataService {
         }
         mConfig.virtual?.keySet()?.each(addProp)
 //                        deepProps.addAll(config.deep ?: [])
-        mConfig.children?.each{processMarshallingConfig(it, props, addProp, domainClass)}
+        mConfig.children?.each { processMarshallingConfig(it, props, addProp, domainClass) }
     }
 
     private Map getModels(Collection<Class<?>> modelTypes) {
         Queue m = modelTypes as Queue
-        def models = [:]
+        def models = [:] as Map<String, ModelDescription>
         while (m.size()) {
             Class model = m.poll()
             log.debug "Getting model for class ${model}"
-            def domainClass = grailsApplication.domainClasses.find { it.clazz == model } as GrailsDomainClass
+            GrailsDomainClass domainClass = grailsApplication.domainClasses.find {
+                it.clazz == model
+            } as GrailsDomainClass
             /** Duck typing here:
              * if model has a GrailsDomainClass then props will be list of GrailsDomainClassProperty objects
              * otherwise props will be a list of Field objects
@@ -407,7 +431,9 @@ class SwaggyDataService {
                                 it.name != 'errors'
                     }
 
-            def optional = domainClass?.constrainedProperties?.findAll { k, v -> v.isNullable() }
+            def optional = domainClass?.constrainedProperties?.findAll { String k, ConstrainedProperty v ->
+                v.isNullable()
+            }
 
             if (domainClass) {
                 // Check for marshalling config
@@ -429,11 +455,11 @@ class SwaggyDataService {
 
             def required = props.collect { f -> f.name } - optional*.key
 
-            def modelDescription = [
-                    id        : model.simpleName,
-                    required  : required,
+            def modelDescription = new ModelDescription(
+                    id: model.simpleName,
+                    required: required,
                     properties: props.collectEntries { f -> [f.name, getTypeDescriptor(f, domainClass)] }
-            ]
+            )
 
             models[model.simpleName] = modelDescription
             props.each { f ->
@@ -459,7 +485,8 @@ class SwaggyDataService {
         models
     }
 
-    private List<MethodDocumentation> generateMethodFromSwaggyAnnotations(String action, Method method, GrailsClass theController) {
+    private List<MethodDocumentation> generateMethodFromSwaggyAnnotations(
+            String action, Method method, GrailsClass theController) {
         def basePath = grailsLinkGenerator.link(uri: '')
         def slug = theController.logicalPropertyName
         def domainName = slugToDomain(slug)
@@ -480,7 +507,8 @@ class SwaggyDataService {
         httpMethods.collect { httpMethod ->
             def inferredNickname = "${httpMethod.toLowerCase()}${slug}${method.name}"
             log.debug "Generating ${inferredNickname}"
-            defineAction(link, httpMethod, domainName, inferredNickname, parameters, defaults.responseMessages, "${action} ${domainName}")
+            defineAction(link, httpMethod, domainName, inferredNickname, parameters, defaults.responseMessages,
+                    "${action} ${domainName}")
         }
     }
 
@@ -488,16 +516,16 @@ class SwaggyDataService {
     private static MethodDocumentation defineAction(
             String link, String httpMethod, String domainName, String inferredNickname,
             List<Parameter> parameters, List<ResponseMessage> responseMessages, String summary) {
-        new MethodDocumentation(link, [
+        new MethodDocumentation(link, null, [
                 new Operation(
                         method: httpMethod,
                         summary: summary,
                         nickname: inferredNickname,
-                        parameters: parameters,
+                        parameters: parameters as Parameter[],
                         type: domainName,
-                        responseMessages: responseMessages,
+                        responseMessages: responseMessages as ResponseMessage[],
                 )
-        ])
+        ] as Operation[])
     }
 
     private List<MethodDocumentation> documentMethodWithSwaggerAnnotations(Method method, GrailsClass theController) {
@@ -505,9 +533,10 @@ class SwaggyDataService {
         def apiOperation = findAnnotation(ApiOperation, method)
         def apiResponses = findAnnotation(ApiResponses, method)
         def apiParams = findAnnotation(ApiImplicitParams, method)?.value() ?: []
-
         def pathParamsAnnotations = apiParams.findAll { it.paramType() == 'path' } as List<ApiImplicitParam>
         def pathParams = pathParamsAnnotations*.name().collectEntries { [it, "{${it}}"] }
+
+        log.debug "## pathParams: ${pathParams}"
 
         def slug = theController.logicalPropertyName
 
@@ -517,24 +546,26 @@ class SwaggyDataService {
         log.debug "Link: $link - ${httpMethods}"
         httpMethods.collect { httpMethod ->
             List<Parameter> parameters = apiParams?.collect { new Parameter(it as ApiImplicitParam) } ?: []
+            log.debug "## parameters: ${parameters}"
             def inferredNickname = "${httpMethod.toLowerCase()}${slug}${method.name}"
             log.debug "Generating ${inferredNickname}"
 
-            new MethodDocumentation(link, [
+            new MethodDocumentation(link, null, [
                     new Operation(
                             method: httpMethod,
                             summary: apiOperation.value(),
                             notes: apiOperation.notes(),
                             nickname: apiOperation.nickname() ?: inferredNickname,
-                            parameters: parameters,
+                            parameters: parameters as Parameter[],
                             type: apiOperation.response() == Void ? 'void' : apiOperation.response().simpleName,
                             responseMessages: apiResponses?.value()?.collect { new ResponseMessage(it) }
                     )
-            ])
+            ] as Operation[])
         }
 
     }
 
+    @SuppressWarnings("GrMethodMayBeStatic")
     private List<String> getHttpMethod(GrailsClass theController, Method method) {
         try {
             def retval = theController.referenceInstance.allowedMethods[method.name] ?: 'GET'
@@ -564,66 +595,57 @@ class SwaggyDataService {
         methods
     }
 
-    /**
-     * Gets the type descriptor for a field in a domain class
-     * @param f
-     * @return
-     */
     @SuppressWarnings("GrMethodMayBeStatic")
-    private Map getTypeDescriptor(def f, GrailsDomainClass gdc) {
-        Map descriptor = getConstraintsInformation(gdc, f.name)
+    private Field getTypeDescriptor(def f, GrailsDomainClass gdc) {
 
-        if (f.type.isAssignableFrom(String)) {
-            descriptor << [type: 'string']
-        } else if (f.type.isAssignableFrom(Double) || f.type.isAssignableFrom(Float)) {
-            descriptor << [type: 'number', format: 'double']
-        } else if (f.type.isAssignableFrom(Long) || f.type.isAssignableFrom(Integer)) {
-            descriptor << [type: 'integer', format: 'int64']
-        } else if (f.type.isAssignableFrom(Date)) {
-            descriptor << [type: 'string', format: 'date-time']
-        } else if (f.type.isAssignableFrom(Boolean)) {
-            descriptor << [type: 'boolean']
-        } else if (f.type.isAssignableFrom(Set) || f.type.isAssignableFrom(List)) {
+        String fieldName = f.name
+        def constrainedProperty = gdc?.constrainedProperties?.getAt(fieldName) as ConstrainedProperty
+        Class type = f.type
+        if (type.isAssignableFrom(String)) {
+            constrainedProperty?.inList ? new StringField(constrainedProperty.inList as String[]) : new StringField()
+        } else if (type.isEnum()) {
+            new StringField(type.values()*.name() as String[])
+        } else if (type.isAssignableFrom(Double) || type.isAssignableFrom(Float) || type.isAssignableFrom(double) ||
+                type.isAssignableFrom(float) || type.isAssignableFrom(BigDecimal)) {
+            addNumericConstraints(constrainedProperty, new NumberField('number', 'double'))
+        } else if (type.isAssignableFrom(Long) || type.isAssignableFrom(Integer) || type.isAssignableFrom(long) ||
+                type.isAssignableFrom(int) || type.isAssignableFrom(BigInteger)) {
+            addNumericConstraints(constrainedProperty, new NumberField('integer', 'int64'))
+        } else if (type.isAssignableFrom(Date)) {
+            new StringField('date-time')
+        } else if (type.isAssignableFrom(byte) || type.isAssignableFrom(Byte)) {
+            new StringField('byte')
+        } else if (type.isAssignableFrom(Boolean) || type.isAssignableFrom(boolean)) {
+            new BooleanField()
+        } else if (type.isAssignableFrom(Set) || type.isAssignableFrom(List)) {
             Class genericType = null
             if (f instanceof GrailsDomainClassProperty) {
-                genericType = gdc?.associationMap?.getAt(f.name)
-                if (!genericType) {
-                    log.warn "Unknown type for property ${f.name}, please specify it in the domain's class hasMany"
-                    descriptor << [type: 'array']
+                genericType = gdc?.associationMap?.getAt(fieldName) as Class
+                if (genericType) {
+                    new ContainerField(new RefItem(genericType.simpleName))
                 } else {
-                    descriptor << [
-                            type : 'array',
-                            items: ['$ref': genericType.simpleName]
-                    ]
+                    log.warn "Unknown type for property ${fieldName}, please specify it in the domain's class hasMany"
+                    new ContainerField(null, null)
                 }
             } else {
-                genericType = genericType ?: f.genericType.actualTypeArguments[0]
-                def clazzName = genericType.simpleName
-                descriptor << [
-                        type : 'array',
-                        items: ['$ref': clazzName]
-                ]
+                genericType = genericType ?: f.genericType.actualTypeArguments[0] as Class
+                new ContainerField(new RefItem(genericType.simpleName))
             }
         } else {
-            descriptor << ['$ref': f.type.simpleName]
+            new RefField(type.simpleName)
         }
-
-        return descriptor
     }
 
-    private static Map getConstraintsInformation(def domain, String propertyName){
-        Map constraintsInfo = [:]
-        def constraintName
-
-        if(domain && domain.constraints && domain.constraints[propertyName]
-                && (domain.constraints[propertyName] instanceof ConstrainedProperty)){
-            domain.constraints[propertyName].appliedConstraints.each { constraint ->
-                constraintName = Introspector.decapitalize(constraint.class.simpleName - "Constraint")
-                constraintsInfo << [("$constraintName".toString()): constraint.constraintParameter]
-            }
+    private NumberField addNumericConstraints(ConstrainedProperty constrainedProperty, NumberField retval) {
+        if (constrainedProperty?.range) {
+            retval.maximum = constrainedProperty.range.to as int
+            retval.minimum = constrainedProperty.range.from as int
+        } else if (constrainedProperty?.min) {
+            retval.minimum = constrainedProperty.min as int
+        } else if (constrainedProperty?.max) {
+            retval.maximum = constrainedProperty.max as int
         }
-
-        return constraintsInfo
+        retval
     }
 
     private static String slugToDomain(String slug) {
@@ -631,7 +653,7 @@ class SwaggyDataService {
     }
 
     private List<String> responseContentTypes(Class controller) {
-        GCU.getStaticPropertyValue(controller, 'responseFormats')?.
+        GrailsClassUtils.getStaticPropertyValue(controller, 'responseFormats')?.
                 collect { String it ->
                     grailsMimeUtility.getMimeTypeForExtension(it)?.name ?: it.contains('/') ? it : null
                 }?.

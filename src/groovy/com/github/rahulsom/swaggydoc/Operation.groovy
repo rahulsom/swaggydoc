@@ -17,9 +17,9 @@ class Operation {
     String summary
     String notes
     String nickname
-    List<Parameter> parameters
+    Parameter[] parameters
     String type
-    List<ResponseMessage> responseMessages
+    ResponseMessage[] responseMessages
 
     Operation leftShift(Operation operation) {
 
