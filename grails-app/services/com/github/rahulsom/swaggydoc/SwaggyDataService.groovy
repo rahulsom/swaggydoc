@@ -42,8 +42,10 @@ class SwaggyDataService {
                 DefaultAction(SwaggyList, [
                         Parameter('offset', 'Records to skip. Empty means 0.', 'query', 'int'),
                         Parameter('max', 'Max records to return. Empty means 10.', 'query', 'int'),
-                        Parameter('sort', 'Field to sort by. Empty means id if q is empty. If q is provided, empty means relevance.', 'query', 'string'),
-                        Parameter('order', 'Order to sort by. Empty means asc if q is empty. If q is provided, empty means desc.', 'query', 'string'),
+                        Parameter('sort', 'Field to sort by. Empty means id if q is empty. If q is provided, empty ' +
+                                'means relevance.', 'query', 'string'),
+                        Parameter('order', 'Order to sort by. Empty means asc if q is empty. If q is provided, empty ' +
+                                'means desc.', 'query', 'string'),
                 ], [])
             },
             show  : { String domainName ->
@@ -283,7 +285,8 @@ class SwaggyDataService {
         log.debug "Tokens for mapping: ${mapping.urlData.tokens}"
         mapping.urlData.tokens.eachWithIndex { String token, int idx ->
             if (token.matches(/^\(.*[\*\+]+.*\)$/)) {
-                def param = (idx == mapping.urlData.tokens.size() - 1) ? 'id' : mapping.constraints[constraintIdx]?.propertyName
+                def param = (idx == mapping.urlData.tokens.size() - 1) ? 'id' :
+                        mapping.constraints[constraintIdx]?.propertyName
                 constraintIdx++
                 if (param != 'id') {
                     // Don't push 'id' as it is one of the default pathParams
@@ -476,7 +479,8 @@ class SwaggyDataService {
         models
     }
 
-    private List<MethodDocumentation> generateMethodFromSwaggyAnnotations(String action, Method method, GrailsClass theController) {
+    private List<MethodDocumentation> generateMethodFromSwaggyAnnotations(
+            String action, Method method, GrailsClass theController) {
         def basePath = grailsLinkGenerator.link(uri: '')
         def slug = theController.logicalPropertyName
         def domainName = slugToDomain(slug)
@@ -497,7 +501,8 @@ class SwaggyDataService {
         httpMethods.collect { httpMethod ->
             def inferredNickname = "${httpMethod.toLowerCase()}${slug}${method.name}"
             log.debug "Generating ${inferredNickname}"
-            defineAction(link, httpMethod, domainName, inferredNickname, parameters, defaults.responseMessages, "${action} ${domainName}")
+            defineAction(link, httpMethod, domainName, inferredNickname, parameters, defaults.responseMessages,
+                    "${action} ${domainName}")
         }
     }
 
