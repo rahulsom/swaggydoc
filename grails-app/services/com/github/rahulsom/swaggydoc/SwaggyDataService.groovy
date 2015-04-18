@@ -4,14 +4,12 @@ import com.wordnik.swagger.annotations.*
 import grails.compiler.GrailsCompileStatic
 import grails.util.Holders
 import org.codehaus.groovy.grails.commons.*
-import org.codehaus.groovy.grails.commons.GrailsClassUtils as GCU
 import org.codehaus.groovy.grails.validation.ConstrainedProperty
 import org.codehaus.groovy.grails.web.mapping.LinkGenerator
 import org.codehaus.groovy.grails.web.mapping.UrlMapping
 import org.codehaus.groovy.grails.web.mapping.UrlMappings
 import org.codehaus.groovy.grails.web.mime.MimeUtility
 
-import java.beans.Introspector
 import java.lang.reflect.AccessibleObject
 import java.lang.reflect.Method
 
@@ -19,6 +17,7 @@ import static org.springframework.http.HttpStatus.*
 
 class SwaggyDataService {
 
+    public static final Closure<DefaultAction> actionFallback = { new DefaultAction() }
     DefaultGrailsApplication grailsApplication
     LinkGenerator grailsLinkGenerator
     UrlMappings grailsUrlMappingsHolder
@@ -34,7 +33,7 @@ class SwaggyDataService {
      */
     static final List knownTypes = [
             int, Integer, long, Long, float, Float, double, Double, BigInteger, BigDecimal,
-            String, boolean, Boolean, Date,
+            String, boolean, Boolean, Date, byte, Byte, void
     ]
 
     @Newify([Parameter, ResponseMessage, DefaultAction])
@@ -151,10 +150,12 @@ class SwaggyDataService {
         // These preserve the path components supporting hierarchical paths discovered through URL mappings
         List<String> resourcePathParts
         List<Parameter> resourcePathParams
-        Map<String, MethodDocumentation> apis = grailsUrlMappingsHolder.urlMappings.
+        Map<String, MethodDocumentation> apis = grailsUrlMappingsHolder.
+                urlMappings.
                 findAll { it.controllerName == controllerName }.
                 collectEntries { mapping ->
 
+                    log.debug("Mapping: $mapping")
                     def paths = populatePaths(mapping)
                     List<String> pathParts = paths.left
                     List<Parameter> pathParams = paths.right
@@ -163,8 +164,9 @@ class SwaggyDataService {
                         resourcePathParts = pathParts
                         resourcePathParams = pathParams
                     }
-                    DefaultAction defaults = (DefaultActionComponents.get(mapping.actionName) ?:
-                            { new DefaultAction() })(domainName)
+
+                    def actionMethod = DefaultActionComponents.get(mapping.actionName)
+                    DefaultAction defaults = (actionMethod ?: actionFallback)(domainName)
                     List<Parameter> parameters = (defaults?.parameters?.clone() ?: []) + pathParams
                     if (pathParts[-1] != "{id}") {
                         // Special case: defaults may include 'id' for single resource paths
@@ -250,10 +252,14 @@ class SwaggyDataService {
                             }
                 }
 
-        def groupedApis = apis.values().
+        log.debug("Apis: $apis")
+
+        def groupedApis = apis.
+                findAll { k, v -> k && v && v.operations.any { op -> op.method != '*' } }.
+                values().
                 groupBy { MethodDocumentation it -> it.path }.
                 collect { path, methodDocs ->
-                    new MethodDocumentation(path, methodDocs*.operations.flatten().unique() as Operation[])
+                    new MethodDocumentation(path, null, methodDocs*.operations.flatten().unique() as Operation[])
                 }
 
         return new ControllerDefinition(
@@ -349,10 +355,11 @@ class SwaggyDataService {
         if (_marshallingConfig == null) {
             _marshallingConfig = [:]
             if (Holders.pluginManager.hasGrailsPlugin('marshallers')) {
-                def MarshallingConfigBuilder = grailsApplication.getClassLoader().loadClass("org.grails.plugins.marshallers.config.MarshallingConfigBuilder")
+                def MarshallingConfigBuilder = grailsApplication.getClassLoader().
+                        loadClass("org.grails.plugins.marshallers.config.MarshallingConfigBuilder")
                 grailsApplication.domainClasses.each {
                     def clazz = it.clazz
-                    Closure mc = GCU.getStaticPropertyValue(clazz, 'marshalling') as Closure
+                    Closure mc = GrailsClassUtils.getStaticPropertyValue(clazz, 'marshalling') as Closure
                     if (mc) {
                         def builder = MarshallingConfigBuilder.newInstance(clazz)
                         mc.delegate = builder
@@ -498,7 +505,7 @@ class SwaggyDataService {
     private static MethodDocumentation defineAction(
             String link, String httpMethod, String domainName, String inferredNickname,
             List<Parameter> parameters, List<ResponseMessage> responseMessages, String summary) {
-        new MethodDocumentation(link, [
+        new MethodDocumentation(link, null, [
                 new Operation(
                         method: httpMethod,
                         summary: summary,
@@ -530,7 +537,7 @@ class SwaggyDataService {
             def inferredNickname = "${httpMethod.toLowerCase()}${slug}${method.name}"
             log.debug "Generating ${inferredNickname}"
 
-            new MethodDocumentation(link, [
+            new MethodDocumentation(link, null, [
                     new Operation(
                             method: httpMethod,
                             summary: apiOperation.value(),
@@ -578,41 +585,37 @@ class SwaggyDataService {
     @SuppressWarnings("GrMethodMayBeStatic")
     private Field getTypeDescriptor(def f, GrailsDomainClass gdc) {
 
-        ConstrainedProperty constrainedProperty = gdc?.constrainedProperties?.getAt(f.name)
+        String fieldName = f.name
+        def constrainedProperty = gdc?.constrainedProperties?.getAt(fieldName) as ConstrainedProperty
         Class type = f.type
         if (type.isAssignableFrom(String)) {
             constrainedProperty?.inList ? new StringField(constrainedProperty.inList as String[]) : new StringField()
         } else if (type.isEnum()) {
             new StringField(type.values()*.name() as String[])
-        } else if (type.isAssignableFrom(Double) || type.isAssignableFrom(Float) || type.isAssignableFrom(double) || type.isAssignableFrom(float) || type.isAssignableFrom(BigDecimal)) {
-            new NumberField('double')
-        } else if (type.isAssignableFrom(Long) || type.isAssignableFrom(Integer) || type.isAssignableFrom(long) || type.isAssignableFrom(int) || type.isAssignableFrom(BigInteger)) {
-            def retval = new IntegerField('int64')
-            if (constrainedProperty?.range) {
-                retval.maximum = constrainedProperty.range.to as int
-                retval.minimum = constrainedProperty.range.from as int
-            } else if (constrainedProperty?.min) {
-                retval.minimum = constrainedProperty.min as int
-            } else if (constrainedProperty?.max) {
-                retval.maximum = constrainedProperty.max as int
-            }
-            retval
+        } else if (type.isAssignableFrom(Double) || type.isAssignableFrom(Float) || type.isAssignableFrom(double) ||
+                type.isAssignableFrom(float) || type.isAssignableFrom(BigDecimal)) {
+            addNumericConstraints(constrainedProperty, new NumberField('number', 'double'))
+        } else if (type.isAssignableFrom(Long) || type.isAssignableFrom(Integer) || type.isAssignableFrom(long) ||
+                type.isAssignableFrom(int) || type.isAssignableFrom(BigInteger)) {
+            addNumericConstraints(constrainedProperty, new NumberField('integer', 'int64'))
         } else if (type.isAssignableFrom(Date)) {
             new StringField('date-time')
+        } else if (type.isAssignableFrom(byte) || type.isAssignableFrom(Byte)) {
+            new StringField('byte')
         } else if (type.isAssignableFrom(Boolean) || type.isAssignableFrom(boolean)) {
             new BooleanField()
         } else if (type.isAssignableFrom(Set) || type.isAssignableFrom(List)) {
             Class genericType = null
             if (f instanceof GrailsDomainClassProperty) {
-                genericType = gdc?.associationMap?.getAt(f.name)
-                if (!genericType) {
-                    log.warn "Unknown type for property ${f.name}, please specify it in the domain's class hasMany"
-                    new ContainerField(null, null)
-                } else {
+                genericType = gdc?.associationMap?.getAt(fieldName) as Class
+                if (genericType) {
                     new ContainerField(new RefItem(genericType.simpleName))
+                } else {
+                    log.warn "Unknown type for property ${fieldName}, please specify it in the domain's class hasMany"
+                    new ContainerField(null, null)
                 }
             } else {
-                genericType = genericType ?: f.genericType.actualTypeArguments[0]
+                genericType = genericType ?: f.genericType.actualTypeArguments[0] as Class
                 new ContainerField(new RefItem(genericType.simpleName))
             }
         } else {
@@ -620,19 +623,16 @@ class SwaggyDataService {
         }
     }
 
-    private static Map getConstraintsInformation(def domain, String propertyName) {
-        Map constraintsInfo = [:]
-        def constraintName
-
-        if (domain && domain.constraints && domain.constraints[propertyName]
-                && (domain.constraints[propertyName] instanceof ConstrainedProperty)) {
-            domain.constraints[propertyName].appliedConstraints.each { constraint ->
-                constraintName = Introspector.decapitalize(constraint.class.simpleName - "Constraint")
-                constraintsInfo << [("$constraintName".toString()): constraint.constraintParameter]
-            }
+    private NumberField addNumericConstraints(ConstrainedProperty constrainedProperty, NumberField retval) {
+        if (constrainedProperty?.range) {
+            retval.maximum = constrainedProperty.range.to as int
+            retval.minimum = constrainedProperty.range.from as int
+        } else if (constrainedProperty?.min) {
+            retval.minimum = constrainedProperty.min as int
+        } else if (constrainedProperty?.max) {
+            retval.maximum = constrainedProperty.max as int
         }
-
-        return constraintsInfo
+        retval
     }
 
     private static String slugToDomain(String slug) {
@@ -640,7 +640,7 @@ class SwaggyDataService {
     }
 
     private List<String> responseContentTypes(Class controller) {
-        GCU.getStaticPropertyValue(controller, 'responseFormats')?.
+        GrailsClassUtils.getStaticPropertyValue(controller, 'responseFormats')?.
                 collect { String it ->
                     grailsMimeUtility.getMimeTypeForExtension(it)?.name ?: it.contains('/') ? it : null
                 }?.

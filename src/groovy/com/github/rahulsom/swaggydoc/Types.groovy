@@ -39,12 +39,6 @@ class StringField extends Field {
     String[] _enum
     String defaultValue
 
-    StringField(String format, String[] _enum, String defaultValue) {
-        this.format = format
-        this._enum = _enum
-        this.defaultValue = defaultValue
-    }
-
     StringField(String[] _enum) {
         this._enum = _enum
     }
@@ -56,48 +50,16 @@ class StringField extends Field {
     StringField() {}
 }
 
-class NumberField extends Field {
-    def getType() { 'number' }
-    String format
-    Integer defaultValue
-
-    NumberField(String format) {
-        this.format = format
-    }
-
-    NumberField(String format, Integer defaultValue) {
-        this.format = format
-        this.defaultValue = defaultValue
-    }
-}
-
 @TupleConstructor(includeSuperFields = true)
-class IntegerField extends Field {
-    def getType() { 'integer' }
+class NumberField extends Field {
+    String type
     String format
     Integer minimum
     Integer maximum
     Integer defaultValue
 
-    IntegerField(String format, Integer minimum, Integer maximum, Integer defaultValue) {
-        this.format = format
-        this.minimum = minimum
-        this.maximum = maximum
-        this.defaultValue = defaultValue
-    }
-
-    IntegerField(String format, Integer defaultValue) {
-        this.format = format
-        this.defaultValue = defaultValue
-    }
-
-    IntegerField(String format, Integer minimum, Integer maximum) {
-        this.format = format
-        this.minimum = minimum
-        this.maximum = maximum
-    }
-
-    IntegerField(String format) {
+    NumberField(String type, String format) {
+        this.type = type
         this.format = format
     }
 }
