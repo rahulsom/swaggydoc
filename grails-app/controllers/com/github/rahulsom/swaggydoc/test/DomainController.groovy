@@ -40,7 +40,10 @@ class DomainController extends RestfulController {
     }
 
     @Override
-    @SwaggyShow
+    @SwaggyShow(extraParams = [
+            @ApiImplicitParam(name="animal", value="Animal to use", dataType = 'string',
+                    allowableValues = '[dog, cat, "mad dog"]', required = true)
+    ])
     def show() {
         super.show()
     }

@@ -45,7 +45,10 @@ class SwaggyDataService {
                         Parameter('sort', 'Field to sort by. Empty means id if q is empty. If q is provided, empty ' +
                                 'means relevance.', 'query', 'string'),
                         Parameter('order', 'Order to sort by. Empty means asc if q is empty. If q is provided, empty ' +
-                                'means desc.', 'query', 'string'),
+                                'means desc.', 'query', 'string').with {
+                            _enum = ['asc', 'desc']
+                            it
+                        },
                 ], [])
             },
             show  : { String domainName ->
