@@ -53,14 +53,9 @@ function addJsClass(el) {
 
                 <span id='toggle-col1' class="toggle">(<a href="#" onclick="localToggle(); return false;">Quick Reference</a>)</span>
 
-                <h1>extraParams</h1><p class="paragraph"/><h2>Purpose</h2><p class="paragraph"/>Sometimes, you want to add extra parameters to standard actions. For example, you might want to add a parameter called
-<code>include</code> that decides what fields are returned in the response. In that case, you do not want to redefine the whole
-suite of annotations using Swagger's low level annotations.<p class="paragraph"/><h2>Usage</h2><p class="paragraph"/>All Swaggy annotations support the <code>extraParams</code> property. You can for example, do this.
-<div class="code"><pre>@SwaggyList(extraParams = &#91;
-    @ApiImplicitParam(name = 'include', value = 'Fields to include in result', dataType = 'string',
-        paramType = 'query')
-&#93;)</pre></div>
-
+                <h1>ApiOperation</h1><p class="paragraph"/><h2>Purpose</h2><p class="paragraph"/>Documents an operation<p class="paragraph"/><h2>Usage</h2><p class="paragraph"/><div class="code"><pre>@ApiOperation(value=<span class="java&#45;quote">""</span>, notes=<span class="java&#45;quote">""</span>, response=Foo, responseContainer=<span class="java&#45;quote">""</span>, tags=<span class="java&#45;quote">""</span>, httpMethod=<span class="java&#45;quote">""</span>, position=0,
+        nickName=<span class="java&#45;quote">""</span>, produces=<span class="java&#45;quote">""</span>, consumes=<span class="java&#45;quote">""</span>, protocols=<span class="java&#45;quote">""</span>, authorizations=&#64;Authorization(<span class="java&#45;quote">""</span>),
+        hidden=<span class="java&#45;keyword">false</span>)</pre></div><p class="paragraph"/><h2>Parameters</h2><p class="paragraph"/><table class="wiki-table" cellpadding="0" cellspacing="0" border="0"><tr><th><strong class="bold">Parameter</strong></th><th><strong class="bold">Supported</strong></th><th><strong class="bold">Usage</strong></th></tr><tr class="table-odd"><td><code>value</code></td><td>Yes</td><td>Provides a brief description of this operation. Should be 120 characters or less for proper visibility in Swagger-UI.</td></tr><tr class="table-even"><td><code>notes</code></td><td>Yes</td><td>A verbose description of the operation.</td></tr><tr class="table-odd"><td><code>response</code></td><td>Yes</td><td>The response type of the operation.</td></tr><tr class="table-even"><td><code>responseContainer</code></td><td>No</td><td>Notes whether the response type is a list of values.</td></tr><tr class="table-odd"><td><code>tags</code></td><td>No</td><td>Currently not implemented in readers, reserved for future use.</td></tr><tr class="table-even"><td><code>httpMethod</code></td><td>No</td><td>Corresponds to the `method` field as the HTTP method used. Acceptable values are "GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS" and "PATCH".</td></tr><tr class="table-odd"><td><code>position</code></td><td>No</td><td>Optional explicit ordering of this API resource in the Resource Listing.</td></tr><tr class="table-even"><td><code>nickname</code></td><td>No</td><td>The nickname field is used by third-party tools to uniquely identify this operation.</td></tr><tr class="table-odd"><td><code>produces</code></td><td>No</td><td>Takes in comma-separated values of content types. For example, "application/json, application/xml" would suggest this API Resource generates JSON and XML output.</td></tr><tr class="table-even"><td><code>consumes</code></td><td>No</td><td>Takes in comma-separated values of content types. For example, "application/json, application/xml" would suggest this API Resource accepts JSON and XML input.</td></tr><tr class="table-odd"><td><code>protocols</code></td><td>No</td><td>Describes url schemes supported by controller.</td></tr><tr class="table-even"><td><code>authorizations</code></td><td>No</td><td>Takes in a list of the required authorizations for this API Resource. This may be overridden by specific operations.</td></tr><tr class="table-odd"><td><code>hidden</code></td><td>No</td><td>Hides the api</td></tr></table>
             </div>
         </td>
         <td id="col2">
@@ -73,7 +68,7 @@ suite of annotations using Swagger's low level annotations.<p class="paragraph"/
                     
                     <div class="menu-block">
                         <h1 class="menu-title" onclick="toggleRef(nextElement(this))">Swagger Annotations</h1>
-                        <div class="menu-sub">
+                        <div class="menu-sub selected">
                             
                             
                             <div class="menu-item"><a href="../../ref/Swagger%20Annotations/Api.html">Api</a>
@@ -93,7 +88,7 @@ suite of annotations using Swagger's low level annotations.<p class="paragraph"/
                     
                     <div class="menu-block">
                         <h1 class="menu-title" onclick="toggleRef(nextElement(this))">Swaggy Annotations</h1>
-                        <div class="menu-sub selected">
+                        <div class="menu-sub">
                             
                             
                             <div class="menu-item"><a href="../../ref/Swaggy%20Annotations/SwaggyDelete.html">SwaggyDelete</a>

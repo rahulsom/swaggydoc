@@ -53,12 +53,20 @@ function addJsClass(el) {
 
                 <span id='toggle-col1' class="toggle">(<a href="#" onclick="localToggle(); return false;">Quick Reference</a>)</span>
 
-                <h1>extraParams</h1><p class="paragraph"/><h2>Purpose</h2><p class="paragraph"/>Sometimes, you want to add extra parameters to standard actions. For example, you might want to add a parameter called
-<code>include</code> that decides what fields are returned in the response. In that case, you do not want to redefine the whole
-suite of annotations using Swagger's low level annotations.<p class="paragraph"/><h2>Usage</h2><p class="paragraph"/>All Swaggy annotations support the <code>extraParams</code> property. You can for example, do this.
-<div class="code"><pre>@SwaggyList(extraParams = &#91;
-    @ApiImplicitParam(name = 'include', value = 'Fields to include in result', dataType = 'string',
-        paramType = 'query')
+                <h1>SwaggyUpdate</h1><p class="paragraph"/><h2>Purpose</h2><p class="paragraph"/>Documents a method as a Update action for an entity. This is shortcode for a couple of Swagger Annotations.<p class="paragraph"/><h2>Examples</h2><p class="paragraph"/>This is the shortcode:<p class="paragraph"/><div class="code"><pre>@SwaggyUpdate
+def update() &#123;
+  // &#8230;
+&#125;</pre></div><p class="paragraph"/><h2>Detailed version</h2><p class="paragraph"/>This is the effect of <code>SwaggyUpdate</code><p class="paragraph"/><div class="code"><pre>@ApiOperation(value = <span class="java&#45;quote">"Update &#35;Demo"</span>, response = &#35;Demo)
+@ApiResponses(&#91;
+    @ApiResponse(code = 400, message = 'Bad Id provided'),
+    @ApiResponse(code = 404, message = 'Could not find &#35;Demo with that Id'),
+    @ApiResponse(code = 422, message = 'Bad Entity Received'),
+&#93;)
+@ApiImplicitParams(&#91;
+    @ApiImplicitParam(name = 'id', value = 'Id to update', paramType = 'path',
+        dataType = '<span class="java&#45;object">int</span>', required = <span class="java&#45;keyword">true</span>),
+    @ApiImplicitParam(name = 'body', paramType = 'body', required = <span class="java&#45;keyword">true</span>,
+        dataType = '&#35;Demo')
 &#93;)</pre></div>
 
             </div>

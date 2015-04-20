@@ -53,14 +53,8 @@ function addJsClass(el) {
 
                 <span id='toggle-col1' class="toggle">(<a href="#" onclick="localToggle(); return false;">Quick Reference</a>)</span>
 
-                <h1>extraParams</h1><p class="paragraph"/><h2>Purpose</h2><p class="paragraph"/>Sometimes, you want to add extra parameters to standard actions. For example, you might want to add a parameter called
-<code>include</code> that decides what fields are returned in the response. In that case, you do not want to redefine the whole
-suite of annotations using Swagger's low level annotations.<p class="paragraph"/><h2>Usage</h2><p class="paragraph"/>All Swaggy annotations support the <code>extraParams</code> property. You can for example, do this.
-<div class="code"><pre>@SwaggyList(extraParams = &#91;
-    @ApiImplicitParam(name = 'include', value = 'Fields to include in result', dataType = 'string',
-        paramType = 'query')
-&#93;)</pre></div>
-
+                <h1>ApiResponse</h1><p class="paragraph"/><h2>Purpose</h2><p class="paragraph"/>Documents a error response code<p class="paragraph"/><h2>Usage</h2><p class="paragraph"/>Simple Usage<p class="paragraph"/><div class="code"><pre>@ApiResponse(code=404, message=<span class="java&#45;quote">"These are not the droid you're looking <span class="java&#45;keyword">for</span>"</span>, response=CustomErrorClass)</pre></div><p class="paragraph"/>
+<h2>Parameters</h2><p class="paragraph"/><table class="wiki-table" cellpadding="0" cellspacing="0" border="0"><tr><th><strong class="bold">Parameter</strong></th><th><strong class="bold">Supported</strong></th><th><strong class="bold">Usage</strong></th></tr><tr class="table-odd"><td><code>code</code></td><td>Yes</td><td>The HTTP code in question</td></tr><tr class="table-even"><td><code>message</code></td><td>Yes</td><td>The correct interpretation of this code</td></tr><tr class="table-odd"><td><code>response</code></td><td>No</td><td>The data type of the response during this code</td></tr></table>
             </div>
         </td>
         <td id="col2">
@@ -73,7 +67,7 @@ suite of annotations using Swagger's low level annotations.<p class="paragraph"/
                     
                     <div class="menu-block">
                         <h1 class="menu-title" onclick="toggleRef(nextElement(this))">Swagger Annotations</h1>
-                        <div class="menu-sub">
+                        <div class="menu-sub selected">
                             
                             
                             <div class="menu-item"><a href="../../ref/Swagger%20Annotations/Api.html">Api</a>
@@ -93,7 +87,7 @@ suite of annotations using Swagger's low level annotations.<p class="paragraph"/
                     
                     <div class="menu-block">
                         <h1 class="menu-title" onclick="toggleRef(nextElement(this))">Swaggy Annotations</h1>
-                        <div class="menu-sub selected">
+                        <div class="menu-sub">
                             
                             
                             <div class="menu-item"><a href="../../ref/Swaggy%20Annotations/SwaggyDelete.html">SwaggyDelete</a>

@@ -2,7 +2,7 @@
                       "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
-    <title>Swaggydoc Plugin 0.15-SNAPSHOT</title>
+    <title>Swaggydoc Plugin 0.15</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <link rel="stylesheet" href="../../css/main.css" type="text/css" media="screen, print" title="Style" charset="utf-8"/>
     <link rel="stylesheet" href="../../css/pdf.css" type="text/css" media="print" title="PDF" charset="utf-8"/>
@@ -53,7 +53,18 @@ function addJsClass(el) {
 
                 <span id='toggle-col1' class="toggle">(<a href="#" onclick="localToggle(); return false;">Quick Reference</a>)</span>
 
-                <h1>example</h1><p class="paragraph"/><h2>Purpose</h2><p class="paragraph"/>This is an example reference item.<p class="paragraph"/><h2>Examples</h2><p class="paragraph"/>You can use code snippets:<p class="paragraph"/><div class="code"><pre>def example = <span class="java&#45;keyword">new</span> Example()</pre></div><p class="paragraph"/><h2>Description</h2><p class="paragraph"/>And provide a detailed description
+                <h1>SwaggyDelete</h1><p class="paragraph"/><h2>Purpose</h2><p class="paragraph"/>Documents a method as a Delete action for an entity. This is shortcode for a couple of Swagger Annotations.<p class="paragraph"/><h2>Examples</h2><p class="paragraph"/>This is the shortcode:<p class="paragraph"/><div class="code"><pre>@SwaggyDelete
+def delete() &#123;
+  // &#8230;
+&#125;</pre></div><p class="paragraph"/><h2>Detailed version</h2><p class="paragraph"/>This is the effect of <code>SwaggyDelete</code><p class="paragraph"/><div class="code"><pre>@ApiOperation(value = <span class="java&#45;quote">"Delete &#35;Domain"</span>)
+@ApiResponses(&#91;
+    @ApiResponse(code = 400, message = 'Bad Id provided'),
+    @ApiResponse(code = 404, message = 'Could not find &#35;Domain with that Id'),
+&#93;)
+@ApiImplicitParams(&#91;
+    @ApiImplicitParam(name = 'id', value = 'Id to delete', paramType = 'path',
+        dataType = '<span class="java&#45;object">int</span>', required = <span class="java&#45;keyword">true</span>),
+&#93;)</pre></div>
 
             </div>
         </td>
@@ -66,11 +77,20 @@ function addJsClass(el) {
                 <div class="menu">
                     
                     <div class="menu-block">
-                        <h1 class="menu-title" onclick="toggleRef(nextElement(this))">Items</h1>
-                        <div class="menu-sub selected">
+                        <h1 class="menu-title" onclick="toggleRef(nextElement(this))">Swagger Annotations</h1>
+                        <div class="menu-sub">
                             
                             
-                            <div class="menu-item"><a href="../../ref/Items/reference.html">reference</a>
+                            <div class="menu-item"><a href="../../ref/Swagger%20Annotations/Api.html">Api</a>
+                            </div>
+                            
+                            <div class="menu-item"><a href="../../ref/Swagger%20Annotations/ApiImplicitParam.html">ApiImplicitParam</a>
+                            </div>
+                            
+                            <div class="menu-item"><a href="../../ref/Swagger%20Annotations/ApiOperation.html">ApiOperation</a>
+                            </div>
+                            
+                            <div class="menu-item"><a href="../../ref/Swagger%20Annotations/ApiResponse.html">ApiResponse</a>
                             </div>
                             
                         </div>
@@ -78,13 +98,25 @@ function addJsClass(el) {
                     
                     <div class="menu-block">
                         <h1 class="menu-title" onclick="toggleRef(nextElement(this))">Swaggy Annotations</h1>
-                        <div class="menu-sub">
+                        <div class="menu-sub selected">
                             
+                            
+                            <div class="menu-item"><a href="../../ref/Swaggy%20Annotations/SwaggyDelete.html">SwaggyDelete</a>
+                            </div>
                             
                             <div class="menu-item"><a href="../../ref/Swaggy%20Annotations/SwaggyList.html">SwaggyList</a>
                             </div>
                             
+                            <div class="menu-item"><a href="../../ref/Swaggy%20Annotations/SwaggyPatch.html">SwaggyPatch</a>
+                            </div>
+                            
+                            <div class="menu-item"><a href="../../ref/Swaggy%20Annotations/SwaggySave.html">SwaggySave</a>
+                            </div>
+                            
                             <div class="menu-item"><a href="../../ref/Swaggy%20Annotations/SwaggyShow.html">SwaggyShow</a>
+                            </div>
+                            
+                            <div class="menu-item"><a href="../../ref/Swaggy%20Annotations/SwaggyUpdate.html">SwaggyUpdate</a>
                             </div>
                             
                             <div class="menu-item"><a href="../../ref/Swaggy%20Annotations/extraParams.html">extraParams</a>

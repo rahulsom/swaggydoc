@@ -2,7 +2,7 @@
                       "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
     <head>
-        <title>Swaggydoc Plugin 0.15-SNAPSHOT</title>
+        <title>Swaggydoc Plugin 0.15</title>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
         <link rel="stylesheet" href="../css/main.css" type="text/css" media="screen, print" title="Style" charset="utf-8" />
         <link rel="stylesheet" href="../css/pdf.css" type="text/css" media="print" title="PDF" charset="utf-8" />
@@ -53,7 +53,7 @@ function addJsClass(el) {
                         <div class="project">
                             <h1>Swaggydoc Plugin - Reference Documentation</h1>
                             <p><strong>Authors:</strong> Rahul Somasunderam</p>
-                            <p><strong>Version:</strong> 0.15-SNAPSHOT</p>
+                            <p><strong>Version:</strong> 0.15</p>
                             
                         </div>
 
@@ -71,9 +71,9 @@ function addJsClass(el) {
 <h1 id="introduction">1 Introduction</h1>
 Swaggydoc makes it easy to document grails controllers using swagger.<p class="paragraph"/>This guide documents configuration defaults and describes how to configure the Swaggydoc plugin for Grails applications.<p class="paragraph"/><h4>Release History</h4>
 <ul class="star">
-<li>2015-??-?? - 0.15</li>
+<li>2015-04-20 - 0.15</li>
 <ul class="star">
-<li>Fully documented APIs</li>
+<li>Fully documented supported annotations</li>
 <li>Support for <code>extraParams</code></li>
 <li>Support for enumerated operation parameters and min/max constraints.</li>
 </ul>
@@ -181,10 +181,19 @@ Swaggydoc makes it easy to document grails controllers using swagger.<p class="p
                 </div>
                 <div class="menu">
                     
-                    <div class="menu-block"><h1 class="menu-title" onclick="toggleRef(this.parentNode.childNodes[1])">Items</h1><div class="menu-sub">
+                    <div class="menu-block"><h1 class="menu-title" onclick="toggleRef(this.parentNode.childNodes[1])">Swagger Annotations</h1><div class="menu-sub">
                         
                         
-                        <div class="menu-item"><a href="../ref/Items/reference.html">reference</a>
+                        <div class="menu-item"><a href="../ref/Swagger%20Annotations/Api.html">Api</a>
+                        </div>
+                        
+                        <div class="menu-item"><a href="../ref/Swagger%20Annotations/ApiImplicitParam.html">ApiImplicitParam</a>
+                        </div>
+                        
+                        <div class="menu-item"><a href="../ref/Swagger%20Annotations/ApiOperation.html">ApiOperation</a>
+                        </div>
+                        
+                        <div class="menu-item"><a href="../ref/Swagger%20Annotations/ApiResponse.html">ApiResponse</a>
                         </div>
                         
                         </div>
@@ -193,10 +202,22 @@ Swaggydoc makes it easy to document grails controllers using swagger.<p class="p
                     <div class="menu-block"><h1 class="menu-title" onclick="toggleRef(this.parentNode.childNodes[1])">Swaggy Annotations</h1><div class="menu-sub">
                         
                         
+                        <div class="menu-item"><a href="../ref/Swaggy%20Annotations/SwaggyDelete.html">SwaggyDelete</a>
+                        </div>
+                        
                         <div class="menu-item"><a href="../ref/Swaggy%20Annotations/SwaggyList.html">SwaggyList</a>
                         </div>
                         
+                        <div class="menu-item"><a href="../ref/Swaggy%20Annotations/SwaggyPatch.html">SwaggyPatch</a>
+                        </div>
+                        
+                        <div class="menu-item"><a href="../ref/Swaggy%20Annotations/SwaggySave.html">SwaggySave</a>
+                        </div>
+                        
                         <div class="menu-item"><a href="../ref/Swaggy%20Annotations/SwaggyShow.html">SwaggyShow</a>
+                        </div>
+                        
+                        <div class="menu-item"><a href="../ref/Swaggy%20Annotations/SwaggyUpdate.html">SwaggyUpdate</a>
                         </div>
                         
                         <div class="menu-item"><a href="../ref/Swaggy%20Annotations/extraParams.html">extraParams</a>
