@@ -1,0 +1,35 @@
+h1. Api
+
+h2. Purpose
+
+Marks a controller as being documented
+
+h2. Usage
+
+Simple Usage
+
+{code}
+@Api("") // passes in value
+{code}
+
+Advanced Usage
+
+{code}
+@Api(value="", description="", basePath="", position=0, produces="", consumes="",
+        protocols="", authorizations=\@Authorization(""), hidden=false)
+{code}
+
+h2. Parameters
+
+{table}
+*Parameter*     | *Supported*   | *Usage*
+@value@         | No            | The 'path' that is going to be used to host the API Declaration of the resource.
+@description@   | No            | This should be a short description of the resource.
+@basePath@      | Yes           | The `basePath` is derived automatically by Swaggydoc. This property allows overriding the default value if needed.
+@position@      | No            | Optional explicit ordering of this API resource in the Resource Listing.
+@produces@      | Yes           | Takes in comma-separated values of content types. For example, "application/json, application/xml" would suggest this API Resource generates JSON and XML output.
+@consumes@      | Yes           | Takes in comma-separated values of content types. For example, "application/json, application/xml" would suggest this API Resource accepts JSON and XML input.
+@protocols@     | No            | Describes url schemes supported by controller.
+@authorizations@| No            | Takes in a list of the required authorizations for this API Resource. This may be overridden by specific operations.
+@hidden@        | No            | Hides the api
+{table}

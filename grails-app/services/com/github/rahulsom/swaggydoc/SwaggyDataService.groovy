@@ -45,7 +45,10 @@ class SwaggyDataService {
                         Parameter('sort', 'Field to sort by. Empty means id if q is empty. If q is provided, empty ' +
                                 'means relevance.', 'query', 'string'),
                         Parameter('order', 'Order to sort by. Empty means asc if q is empty. If q is provided, empty ' +
-                                'means desc.', 'query', 'string'),
+                                'means desc.', 'query', 'string').with {
+                            _enum = ['asc', 'desc']
+                            it
+                        },
                 ], [])
             },
             show  : { String domainName ->
@@ -495,6 +498,12 @@ class SwaggyDataService {
         if (defaults.swaggyAnnotation.metaClass.getMetaMethod('searchParam')
                 && findAnnotation(defaults.swaggyAnnotation, method).searchParam()) {
             parameters << new Parameter('q', 'Query. Follows Lucene Query Syntax.', 'query', 'string')
+        }
+        if (defaults.swaggyAnnotation.metaClass.getMetaMethod('extraParams')
+                && findAnnotation(defaults.swaggyAnnotation, method).extraParams()) {
+            findAnnotation(defaults.swaggyAnnotation, method).extraParams().each { ApiImplicitParam param ->
+                parameters << new Parameter(param)
+            }
         }
         def pathParams = parameters.
                 findAll { it.paramType == 'path' }.

@@ -40,8 +40,19 @@ class ApiController {
     private Map removeUnderscores (Map<String,Object> map) {
         map.collectEntries {String k, Object v ->
             def k1 = k == '_enum' ? 'enum' : k
-            def v1 = v instanceof Map ? removeUnderscores(v) : v
+            def v1
+            if (v instanceof Map) {
+                v1 = removeUnderscores(v)
+            } else if (v instanceof List) {
+                v1 = v.collect { v2 ->
+                    v2 instanceof Map ? removeUnderscores(v2): v2
+                }
+            } else {
+                v1 = v
+            }
             [k1, v1]
+        }.findAll {String k, Object v ->
+            k != 'enum' || k == 'enum' && v instanceof List && v.size() > 0
         }
     }
 

@@ -139,7 +139,8 @@ class ApiControllerSpec extends Specification {
         indexMethod.operations.size() == 1
         indexMethod.operations[0].method == 'GET'
         indexMethod.operations[0].type == 'Domain'
-        indexMethod.operations[0].parameters.size() == 5
+        indexMethod.operations[0].parameters.size() == 6
+        indexMethod.operations[0].parameters*.name as Set == ['offset', 'max', 'sort', 'order', 'q', 'include'] as Set
 
     }
 

@@ -4,6 +4,7 @@ import com.wordnik.swagger.annotations.ApiImplicitParam
 import groovy.transform.CompileStatic
 import groovy.transform.EqualsAndHashCode
 import groovy.transform.ToString
+import groovy.util.logging.Log4j
 
 /**
  * A parameter that could be serialized in swagger json spec
@@ -13,6 +14,7 @@ import groovy.transform.ToString
 @CompileStatic
 @EqualsAndHashCode(includes = ['name'])
 @ToString(includePackage = false, includes = ['name', 'paramType', 'required'])
+@Log4j
 class Parameter {
     String name
     String description
@@ -20,6 +22,7 @@ class Parameter {
     String type
     boolean required
     String defaultValue
+    String[] _enum
 
     Parameter(String name, String description, String paramType, String type, boolean required = false) {
         this.name = name
@@ -30,7 +33,17 @@ class Parameter {
     }
 
     Parameter(ApiImplicitParam param) {
-        this(param.name(), param.value(), param.paramType(), param.dataType() ?: 'string', param.required())
+        this(param.name(), param.value(), param.paramType()?:'query', param.dataType() ?: 'string', param.required())
         defaultValue = param.defaultValue()
+        if (param.allowableValues() && !param.allowableValues().isEmpty()) {
+            if (param.allowableValues()[0] == '[' && param.allowableValues()[-1] == ']') {
+                _enum = param.allowableValues()[1..-2].split(/,(?=([^\"]*\"[^\"]*\")*[^\"]*$)/)*.trim().collect {
+                    (it[0] == it[-1] && (it[0] == '"' || it[0] == "'")) ? it[1..-2] : it
+                }
+            } else {
+                log.error("Bad value for allowable values: '${param.allowableValues()}'")
+            }
+        }
+
     }
 }
