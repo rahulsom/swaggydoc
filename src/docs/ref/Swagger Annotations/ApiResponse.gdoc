@@ -1,0 +1,23 @@
+h1. ApiResponse
+
+h2. Purpose
+
+Documents a error response code
+
+h2. Usage
+
+Simple Usage
+
+{code}
+@ApiResponse(code=404, message="These are not the droid you're looking for", response=CustomErrorClass)
+{code}
+
+
+h2. Parameters
+
+{table}
+*Parameter*     | *Supported*   | *Usage*
+@code@          | Yes           | The HTTP code in question
+@message@       | Yes           | The correct interpretation of this code
+@response@      | No            | The data type of the response during this code
+{table}
