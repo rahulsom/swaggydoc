@@ -1,0 +1,35 @@
+h1. SwaggyPatch
+
+h2. Purpose
+
+Documents a method as a Patch action for an entity. This is shortcode for a couple of Swagger Annotations.
+
+h2. Examples
+
+This is the shortcode:
+
+{code}
+@SwaggyPatch
+def patch() {
+  // ...
+}
+{code}
+
+h2. Detailed version
+
+This is the effect of @SwaggyPatch@
+
+{code}
+@ApiOperation(value = "Patch #Domain", response = #Domain)
+@ApiResponses([
+    @ApiResponse(code = 400, message = 'Bad Id provided'),
+    @ApiResponse(code = 404, message = 'Could not find #Domain with that Id'),
+    @ApiResponse(code = 422, message = 'Bad Entity Received'),
+])
+@ApiImplicitParams([
+    @ApiImplicitParam(name = 'id', value = 'Id to patch', paramType = 'path',
+        dataType = 'int', required = true),
+    @ApiImplicitParam(name = 'body', paramType = 'body', required = true,
+        dataType = '#Domain')
+])
+{code}

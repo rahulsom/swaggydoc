@@ -1,0 +1,32 @@
+h1. SwaggyDelete
+
+h2. Purpose
+
+Documents a method as a Delete action for an entity. This is shortcode for a couple of Swagger Annotations.
+
+h2. Examples
+
+This is the shortcode:
+
+{code}
+@SwaggyDelete
+def delete() {
+  // ...
+}
+{code}
+
+h2. Detailed version
+
+This is the effect of @SwaggyDelete@
+
+{code}
+@ApiOperation(value = "Delete #Domain")
+@ApiResponses([
+    @ApiResponse(code = 400, message = 'Bad Id provided'),
+    @ApiResponse(code = 404, message = 'Could not find #Domain with that Id'),
+])
+@ApiImplicitParams([
+    @ApiImplicitParam(name = 'id', value = 'Id to delete', paramType = 'path',
+        dataType = 'int', required = true),
+])
+{code}

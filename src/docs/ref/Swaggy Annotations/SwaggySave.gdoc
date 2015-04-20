@@ -1,0 +1,31 @@
+h1. SwaggySave
+
+h2. Purpose
+
+Documents a method as a Save action for an entity. This is shortcode for a couple of Swagger Annotations.
+
+h2. Examples
+
+This is the shortcode:
+
+{code}
+@SwaggySave
+def save() {
+  // ...
+}
+{code}
+
+h2. Detailed version
+
+This is the effect of @SwaggySave@
+
+{code}
+@ApiOperation(value = "Save #Domain", response = #Domain)
+@ApiResponses([
+    @ApiResponse(code = 422, message = 'Bad Entity Received'),
+])
+@ApiImplicitParams([
+    @ApiImplicitParam(name = 'body', paramType = 'body', required = true,
+        dataType = '#Domain'),
+])
+{code}

@@ -1,0 +1,35 @@
+h1. SwaggyUpdate
+
+h2. Purpose
+
+Documents a method as a Update action for an entity. This is shortcode for a couple of Swagger Annotations.
+
+h2. Examples
+
+This is the shortcode:
+
+{code}
+@SwaggyUpdate
+def update() {
+  // ...
+}
+{code}
+
+h2. Detailed version
+
+This is the effect of @SwaggyUpdate@
+
+{code}
+@ApiOperation(value = "Update #Demo", response = #Demo)
+@ApiResponses([
+    @ApiResponse(code = 400, message = 'Bad Id provided'),
+    @ApiResponse(code = 404, message = 'Could not find #Demo with that Id'),
+    @ApiResponse(code = 422, message = 'Bad Entity Received'),
+])
+@ApiImplicitParams([
+    @ApiImplicitParam(name = 'id', value = 'Id to update', paramType = 'path',
+        dataType = 'int', required = true),
+    @ApiImplicitParam(name = 'body', paramType = 'body', required = true,
+        dataType = '#Demo')
+])
+{code}
