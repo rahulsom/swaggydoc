@@ -496,6 +496,12 @@ class SwaggyDataService {
                 && findAnnotation(defaults.swaggyAnnotation, method).searchParam()) {
             parameters << new Parameter('q', 'Query. Follows Lucene Query Syntax.', 'query', 'string')
         }
+        if (defaults.swaggyAnnotation.metaClass.getMetaMethod('extraParams')
+                && findAnnotation(defaults.swaggyAnnotation, method).extraParams()) {
+            findAnnotation(defaults.swaggyAnnotation, method).extraParams().each { ApiImplicitParam param ->
+                parameters << new Parameter(param)
+            }
+        }
         def pathParams = parameters.
                 findAll { it.paramType == 'path' }.
                 collect { it.name }.
