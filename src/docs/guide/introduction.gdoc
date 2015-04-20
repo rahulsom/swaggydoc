@@ -3,6 +3,10 @@ Swaggydoc makes it easy to document grails controllers using swagger.
 This guide documents configuration defaults and describes how to configure the Swaggydoc plugin for Grails applications.
 
 h4. Release History
+* 2015-??-?? - 0.15
+** Fully documented APIs
+** Support for @extraParams@
+** Support for enumerated operation parameters and min/max constraints.
 * 2015-04-18 - 0.14
 ** Overridable path params
 ** Removed blank methods
@@ -67,4 +71,4 @@ h4. Release History
 ** Added support for summarized annotations - List and Show
 ** Better Markup
 ** Working API Renderer
-** Implemented documentation 
+** Implemented documentation

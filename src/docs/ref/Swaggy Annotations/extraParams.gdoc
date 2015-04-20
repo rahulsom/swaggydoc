@@ -1,0 +1,17 @@
+h1. extraParams
+
+h2. Purpose
+
+Sometimes, you want to add extra parameters to standard actions. For example, you might want to add a parameter called
+@include@ that decides what fields are returned in the response. In that case, you do not want to redefine the whole
+suite of annotations using Swagger's low level annotations.
+
+h2. Usage
+
+All Swaggy annotations support the @extraParams@ property. You can for example, do this.
+{code}
+@SwaggyList(extraParams = [
+    @ApiImplicitParam(name = 'include', value = 'Fields to include in result', dataType = 'string',
+        paramType = 'query')
+])
+{code}

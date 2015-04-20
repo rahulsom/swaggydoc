@@ -1,0 +1,45 @@
+h1. SwaggyList
+
+h2. Purpose
+
+Documents a method as a List action for an entity. This is shortcode for a couple of Swagger Annotations.
+
+h2. Examples
+
+This is the shortcode:
+
+{code}
+@SwaggyList
+def index() {
+  // ...
+}
+{code}
+
+h2. Detailed version
+
+This is the effect of @SwaggyList@
+
+{code}
+@ApiOperation(value = 'List #domain', response = #domain, responseContainer = 'list')
+@ApiImplicitParams([
+    @ApiImplicitParam(name = 'offset', value = 'Records to skip', defaultValue = '0',
+        paramType = 'query', dataType = 'int'),
+    @ApiImplicitParam(name = 'max', value = 'Max records to return', defaultValue = '10',
+        paramType = 'query', dataType = 'int'),
+    @ApiImplicitParam(name = 'sort', value = 'Field to sort by', defaultValue = 'id',
+        paramType = 'query', dataType = 'string'),
+    @ApiImplicitParam(name = 'order', value = 'Order to sort by', defaultValue = 'asc',
+        paramType = 'query', dataType = 'string'),
+    @ApiImplicitParam(name = 'q', value = 'Query', paramType = 'query', dataType = 'string'),
+])
+{code}
+
+
+h2. Customization
+
+This assumes that the list method accepts a parameter @q@ as a search criteria. If you do not wish to use it that
+way, you can change the way this is implemented
+
+{code}
+@SwaggyList(searchParam = false)
+{code}
