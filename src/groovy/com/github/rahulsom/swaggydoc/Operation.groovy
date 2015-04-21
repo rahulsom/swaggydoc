@@ -20,6 +20,8 @@ class Operation {
     Parameter[] parameters
     String type
     ResponseMessage[] responseMessages
+    String[] produces
+    String[] consumes
 
     Operation leftShift(Operation operation) {
 

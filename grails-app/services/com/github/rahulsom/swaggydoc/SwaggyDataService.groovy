@@ -567,7 +567,9 @@ class SwaggyDataService {
                             nickname: apiOperation.nickname() ?: inferredNickname,
                             parameters: parameters as Parameter[],
                             type: apiOperation.response() == Void ? 'void' : apiOperation.response().simpleName,
-                            responseMessages: apiResponses?.value()?.collect { new ResponseMessage(it) }
+                            responseMessages: apiResponses?.value()?.collect { new ResponseMessage(it) },
+                            produces: apiOperation.produces().split(',')*.trim().findAll{it} ?: null,
+                            consumes: apiOperation.consumes().split(',')*.trim().findAll{it} ?: null,
                     )
             ] as Operation[])
         }

@@ -14,14 +14,14 @@ h2. Usage
 h2. Parameters
 
 {table}
-*Parameter*             | *Supported*   | *Usage*
-@name@                  | Yes           | The name for the parameter. If @paramType@ is "path", the name should be the associated section in the path. If @paramType@ is "body", the name should be "body".
-@value@                 | Yes           | A brief description of the parameter.
-@defaultValue@          | Yes           | Describes the default value for the parameter.
-@allowableValues@       | Yes           | Limits the acceptable values for this parameter. To set a list of values, provide a comma-separated list surrounded by square brackets.
-@required@              | Yes           | Specifies if the parameter is required or not.
-@access@                | No            | Allows for filtering a parameter from the API documentation.
-@allowMultiple@         | No            | Specifies whether the parameter can accept multiple comma-separated values.
-@dataType@              | No            | The data type of the parameter. This can be the class name or a primitive.
-@paramType@             | No            | The parameter type of the parameter. Valid values are @path@, @query@, @body@, @header@ or @form@.
+*Parameter*         | *Supported*   | *Usage*
+@name@              | Yes           | The name for the parameter. If @paramType@ is "path", the name should be the associated section in the path. If @paramType@ is "body", the name should be "body".
+@value@             | Yes           | A brief description of the parameter.
+@defaultValue@      | Yes           | Describes the default value for the parameter.
+@allowableValues@   | Yes           | Limits the acceptable values for this parameter. To set a list of values, provide a comma-separated list surrounded by square brackets.
+@required@          | Yes           | Specifies if the parameter is required or not.
+@access@            | No            | Allows for filtering a parameter from the API documentation.
+@allowMultiple@     | No            | Specifies whether the parameter can accept multiple comma-separated values.
+@dataType@          | No            | The data type of the parameter. This can be the class name or a primitive.
+@paramType@         | No            | The parameter type of the parameter. Valid values are @path@, @query@, @body@, @header@ or @form@.
 {table}
