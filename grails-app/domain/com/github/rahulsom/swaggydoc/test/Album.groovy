@@ -4,4 +4,8 @@ class Album {
 
     static constraints = {
     }
+
+    static hasMany = [
+            photos: Photo
+    ]
 }

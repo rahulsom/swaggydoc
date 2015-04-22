@@ -4,4 +4,6 @@ class Photo {
 
     static constraints = {
     }
+
+    static belongsTo = [album: Album]
 }
