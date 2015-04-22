@@ -20,7 +20,7 @@ class ApiControllerSpec extends Specification {
         json.apiVersion == '1.0'
         json.swaggerVersion == '1.2'
         json.info.contact == 'rahul.som@gmail.com'
-        json.apis.size() == 7
+        json.apis.size() == 9
         json.apis.find {it.path == 'http://localhost/api/show/domain'}
         json.apis.find {it.path == 'http://localhost/api/show/domain'}.description == 'Domain Controller'
         json.apis.find {it.path == 'http://localhost/api/show/domainless'}
@@ -33,6 +33,10 @@ class ApiControllerSpec extends Specification {
         json.apis.find {it.path == 'http://localhost/api/show/mapped'}.description == 'Mapped Controller'
         json.apis.find {it.path == 'http://localhost/api/show/mappedWithAnnotations'}
         json.apis.find {it.path == 'http://localhost/api/show/mappedWithAnnotations'}.description == 'Mapped With Annotations Controller'
+        json.apis.find {it.path == 'http://localhost/api/show/album'}
+        json.apis.find {it.path == 'http://localhost/api/show/album'}.description == 'Album Controller'
+        json.apis.find {it.path == 'http://localhost/api/show/photo'}
+        json.apis.find {it.path == 'http://localhost/api/show/photo'}.description == 'Photo Controller'
     }
 
     void "test showing a controller with matching domain" () {

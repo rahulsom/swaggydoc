@@ -16,7 +16,7 @@
     <script src="${g.resource(dir: 'js/swagger-lib', file: 'underscore-min.js')}" type='text/javascript'></script>
     <script src="${g.resource(dir: 'js/swagger-lib', file: 'backbone-min.js')}" type='text/javascript'></script>
     <script src="${g.resource(dir: 'js/swagger-lib', file: 'swagger.js')}" type='text/javascript'></script>
-    <script src="${g.resource(dir: 'js/', file: 'swagger-ui.min.js')}" type='text/javascript'></script>
+    <script src="${g.resource(dir: 'js/', file: 'swagger-ui.js')}" type='text/javascript'></script>
     <script src="${g.resource(dir: 'js/swagger-lib', file: 'highlight.7.3.pack.js')}" type='text/javascript'></script>
 
     <!-- enabling this will enable oauth2 implicit scope support -->
