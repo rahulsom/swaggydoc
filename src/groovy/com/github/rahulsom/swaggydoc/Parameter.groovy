@@ -5,6 +5,7 @@ import groovy.transform.CompileStatic
 import groovy.transform.EqualsAndHashCode
 import groovy.transform.ToString
 import groovy.util.logging.Log4j
+import org.codehaus.groovy.antlr.EnumHelper
 
 /**
  * A parameter that could be serialized in swagger json spec
@@ -32,7 +33,7 @@ class Parameter {
         this.required = required
     }
 
-    Parameter(ApiImplicitParam param) {
+    Parameter(ApiImplicitParam param, Set<Class> classes = []) {
         this(param.name(), param.value(), param.paramType()?:'query', param.dataType() ?: 'string', param.required())
         defaultValue = param.defaultValue()
         if (param.allowableValues() && !param.allowableValues().isEmpty()) {
@@ -42,6 +43,14 @@ class Parameter {
                 }
             } else {
                 log.error("Bad value for allowable values: '${param.allowableValues()}'")
+            }
+        } else if (classes.find{it.simpleName == param.dataType()}) {
+            def clazz = classes.find{it.simpleName == param.dataType()}
+            if (clazz.isEnum()) {
+                this.type = 'string'
+                _enum = clazz.enumConstants
+            } else {
+                log.error("Non enum class ${param.dataType()} sent as param - ${param.name()}")
             }
         }
 

@@ -35,7 +35,9 @@ class LowLevelController extends RestfulController {
             @ApiImplicitParam(name = 'sort', value = 'Field to sort by', defaultValue = 'id', paramType = 'query', dataType = 'string'),
             @ApiImplicitParam(name = 'order', value = 'Order to sort by', defaultValue = 'asc', paramType = 'query', dataType = 'string'),
             @ApiImplicitParam(name = 'q', value = 'Query', paramType = 'query', dataType = 'string'),
+            @ApiImplicitParam(name = 's', value = 'Shirt Size', paramType = 'query', dataType = 'ShirtSize'),
     ])
+    @SwaggyAdditionalClasses(ShirtSize)
     def index() {
         super.index()
     }

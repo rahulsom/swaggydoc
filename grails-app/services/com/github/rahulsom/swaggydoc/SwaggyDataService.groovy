@@ -215,7 +215,7 @@ class SwaggyDataService {
         modelTypes.addAll(additionalClasses*.value().flatten())
 
         log.debug "modelTypes: $modelTypes"
-        Map models = getModels(modelTypes)
+        Map models = getModels(modelTypes.findAll{!it.isEnum()})
 
         def updateDocFromUrlMappings = { String action, MethodDocumentation documentation ->
             if (apis.containsKey(action)) {
@@ -252,7 +252,7 @@ class SwaggyDataService {
 
         // Update APIs with low-level method annotations
         apiMethods.each { method ->
-            documentMethodWithSwaggerAnnotations(method, theController).each {
+            documentMethodWithSwaggerAnnotations(method, theController, modelTypes).each {
                 updateDocumentation(method.name, it)
             }
         }
@@ -542,7 +542,7 @@ class SwaggyDataService {
         ] as Operation[])
     }
 
-    private List<MethodDocumentation> documentMethodWithSwaggerAnnotations(Method method, GrailsClass theController) {
+    private List<MethodDocumentation> documentMethodWithSwaggerAnnotations(Method method, GrailsClass theController, Set<Class> modelTypes) {
         def basePath = grailsLinkGenerator.link(uri: '')
         def apiOperation = findAnnotation(ApiOperation, method)
         def apiResponses = findAnnotation(ApiResponses, method)
@@ -559,7 +559,7 @@ class SwaggyDataService {
         def httpMethods = getHttpMethod(theController, method)
         log.debug "Link: $link - ${httpMethods}"
         httpMethods.collect { httpMethod ->
-            List<Parameter> parameters = apiParams?.collect { new Parameter(it as ApiImplicitParam) } ?: []
+            List<Parameter> parameters = apiParams?.collect { new Parameter(it as ApiImplicitParam, modelTypes) } ?: []
             log.debug "## parameters: ${parameters}"
             def inferredNickname = "${httpMethod.toLowerCase()}${slug}${method.name}"
             log.debug "Generating ${inferredNickname}"
