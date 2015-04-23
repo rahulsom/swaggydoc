@@ -28,7 +28,7 @@ class LowLevelController extends RestfulController {
     }
 
     @Override
-    @ApiOperation(value = 'List demos', response = Domain, responseContainer = 'list')
+    @ApiOperation(value = 'List demos', response = Domain, responseContainer = 'array')
     @ApiImplicitParams([
             @ApiImplicitParam(name = 'offset', value = 'Records to skip', defaultValue = '0', paramType = 'query', dataType = 'int'),
             @ApiImplicitParam(name = 'max', value = 'Max records to return', defaultValue = '10', paramType = 'query', dataType = 'int'),
@@ -106,7 +106,7 @@ class LowLevelController extends RestfulController {
     }
 
     @Override
-    @ApiOperation(value = "Delete Demo")
+    @ApiOperation(value = "Delete Demo", response = Void)
     @ApiResponses([
             @ApiResponse(code = 400, message = 'Bad Id provided'),
             @ApiResponse(code = 404, message = 'Could not find Demo with that Id'),

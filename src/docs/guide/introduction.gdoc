@@ -7,6 +7,7 @@ h4. Release History
 * Added support for overriding produces and consumes per method
 * Added support for documenting command objects
 * Added support for enums as dataTypes in ApiOperation
+* Added support for responseContainers
 * 2015-04-20 - 0.15
 ** Fully documented supported annotations
 ** Support for @extraParams@

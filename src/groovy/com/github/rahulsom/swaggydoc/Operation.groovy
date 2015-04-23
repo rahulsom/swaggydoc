@@ -19,6 +19,7 @@ class Operation {
     String nickname
     Parameter[] parameters
     String type
+    Item items
     ResponseMessage[] responseMessages
     String[] produces
     String[] consumes

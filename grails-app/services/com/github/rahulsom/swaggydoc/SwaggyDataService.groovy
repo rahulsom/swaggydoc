@@ -39,7 +39,7 @@ class SwaggyDataService {
     @Newify([Parameter, ResponseMessage, DefaultAction])
     public static final Map<String, Closure<DefaultAction>> DefaultActionComponents = [
             index : { String domainName ->
-                DefaultAction(SwaggyList, [
+                DefaultAction(SwaggyList, domainName, [
                         Parameter('offset', 'Records to skip. Empty means 0.', 'query', 'int'),
                         Parameter('max', 'Max records to return. Empty means 10.', 'query', 'int'),
                         Parameter('sort', 'Field to sort by. Empty means id if q is empty. If q is provided, empty ' +
@@ -49,10 +49,10 @@ class SwaggyDataService {
                             _enum = ['asc', 'desc']
                             it
                         },
-                ], [])
+                ], [], true)
             },
             show  : { String domainName ->
-                DefaultAction(SwaggyShow, [Parameter('id', 'Identifier to look for', 'path', 'string', true)],
+                DefaultAction(SwaggyShow, domainName, [Parameter('id', 'Identifier to look for', 'path', 'string', true)],
                         [
                                 ResponseMessage(BAD_REQUEST, 'Bad Request'),
                                 ResponseMessage(NOT_FOUND, "Could not find ${domainName} with that Id"),
@@ -60,7 +60,7 @@ class SwaggyDataService {
                 )
             },
             save  : { String domainName ->
-                DefaultAction(SwaggySave, [Parameter('body', "Description of ${domainName}", 'body', domainName, true)],
+                DefaultAction(SwaggySave, domainName, [Parameter('body', "Description of ${domainName}", 'body', domainName, true)],
                         [
                                 ResponseMessage(CREATED, "New ${domainName} created"),
                                 ResponseMessage(UNPROCESSABLE_ENTITY, 'Malformed Entity received'),
@@ -68,7 +68,7 @@ class SwaggyDataService {
                 )
             },
             update: { String domainName ->
-                DefaultAction(SwaggyUpdate,
+                DefaultAction(SwaggyUpdate, domainName,
                         [
                                 Parameter('id', "Id to update", 'path', 'string', true),
                                 Parameter('body', "Description of ${domainName}", 'body', domainName, true),
@@ -81,7 +81,7 @@ class SwaggyDataService {
                 )
             },
             patch : { String domainName ->
-                DefaultAction(SwaggyPatch,
+                DefaultAction(SwaggyPatch, domainName,
                         [
                                 Parameter('id', "Id to patch", 'path', 'string', true),
                                 Parameter('body', "Description of ${domainName}", 'body', domainName, true),
@@ -94,7 +94,7 @@ class SwaggyDataService {
                 )
             },
             delete: { String domainName ->
-                DefaultAction(SwaggyDelete, [Parameter('id', "Id to delete", 'path', 'string', true)],
+                DefaultAction(SwaggyDelete, 'void', [Parameter('id', "Id to delete", 'path', 'string', true)],
                         [
                                 ResponseMessage(NO_CONTENT, 'Delete successful'),
                                 ResponseMessage(BAD_REQUEST, 'Bad Request'),
@@ -181,10 +181,16 @@ class SwaggyDataService {
                     }
                     [
                             mapping.actionName,
-                            defineAction('/' + pathParts.join('/'), mapping.httpMethod, domainName,
+                            defineAction('/' + pathParts.join('/'), mapping.httpMethod, defaults.responseType,
                                     "${mapping.httpMethod.toLowerCase()}${controllerName}${mapping.actionName}",
                                     parameters, defaults?.responseMessages ?: [], "${mapping.actionName} ${domainName}"
-                            )
+                            ).with {
+                                if (defaults.isList) {
+                                    it.operations[0].type = 'array'
+                                    it.operations[0].items = new RefItem(defaults.responseType)
+                                }
+                                it
+                            }
                     ]
                 }
 
@@ -211,11 +217,11 @@ class SwaggyDataService {
         ).grep() as Set<Class>
 
         List<SwaggyAdditionalClasses> additionalClasses = allAnnotations.
-                findAll {it.annotationType() == SwaggyAdditionalClasses } as List<SwaggyAdditionalClasses>
+                findAll { it.annotationType() == SwaggyAdditionalClasses } as List<SwaggyAdditionalClasses>
         modelTypes.addAll(additionalClasses*.value().flatten())
 
         log.debug "modelTypes: $modelTypes"
-        Map models = getModels(modelTypes.findAll{!it.isEnum()})
+        Map models = getModels(modelTypes.findAll { !it.isEnum() })
 
         def updateDocFromUrlMappings = { String action, MethodDocumentation documentation ->
             if (apis.containsKey(action)) {
@@ -232,7 +238,7 @@ class SwaggyDataService {
                 int idx = 0
                 resourcePathParams.each { rpp ->
                     if (!parameters.find { it.name == rpp.name })
-                        parameters.add(idx ++, rpp)
+                        parameters.add(idx++, rpp)
                 }
                 apis[action].operations[0].parameters = parameters as Parameter[]
             }
@@ -414,7 +420,7 @@ class SwaggyDataService {
         mConfig.children?.each { processMarshallingConfig(it, props, addProp, domainClass) }
     }
 
-    private Map<String,ModelDescription> getModels(Collection<Class<?>> modelTypes) {
+    private Map<String, ModelDescription> getModels(Collection<Class<?>> modelTypes) {
         Queue m = modelTypes as Queue
         def models = [:] as Map<String, ModelDescription>
         while (m.size()) {
@@ -528,7 +534,7 @@ class SwaggyDataService {
 
     @GrailsCompileStatic
     private static MethodDocumentation defineAction(
-            String link, String httpMethod, String domainName, String inferredNickname,
+            String link, String httpMethod, String responseType, String inferredNickname,
             List<Parameter> parameters, List<ResponseMessage> responseMessages, String summary) {
         new MethodDocumentation(link, null, [
                 new Operation(
@@ -536,7 +542,7 @@ class SwaggyDataService {
                         summary: summary,
                         nickname: inferredNickname,
                         parameters: parameters as Parameter[],
-                        type: domainName,
+                        type: responseType,
                         responseMessages: responseMessages as ResponseMessage[],
                 )
         ] as Operation[])
@@ -564,6 +570,9 @@ class SwaggyDataService {
             def inferredNickname = "${httpMethod.toLowerCase()}${slug}${method.name}"
             log.debug "Generating ${inferredNickname}"
 
+            def responseType = apiOperation.response() == Void ? 'void' : apiOperation.response().simpleName
+            def responseIsArray = apiOperation.responseContainer()
+
             new MethodDocumentation(link, null, [
                     new Operation(
                             method: httpMethod,
@@ -571,11 +580,16 @@ class SwaggyDataService {
                             notes: apiOperation.notes(),
                             nickname: apiOperation.nickname() ?: inferredNickname,
                             parameters: parameters as Parameter[],
-                            type: apiOperation.response() == Void ? 'void' : apiOperation.response().simpleName,
+                            type: responseIsArray.isEmpty() ? responseType : responseIsArray,
                             responseMessages: apiResponses?.value()?.collect { new ResponseMessage(it) },
-                            produces: apiOperation.produces().split(',')*.trim().findAll{it} ?: null,
-                            consumes: apiOperation.consumes().split(',')*.trim().findAll{it} ?: null,
-                    )
+                            produces: apiOperation.produces().split(',')*.trim().findAll { it } ?: null,
+                            consumes: apiOperation.consumes().split(',')*.trim().findAll { it } ?: null,
+                    ).with {
+                        if (responseIsArray) {
+                            it.items = new RefItem(responseType)
+                        }
+                        it
+                    }
             ] as Operation[])
         }
 
