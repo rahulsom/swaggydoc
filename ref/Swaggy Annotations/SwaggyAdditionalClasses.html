@@ -53,22 +53,15 @@ function addJsClass(el) {
 
                 <span id='toggle-col1' class="toggle">(<a href="#" onclick="localToggle(); return false;">Quick Reference</a>)</span>
 
-                <h1>SwaggyPatch</h1><p class="paragraph"/><h2>Purpose</h2><p class="paragraph"/>Documents a method as a Patch action for an entity. This is shortcode for a couple of Swagger Annotations.<p class="paragraph"/><h2>Examples</h2><p class="paragraph"/>This is the shortcode:<p class="paragraph"/><div class="code"><pre>@SwaggyPatch
-def patch() &#123;
-  // &#8230;
-&#125;</pre></div><p class="paragraph"/><h2>Detailed version</h2><p class="paragraph"/>This is the effect of <code>SwaggyPatch</code><p class="paragraph"/><div class="code"><pre>@ApiOperation(value = <span class="java&#45;quote">"Patch &#35;Domain"</span>, response = &#35;Domain)
+                <h1>SwaggyDelete</h1><p class="paragraph"/><h2>Purpose</h2><p class="paragraph"/>Tells Swaggy that additional classes need to be documented for the method documentation to be complete. Typically
+these are command objects.<p class="paragraph"/><h2>Examples</h2><p class="paragraph"/><div class="code"><pre>@ApiOperation(value = <span class="java&#45;quote">"<span class="java&#45;object">Process</span> Custom Request"</span>, response = ResponseThatIsAutomaticallyDocumented)
 @ApiResponses(&#91;
-    @ApiResponse(code = 400, message = 'Bad Id provided'),
-    @ApiResponse(code = 404, message = 'Could not find &#35;Domain with that Id'),
     @ApiResponse(code = 422, message = 'Bad Entity Received'),
 &#93;)
 @ApiImplicitParams(&#91;
-    @ApiImplicitParam(name = 'id', value = 'Id to patch', paramType = 'path',
-        dataType = '<span class="java&#45;object">int</span>', required = <span class="java&#45;keyword">true</span>),
-    @ApiImplicitParam(name = 'body', paramType = 'body', required = <span class="java&#45;keyword">true</span>,
-        dataType = '&#35;Domain')
-&#93;)</pre></div>
-
+    @ApiImplicitParam(name = 'body', paramType = 'body', required = <span class="java&#45;keyword">true</span>, dataType = 'CustomCommand')
+&#93;)
+@SwaggyAdditionalClasses(&#91;CustomCommand&#93;)</pre></div>
             </div>
         </td>
         <td id="col2">
