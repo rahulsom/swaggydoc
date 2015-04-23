@@ -3,6 +3,9 @@ package com.github.rahulsom.swaggydoc
 import grails.converters.JSON
 import groovy.json.JsonSlurper
 
+import javax.servlet.http.HttpServlet
+import javax.servlet.http.HttpServletResponse
+
 class ApiController {
 
     def swaggyDataService
@@ -20,21 +23,25 @@ class ApiController {
 
     def show(String id) {
         header 'Access-Control-Allow-Origin', '*'
-        //// START hacky workaround
-        // Fix for awful rendering bug in Grails 2.4.4.
-        // Keeping the code here as to not muddy up the service code
-        ControllerDefinition response = swaggyDataService.apiDetails(id)
-        response.models.values().each { model ->
-            model.required = model.required?.toArray()
-        }
+        ControllerDefinition controllerDefinition = swaggyDataService.apiDetails(id)
+        if (!controllerDefinition) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND)
+        } else {
+            //// START hacky workaround
+            // Fix for awful rendering bug in Grails 2.4.4.
+            // Keeping the code here as to not muddy up the service code
+            controllerDefinition.models.values().each { model ->
+                model.required = model.required?.toArray()
+            }
+            //// END hacky workaround (remove and uncomment next line after Grails bug is fixed)
 
-        def newJson = removeUnderscores(
-                new JsonSlurper().parseText(
-                        (response as JSON).toString()
-                ) as Map
-        )
-        render newJson as JSON
-        //// END hacky workaround (remove and uncomment next line after Grails bug is fixed)
+            def newJson = removeUnderscores(
+                    new JsonSlurper().parseText(
+                            (controllerDefinition as JSON).toString()
+                    ) as Map
+            )
+            render newJson as JSON
+        }
     }
 
     private Map removeUnderscores (Map<String,Object> map) {

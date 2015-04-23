@@ -1,5 +1,6 @@
 package com.github.rahulsom.swaggydoc.test
 
+import com.github.rahulsom.swaggydoc.SwaggyAdditionalClasses
 import com.wordnik.swagger.annotations.*
 import grails.rest.RestfulController
 import grails.transaction.Transactional
@@ -27,14 +28,16 @@ class LowLevelController extends RestfulController {
     }
 
     @Override
-    @ApiOperation(value = 'List demos', response = Domain, responseContainer = 'list')
+    @ApiOperation(value = 'List demos', response = Domain, responseContainer = 'array')
     @ApiImplicitParams([
             @ApiImplicitParam(name = 'offset', value = 'Records to skip', defaultValue = '0', paramType = 'query', dataType = 'int'),
             @ApiImplicitParam(name = 'max', value = 'Max records to return', defaultValue = '10', paramType = 'query', dataType = 'int'),
             @ApiImplicitParam(name = 'sort', value = 'Field to sort by', defaultValue = 'id', paramType = 'query', dataType = 'string'),
             @ApiImplicitParam(name = 'order', value = 'Order to sort by', defaultValue = 'asc', paramType = 'query', dataType = 'string'),
             @ApiImplicitParam(name = 'q', value = 'Query', paramType = 'query', dataType = 'string'),
+            @ApiImplicitParam(name = 's', value = 'Shirt Size', paramType = 'query', dataType = 'ShirtSize'),
     ])
+    @SwaggyAdditionalClasses(ShirtSize)
     def index() {
         super.index()
     }
@@ -42,7 +45,7 @@ class LowLevelController extends RestfulController {
     @Override
     @ApiOperation(value = "Show Demo", response = Domain)
     @ApiResponses([
-            @ApiResponse(code = 400, message = 'Bad Id provided'),
+            @ApiResponse(code = 400, message = 'Bad Id provided', response = ErrorMessage),
             @ApiResponse(code = 404, message = 'Could not find Demo with that Id'),
     ])
     @ApiImplicitParams([
@@ -78,8 +81,10 @@ class LowLevelController extends RestfulController {
             @ApiResponse(code = 422, message = 'Bad Entity Received'),
     ])
     @ApiImplicitParams([
-            @ApiImplicitParam(name = 'body', paramType = 'body', required = true, dataType = 'Demo'),
+            @ApiImplicitParam(name = 'body', paramType = 'body', required = true, dataType = 'LowForm',
+                    defaultValue = '{"name":"foo", "address":"bar"}')
     ])
+    @SwaggyAdditionalClasses([LowForm])
     @Override
     def save() {
         super.save()
@@ -101,7 +106,7 @@ class LowLevelController extends RestfulController {
     }
 
     @Override
-    @ApiOperation(value = "Delete Demo")
+    @ApiOperation(value = "Delete Demo", response = Void)
     @ApiResponses([
             @ApiResponse(code = 400, message = 'Bad Id provided'),
             @ApiResponse(code = 404, message = 'Could not find Demo with that Id'),

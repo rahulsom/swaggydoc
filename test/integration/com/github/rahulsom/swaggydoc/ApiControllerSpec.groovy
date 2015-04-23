@@ -20,7 +20,7 @@ class ApiControllerSpec extends Specification {
         json.apiVersion == '1.0'
         json.swaggerVersion == '1.2'
         json.info.contact == 'rahul.som@gmail.com'
-        json.apis.size() == 7
+        json.apis.size() == 9
         json.apis.find {it.path == 'http://localhost/api/show/domain'}
         json.apis.find {it.path == 'http://localhost/api/show/domain'}.description == 'Domain Controller'
         json.apis.find {it.path == 'http://localhost/api/show/domainless'}
@@ -33,6 +33,10 @@ class ApiControllerSpec extends Specification {
         json.apis.find {it.path == 'http://localhost/api/show/mapped'}.description == 'Mapped Controller'
         json.apis.find {it.path == 'http://localhost/api/show/mappedWithAnnotations'}
         json.apis.find {it.path == 'http://localhost/api/show/mappedWithAnnotations'}.description == 'Mapped With Annotations Controller'
+        json.apis.find {it.path == 'http://localhost/api/show/album'}
+        json.apis.find {it.path == 'http://localhost/api/show/album'}.description == 'Album Controller'
+        json.apis.find {it.path == 'http://localhost/api/show/photo'}
+        json.apis.find {it.path == 'http://localhost/api/show/photo'}.description == 'Photo Controller'
     }
 
     void "test showing a controller with matching domain" () {
@@ -180,12 +184,14 @@ class ApiControllerSpec extends Specification {
         json.resourcePath == "/lowLevel/index"
         json.produces == ['application/json', 'application/xml', 'text/html']
         json.consumes == ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
-        json.models.size() == 3
+        json.models.size() == 4
         json.apis.size() == 8
 
         json.models.find {k,v -> k == 'Domain'}
-        json.models.find {k,v -> k == 'Void'}
         json.models.find {k,v -> k == 'Subdomain'}
+        json.models.find {k,v -> k == 'LowForm'}
+        json.models.find {k,v -> k == 'ErrorMessage'}
+
         def demoModel = json.models.find {k,v -> k == 'Domain'}
     }
 
@@ -206,7 +212,7 @@ class ApiControllerSpec extends Specification {
         json.resourcePath == "/lowLevel/index"
         json.produces == ['application/json', 'application/xml', 'text/html']
         json.consumes == ['application/json', 'application/xml', 'application/x-www-form-urlencoded']
-        json.models.size() == 3
+        json.models.size() == 4
         json.apis.size() == 8
 
         json.apis.find {it.path == '/lowLevel/duplicateMethod/{id}'}

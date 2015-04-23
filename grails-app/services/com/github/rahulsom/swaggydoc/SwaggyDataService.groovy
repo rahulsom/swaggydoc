@@ -10,6 +10,7 @@ import org.codehaus.groovy.grails.web.mapping.UrlMapping
 import org.codehaus.groovy.grails.web.mapping.UrlMappings
 import org.codehaus.groovy.grails.web.mime.MimeUtility
 
+import java.lang.annotation.Annotation
 import java.lang.reflect.AccessibleObject
 import java.lang.reflect.Method
 
@@ -38,8 +39,8 @@ class SwaggyDataService {
 
     @Newify([Parameter, ResponseMessage, DefaultAction])
     public static final Map<String, Closure<DefaultAction>> DefaultActionComponents = [
-            index : { String domainName ->
-                DefaultAction(SwaggyList, [
+            index: { String domainName ->
+                DefaultAction(SwaggyList, domainName, [
                         Parameter('offset', 'Records to skip. Empty means 0.', 'query', 'int'),
                         Parameter('max', 'Max records to return. Empty means 10.', 'query', 'int'),
                         Parameter('sort', 'Field to sort by. Empty means id if q is empty. If q is provided, empty ' +
@@ -49,18 +50,18 @@ class SwaggyDataService {
                             _enum = ['asc', 'desc']
                             it
                         },
-                ], [])
+                ], [], true)
             },
-            show  : { String domainName ->
-                DefaultAction(SwaggyShow, [Parameter('id', 'Identifier to look for', 'path', 'string', true)],
+            show: { String domainName ->
+                DefaultAction(SwaggyShow, domainName, [Parameter('id', 'Identifier to look for', 'path', 'string', true)],
                         [
                                 ResponseMessage(BAD_REQUEST, 'Bad Request'),
                                 ResponseMessage(NOT_FOUND, "Could not find ${domainName} with that Id"),
                         ]
                 )
             },
-            save  : { String domainName ->
-                DefaultAction(SwaggySave, [Parameter('body', "Description of ${domainName}", 'body', domainName, true)],
+            save: { String domainName ->
+                DefaultAction(SwaggySave, domainName, [Parameter('body', "Description of ${domainName}", 'body', domainName, true)],
                         [
                                 ResponseMessage(CREATED, "New ${domainName} created"),
                                 ResponseMessage(UNPROCESSABLE_ENTITY, 'Malformed Entity received'),
@@ -68,7 +69,7 @@ class SwaggyDataService {
                 )
             },
             update: { String domainName ->
-                DefaultAction(SwaggyUpdate,
+                DefaultAction(SwaggyUpdate, domainName,
                         [
                                 Parameter('id', "Id to update", 'path', 'string', true),
                                 Parameter('body', "Description of ${domainName}", 'body', domainName, true),
@@ -80,8 +81,8 @@ class SwaggyDataService {
                         ]
                 )
             },
-            patch : { String domainName ->
-                DefaultAction(SwaggyPatch,
+            patch: { String domainName ->
+                DefaultAction(SwaggyPatch, domainName,
                         [
                                 Parameter('id', "Id to patch", 'path', 'string', true),
                                 Parameter('body', "Description of ${domainName}", 'body', domainName, true),
@@ -94,7 +95,7 @@ class SwaggyDataService {
                 )
             },
             delete: { String domainName ->
-                DefaultAction(SwaggyDelete, [Parameter('id', "Id to delete", 'path', 'string', true)],
+                DefaultAction(SwaggyDelete, 'void', [Parameter('id', "Id to delete", 'path', 'string', true)],
                         [
                                 ResponseMessage(NO_CONTENT, 'Delete successful'),
                                 ResponseMessage(BAD_REQUEST, 'Bad Request'),
@@ -143,6 +144,9 @@ class SwaggyDataService {
         GrailsControllerClass theController = grailsApplication.controllerClasses.find {
             it.logicalPropertyName == controllerName
         } as GrailsControllerClass
+        if (!theController) {
+            return null
+        }
         Class theControllerClazz = theController.referenceInstance.class
 
         Api api = getApi(theController)
@@ -181,10 +185,16 @@ class SwaggyDataService {
                     }
                     [
                             mapping.actionName,
-                            defineAction('/' + pathParts.join('/'), mapping.httpMethod, domainName,
+                            defineAction('/' + pathParts.join('/'), mapping.httpMethod, defaults.responseType,
                                     "${mapping.httpMethod.toLowerCase()}${controllerName}${mapping.actionName}",
                                     parameters, defaults?.responseMessages ?: [], "${mapping.actionName} ${domainName}"
-                            )
+                            ).with {
+                                if (defaults.isList) {
+                                    it.operations[0].type = 'array'
+                                    it.operations[0].items = new RefItem(defaults.responseType)
+                                }
+                                it
+                            }
                     ]
                 }
 
@@ -200,17 +210,24 @@ class SwaggyDataService {
         def apiMethods = methodsOfType(ApiOperation, theControllerClazz)
 
         def allAnnotations = apiMethods*.annotations.flatten()
-        List<ApiOperation> apiOperationAnnotations = allAnnotations.
-                findAll { it.annotationType() == ApiOperation } as List<ApiOperation>
 
-        def modelTypes = (
-                apiOperationAnnotations*.response() +
-                        grailsApplication.domainClasses.
-                                find { it.logicalPropertyName == theController.logicalPropertyName }?.
-                                clazz
-        ).grep()
+        List<ApiOperation> apiOperationAnnotations = filter(allAnnotations, ApiOperation)
+        List<ApiResponses> apiResponseAnnotations = filter(allAnnotations, ApiResponses)
+        List<SwaggyAdditionalClasses> additionalClassesAnnotations = filter(allAnnotations, SwaggyAdditionalClasses)
 
-        Map models = getModels(modelTypes)
+        def successTypes = apiOperationAnnotations*.response()
+        def inferredTypes = grailsApplication.domainClasses.
+                find { it.logicalPropertyName == theController.logicalPropertyName }?.
+                clazz
+        def additionalTypes = additionalClassesAnnotations*.value().flatten()
+        def errorTypes = apiResponseAnnotations*.value().flatten()*.response().flatten()
+
+        def modelTypes = (successTypes + inferredTypes + additionalTypes + errorTypes).grep() as Set<Class>
+
+        modelTypes.addAll(additionalClassesAnnotations*.value().flatten())
+
+        log.debug "modelTypes: $modelTypes"
+        Map models = getModels(modelTypes.findAll { !it.isEnum() && it != Void })
 
         def updateDocFromUrlMappings = { String action, MethodDocumentation documentation ->
             if (apis.containsKey(action)) {
@@ -227,7 +244,7 @@ class SwaggyDataService {
                 int idx = 0
                 resourcePathParams.each { rpp ->
                     if (!parameters.find { it.name == rpp.name })
-                        parameters.add(idx ++, rpp)
+                        parameters.add(idx++, rpp)
                 }
                 apis[action].operations[0].parameters = parameters as Parameter[]
             }
@@ -247,7 +264,7 @@ class SwaggyDataService {
 
         // Update APIs with low-level method annotations
         apiMethods.each { method ->
-            documentMethodWithSwaggerAnnotations(method, theController).each {
+            documentMethodWithSwaggerAnnotations(method, theController, modelTypes).each {
                 updateDocumentation(method.name, it)
             }
         }
@@ -283,6 +300,12 @@ class SwaggyDataService {
                 apis: groupedApis,
                 models: models
         )
+    }
+
+    @GrailsCompileStatic
+    @SuppressWarnings("GrMethodMayBeStatic")
+    private <T> List<T> filter(ArrayList<Annotation> allAnnotations, Class<T> clazz) {
+        allAnnotations.findAll { it.annotationType() == clazz } as List<T>
     }
 
     @GrailsCompileStatic
@@ -409,7 +432,7 @@ class SwaggyDataService {
         mConfig.children?.each { processMarshallingConfig(it, props, addProp, domainClass) }
     }
 
-    private Map getModels(Collection<Class<?>> modelTypes) {
+    private Map<String, ModelDescription> getModels(Collection<Class<?>> modelTypes) {
         Queue m = modelTypes as Queue
         def models = [:] as Map<String, ModelDescription>
         while (m.size()) {
@@ -523,7 +546,7 @@ class SwaggyDataService {
 
     @GrailsCompileStatic
     private static MethodDocumentation defineAction(
-            String link, String httpMethod, String domainName, String inferredNickname,
+            String link, String httpMethod, String responseType, String inferredNickname,
             List<Parameter> parameters, List<ResponseMessage> responseMessages, String summary) {
         new MethodDocumentation(link, null, [
                 new Operation(
@@ -531,13 +554,13 @@ class SwaggyDataService {
                         summary: summary,
                         nickname: inferredNickname,
                         parameters: parameters as Parameter[],
-                        type: domainName,
+                        type: responseType,
                         responseMessages: responseMessages as ResponseMessage[],
                 )
         ] as Operation[])
     }
 
-    private List<MethodDocumentation> documentMethodWithSwaggerAnnotations(Method method, GrailsClass theController) {
+    private List<MethodDocumentation> documentMethodWithSwaggerAnnotations(Method method, GrailsClass theController, Set<Class> modelTypes) {
         def basePath = grailsLinkGenerator.link(uri: '')
         def apiOperation = findAnnotation(ApiOperation, method)
         def apiResponses = findAnnotation(ApiResponses, method)
@@ -554,10 +577,13 @@ class SwaggyDataService {
         def httpMethods = getHttpMethod(theController, method)
         log.debug "Link: $link - ${httpMethods}"
         httpMethods.collect { httpMethod ->
-            List<Parameter> parameters = apiParams?.collect { new Parameter(it as ApiImplicitParam) } ?: []
+            List<Parameter> parameters = apiParams?.collect { new Parameter(it as ApiImplicitParam, modelTypes) } ?: []
             log.debug "## parameters: ${parameters}"
             def inferredNickname = "${httpMethod.toLowerCase()}${slug}${method.name}"
             log.debug "Generating ${inferredNickname}"
+
+            def responseType = apiOperation.response() == Void ? 'void' : apiOperation.response().simpleName
+            def responseIsArray = apiOperation.responseContainer()
 
             new MethodDocumentation(link, null, [
                     new Operation(
@@ -566,9 +592,16 @@ class SwaggyDataService {
                             notes: apiOperation.notes(),
                             nickname: apiOperation.nickname() ?: inferredNickname,
                             parameters: parameters as Parameter[],
-                            type: apiOperation.response() == Void ? 'void' : apiOperation.response().simpleName,
-                            responseMessages: apiResponses?.value()?.collect { new ResponseMessage(it) }
-                    )
+                            type: responseIsArray.isEmpty() ? responseType : responseIsArray,
+                            responseMessages: apiResponses?.value()?.collect { new ResponseMessage(it) },
+                            produces: apiOperation.produces().split(',')*.trim().findAll { it } ?: null,
+                            consumes: apiOperation.consumes().split(',')*.trim().findAll { it } ?: null,
+                    ).with {
+                        if (responseIsArray) {
+                            it.items = new RefItem(responseType)
+                        }
+                        it
+                    }
             ] as Operation[])
         }
 

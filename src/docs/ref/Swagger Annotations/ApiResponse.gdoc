@@ -19,5 +19,5 @@ h2. Parameters
 *Parameter*     | *Supported*   | *Usage*
 @code@          | Yes           | The HTTP code in question
 @message@       | Yes           | The correct interpretation of this code
-@response@      | No            | The data type of the response during this code
+@response@      | Yes           | The data type of the response during this code
 {table}

@@ -13,10 +13,20 @@ import org.springframework.http.HttpStatus
 class ResponseMessage {
     int code
     String message
+    String responseModel
 
-    ResponseMessage(int code, String message) {
+    ResponseMessage(int code, String message, String responseModel) {
         this.code = code
         this.message = message
+        this.responseModel = responseModel
+    }
+
+    ResponseMessage(int code, String message) {
+        this(code, message, null)
+    }
+
+    ResponseMessage(HttpStatus code, String message, String responseModel) {
+        this(code.value(), message, responseModel)
     }
 
     ResponseMessage(HttpStatus code, String message) {
@@ -24,6 +34,7 @@ class ResponseMessage {
     }
 
     ResponseMessage(ApiResponse response) {
-        this(response.code(), response.message())
+        this(response.code(), response.message(),
+                response.response() == Void ? 'void': response.response().simpleName)
     }
 }

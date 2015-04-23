@@ -47,3 +47,10 @@ public @interface SwaggyPatch {
 public @interface SwaggyDelete {
     ApiImplicitParam[] extraParams() default []
 }
+
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface SwaggyAdditionalClasses {
+    Class[] value()
+}
+
