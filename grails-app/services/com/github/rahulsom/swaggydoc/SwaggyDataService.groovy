@@ -225,7 +225,7 @@ class SwaggyDataService {
         modelTypes.addAll(additionalClassesAnnotations*.value().flatten())
 
         log.debug "modelTypes: $modelTypes"
-        Map models = getModels(modelTypes.findAll { !it.isEnum() })
+        Map models = getModels(modelTypes.findAll { !it.isEnum() && it != Void })
 
         def updateDocFromUrlMappings = { String action, MethodDocumentation documentation ->
             if (apis.containsKey(action)) {

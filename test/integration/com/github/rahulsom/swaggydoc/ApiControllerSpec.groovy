@@ -188,9 +188,9 @@ class ApiControllerSpec extends Specification {
         json.apis.size() == 8
 
         json.models.find {k,v -> k == 'Domain'}
-        json.models.find {k,v -> k == 'Void'}
         json.models.find {k,v -> k == 'Subdomain'}
         json.models.find {k,v -> k == 'LowForm'}
+        json.models.find {k,v -> k == 'ErrorMessage'}
 
         def demoModel = json.models.find {k,v -> k == 'Domain'}
     }
