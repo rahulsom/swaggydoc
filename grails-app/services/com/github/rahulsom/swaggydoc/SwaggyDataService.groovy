@@ -208,8 +208,13 @@ class SwaggyDataService {
                         grailsApplication.domainClasses.
                                 find { it.logicalPropertyName == theController.logicalPropertyName }?.
                                 clazz
-        ).grep()
+        ).grep() as Set<Class>
 
+        List<SwaggyAdditionalClasses> additionalClasses = allAnnotations.
+                findAll {it.annotationType() == SwaggyAdditionalClasses } as List<SwaggyAdditionalClasses>
+        modelTypes.addAll(additionalClasses*.value().flatten())
+
+        log.debug "modelTypes: $modelTypes"
         Map models = getModels(modelTypes)
 
         def updateDocFromUrlMappings = { String action, MethodDocumentation documentation ->
@@ -409,7 +414,7 @@ class SwaggyDataService {
         mConfig.children?.each { processMarshallingConfig(it, props, addProp, domainClass) }
     }
 
-    private Map getModels(Collection<Class<?>> modelTypes) {
+    private Map<String,ModelDescription> getModels(Collection<Class<?>> modelTypes) {
         Queue m = modelTypes as Queue
         def models = [:] as Map<String, ModelDescription>
         while (m.size()) {

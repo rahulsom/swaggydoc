@@ -1,5 +1,6 @@
 package com.github.rahulsom.swaggydoc.test
 
+import com.github.rahulsom.swaggydoc.SwaggyAdditionalClasses
 import com.wordnik.swagger.annotations.*
 import grails.rest.RestfulController
 import grails.transaction.Transactional
@@ -78,8 +79,10 @@ class LowLevelController extends RestfulController {
             @ApiResponse(code = 422, message = 'Bad Entity Received'),
     ])
     @ApiImplicitParams([
-            @ApiImplicitParam(name = 'body', paramType = 'body', required = true, dataType = 'Demo'),
+            @ApiImplicitParam(name = 'body', paramType = 'body', required = true, dataType = 'LowForm',
+                    defaultValue = '{"name":"foo", "address":"bar"}')
     ])
+    @SwaggyAdditionalClasses([LowForm])
     @Override
     def save() {
         super.save()

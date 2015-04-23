@@ -1,0 +1,19 @@
+h1. SwaggyDelete
+
+h2. Purpose
+
+Tells Swaggy that additional classes need to be documented for the method documentation to be complete. Typically
+these are command objects.
+
+h2. Examples
+
+{code}
+@ApiOperation(value = "Process Custom Request", response = ResponseThatIsAutomaticallyDocumented)
+@ApiResponses([
+    @ApiResponse(code = 422, message = 'Bad Entity Received'),
+])
+@ApiImplicitParams([
+    @ApiImplicitParam(name = 'body', paramType = 'body', required = true, dataType = 'CustomCommand')
+])
+@SwaggyAdditionalClasses([CustomCommand])
+{code}
