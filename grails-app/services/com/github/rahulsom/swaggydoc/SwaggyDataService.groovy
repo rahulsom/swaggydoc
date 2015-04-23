@@ -10,6 +10,7 @@ import org.codehaus.groovy.grails.web.mapping.UrlMapping
 import org.codehaus.groovy.grails.web.mapping.UrlMappings
 import org.codehaus.groovy.grails.web.mime.MimeUtility
 
+import java.lang.annotation.Annotation
 import java.lang.reflect.AccessibleObject
 import java.lang.reflect.Method
 
@@ -143,6 +144,9 @@ class SwaggyDataService {
         GrailsControllerClass theController = grailsApplication.controllerClasses.find {
             it.logicalPropertyName == controllerName
         } as GrailsControllerClass
+        if (!theController) {
+            return null
+        }
         Class theControllerClazz = theController.referenceInstance.class
 
         Api api = getApi(theController)
@@ -207,20 +211,18 @@ class SwaggyDataService {
 
         def allAnnotations = apiMethods*.annotations.flatten()
 
-        List<ApiOperation> apiOperationAnnotations = allAnnotations.findAll { it.annotationType() == ApiOperation }
-        List<ApiResponses> apiResponseAnnotations = allAnnotations.findAll { it.annotationType() == ApiResponses }
-        List<SwaggyAdditionalClasses> additionalClassesAnnotations = allAnnotations.
-                findAll { it.annotationType() == SwaggyAdditionalClasses }
+        List<ApiOperation> apiOperationAnnotations = filter(allAnnotations, ApiOperation)
+        List<ApiResponses> apiResponseAnnotations = filter(allAnnotations, ApiResponses)
+        List<SwaggyAdditionalClasses> additionalClassesAnnotations = filter(allAnnotations, SwaggyAdditionalClasses)
 
-        def successResponseTypes = apiOperationAnnotations*.response()
-        def inferredResponseTypes = grailsApplication.domainClasses.
+        def successTypes = apiOperationAnnotations*.response()
+        def inferredTypes = grailsApplication.domainClasses.
                 find { it.logicalPropertyName == theController.logicalPropertyName }?.
                 clazz
         def additionalTypes = additionalClassesAnnotations*.value().flatten()
-        def errorResponseTypes = apiResponseAnnotations*.value().flatten()*.response().flatten()
+        def errorTypes = apiResponseAnnotations*.value().flatten()*.response().flatten()
 
-        def modelTypes = (successResponseTypes + inferredResponseTypes + additionalTypes + errorResponseTypes).
-                grep() as Set<Class>
+        def modelTypes = (successTypes + inferredTypes + additionalTypes + errorTypes).grep() as Set<Class>
 
         modelTypes.addAll(additionalClassesAnnotations*.value().flatten())
 
@@ -298,6 +300,12 @@ class SwaggyDataService {
                 apis: groupedApis,
                 models: models
         )
+    }
+
+    @GrailsCompileStatic
+    @SuppressWarnings("GrMethodMayBeStatic")
+    private <T> List<T> filter(ArrayList<Annotation> allAnnotations, Class<T> clazz) {
+        allAnnotations.findAll { it.annotationType() == clazz } as List<T>
     }
 
     @GrailsCompileStatic
