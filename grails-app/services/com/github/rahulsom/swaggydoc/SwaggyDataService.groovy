@@ -38,7 +38,7 @@ class SwaggyDataService {
 
     @Newify([Parameter, ResponseMessage, DefaultAction])
     public static final Map<String, Closure<DefaultAction>> DefaultActionComponents = [
-            index : { String domainName ->
+            index: { String domainName ->
                 DefaultAction(SwaggyList, domainName, [
                         Parameter('offset', 'Records to skip. Empty means 0.', 'query', 'int'),
                         Parameter('max', 'Max records to return. Empty means 10.', 'query', 'int'),
@@ -51,7 +51,7 @@ class SwaggyDataService {
                         },
                 ], [], true)
             },
-            show  : { String domainName ->
+            show: { String domainName ->
                 DefaultAction(SwaggyShow, domainName, [Parameter('id', 'Identifier to look for', 'path', 'string', true)],
                         [
                                 ResponseMessage(BAD_REQUEST, 'Bad Request'),
@@ -59,7 +59,7 @@ class SwaggyDataService {
                         ]
                 )
             },
-            save  : { String domainName ->
+            save: { String domainName ->
                 DefaultAction(SwaggySave, domainName, [Parameter('body', "Description of ${domainName}", 'body', domainName, true)],
                         [
                                 ResponseMessage(CREATED, "New ${domainName} created"),
@@ -80,7 +80,7 @@ class SwaggyDataService {
                         ]
                 )
             },
-            patch : { String domainName ->
+            patch: { String domainName ->
                 DefaultAction(SwaggyPatch, domainName,
                         [
                                 Parameter('id', "Id to patch", 'path', 'string', true),
@@ -206,19 +206,23 @@ class SwaggyDataService {
         def apiMethods = methodsOfType(ApiOperation, theControllerClazz)
 
         def allAnnotations = apiMethods*.annotations.flatten()
-        List<ApiOperation> apiOperationAnnotations = allAnnotations.
-                findAll { it.annotationType() == ApiOperation } as List<ApiOperation>
 
-        def modelTypes = (
-                apiOperationAnnotations*.response() +
-                        grailsApplication.domainClasses.
-                                find { it.logicalPropertyName == theController.logicalPropertyName }?.
-                                clazz
-        ).grep() as Set<Class>
+        List<ApiOperation> apiOperationAnnotations = allAnnotations.findAll { it.annotationType() == ApiOperation }
+        List<ApiResponses> apiResponseAnnotations = allAnnotations.findAll { it.annotationType() == ApiResponses }
+        List<SwaggyAdditionalClasses> additionalClassesAnnotations = allAnnotations.
+                findAll { it.annotationType() == SwaggyAdditionalClasses }
 
-        List<SwaggyAdditionalClasses> additionalClasses = allAnnotations.
-                findAll { it.annotationType() == SwaggyAdditionalClasses } as List<SwaggyAdditionalClasses>
-        modelTypes.addAll(additionalClasses*.value().flatten())
+        def successResponseTypes = apiOperationAnnotations*.response()
+        def inferredResponseTypes = grailsApplication.domainClasses.
+                find { it.logicalPropertyName == theController.logicalPropertyName }?.
+                clazz
+        def additionalTypes = additionalClassesAnnotations*.value().flatten()
+        def errorResponseTypes = apiResponseAnnotations*.value().flatten()*.response().flatten()
+
+        def modelTypes = (successResponseTypes + inferredResponseTypes + additionalTypes + errorResponseTypes).
+                grep() as Set<Class>
+
+        modelTypes.addAll(additionalClassesAnnotations*.value().flatten())
 
         log.debug "modelTypes: $modelTypes"
         Map models = getModels(modelTypes.findAll { !it.isEnum() })

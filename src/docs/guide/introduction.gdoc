@@ -8,6 +8,7 @@ h4. Release History
 * Added support for documenting command objects
 * Added support for enums as dataTypes in ApiOperation
 * Added support for responseContainers
+* Added support for response classes for ApiResponse
 * 2015-04-20 - 0.15
 ** Fully documented supported annotations
 ** Support for @extraParams@

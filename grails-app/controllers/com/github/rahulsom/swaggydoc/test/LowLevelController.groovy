@@ -45,7 +45,7 @@ class LowLevelController extends RestfulController {
     @Override
     @ApiOperation(value = "Show Demo", response = Domain)
     @ApiResponses([
-            @ApiResponse(code = 400, message = 'Bad Id provided'),
+            @ApiResponse(code = 400, message = 'Bad Id provided', response = ErrorMessage),
             @ApiResponse(code = 404, message = 'Could not find Demo with that Id'),
     ])
     @ApiImplicitParams([

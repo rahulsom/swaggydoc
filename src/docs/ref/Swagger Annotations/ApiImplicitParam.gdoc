@@ -22,6 +22,6 @@ h2. Parameters
 @required@          | Yes           | Specifies if the parameter is required or not.
 @access@            | No            | Allows for filtering a parameter from the API documentation.
 @allowMultiple@     | No            | Specifies whether the parameter can accept multiple comma-separated values.
-@dataType@          | No            | The data type of the parameter. This can be the class name or a primitive.
-@paramType@         | No            | The parameter type of the parameter. Valid values are @path@, @query@, @body@, @header@ or @form@.
+@dataType@          | Yes           | The data type of the parameter. This can be the class name or a primitive.
+@paramType@         | Yes           | The parameter type of the parameter. Valid values are @path@, @query@, @body@, @header@ or @form@.
 {table}
