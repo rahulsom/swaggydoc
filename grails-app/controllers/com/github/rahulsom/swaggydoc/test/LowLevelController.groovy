@@ -50,6 +50,7 @@ class LowLevelController extends RestfulController {
     ])
     @ApiImplicitParams([
             @ApiImplicitParam(name = 'id', value = 'Id to fetch', paramType = 'path', dataType = 'int', required = true),
+            @ApiImplicitParam(name = 'a', value = 'Animals', paramType = 'query', dataType = 'string', allowMultiple = true),
     ])
     def show() {
         super.show()
