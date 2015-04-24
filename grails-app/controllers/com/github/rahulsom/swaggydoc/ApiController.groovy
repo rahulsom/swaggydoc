@@ -44,6 +44,17 @@ class ApiController {
                             (controllerDefinition as JSON).toString()
                     ) as Map
             )
+
+            newJson.apis.each { api ->
+                api.operations.each {op ->
+                    op.responseMessages.each {rm ->
+                        if (rm.responseModel == 'void') {
+                            rm.remove('responseModel')
+                        }
+                    }
+                }
+            }
+
             render newJson as JSON
         }
     }
