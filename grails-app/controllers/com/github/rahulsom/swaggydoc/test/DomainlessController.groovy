@@ -38,17 +38,20 @@ class DomainlessController extends RestfulController {
         super.save()
     }
 
-    @Override@SwaggyUpdate
+    @Override
+    @SwaggyUpdate
     def update() {
         super.update()
     }
 
-    @Override@SwaggyDelete
+    @Override
+    @SwaggyDelete
     def delete() {
         super.delete()
     }
 
-    @Override@SwaggyPatch
+    @Override
+    @SwaggyPatch
     Object patch() {
         return super.patch()
     }
