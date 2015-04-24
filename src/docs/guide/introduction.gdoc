@@ -4,6 +4,7 @@ This guide documents configuration defaults and describes how to configure the S
 
 h4. Release History
 * 2015-??-?? - 0.17
+    ** Support for multiple values
     ** No responseModel when responseModel is 'void'. This improves codegen.
 * 2015-04-23 - 0.16
     ** Added support for overriding produces and consumes per method

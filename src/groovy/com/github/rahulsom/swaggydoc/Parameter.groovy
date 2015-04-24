@@ -24,6 +24,7 @@ class Parameter {
     boolean required
     String defaultValue
     String[] _enum
+    boolean allowMultiple
 
     Parameter(String name, String description, String paramType, String type, boolean required = false) {
         this.name = name
@@ -53,6 +54,6 @@ class Parameter {
                 log.error("Non enum class ${param.dataType()} sent as param - ${param.name()}")
             }
         }
-
+        allowMultiple = param.allowMultiple()
     }
 }
