@@ -18,6 +18,10 @@ import grails.transaction.Transactional
 )
 class PogoController {
 
+    static allowedMethods = [
+            save: 'POST'
+    ]
+
     @ApiOperation(value = "Save Demo", response = Pogo, produces = "text/csv, application/json, application/xml")
     @ApiResponses([
             @ApiResponse(code = 422, message = 'Bad Entity Received'),
