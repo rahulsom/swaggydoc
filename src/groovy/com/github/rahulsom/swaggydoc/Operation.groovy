@@ -6,7 +6,7 @@ import groovy.transform.ToString
 
 /**
  * Represents an operation on a path
- * 
+ *
  * @author Rahul
  */
 @CompileStatic
@@ -20,19 +20,21 @@ class Operation {
     Parameter[] parameters
     String type
     Item items
-    ResponseMessage[] responseMessages
+    ResponseMessage[] responseMessages = []
     String[] produces
     String[] consumes
 
     Operation leftShift(Operation operation) {
 
         if (operation.method) this.method = operation.method
-        if (operation.summary) this.summary= operation.summary
+        if (operation.summary) this.summary = operation.summary
         if (operation.notes) this.notes = operation.notes
-        if (operation.nickname) this.nickname= operation.nickname
-        if (operation.parameters) this.parameters= operation.parameters
-        if (operation.type) this.type= operation.type
-        if (operation.responseMessages) this.responseMessages= operation.responseMessages
+        if (operation.nickname) this.nickname = operation.nickname
+        if (operation.parameters) this.parameters = operation.parameters
+        if (operation.type) this.type = operation.type
+        if (operation.responseMessages) this.responseMessages = operation.responseMessages
+        if (operation.produces) this.produces = operation.produces
+        if (operation.consumes) this.consumes = operation.consumes
 
         this
     }

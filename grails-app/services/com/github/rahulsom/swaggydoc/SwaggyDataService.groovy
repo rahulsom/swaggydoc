@@ -537,7 +537,7 @@ class SwaggyDataService {
         def httpMethods = getHttpMethod(theController, method)
         log.debug "Link: $link - ${httpMethods}"
         httpMethods.collect { httpMethod ->
-            def inferredNickname = "${httpMethod.toLowerCase()}${slug}${method.name}"
+            def inferredNickname = method.name
             log.debug "Generating ${inferredNickname}"
             defineAction(link, httpMethod, domainName, inferredNickname, parameters, defaults.responseMessages,
                     "${action} ${domainName}")
@@ -555,7 +555,7 @@ class SwaggyDataService {
                         nickname: inferredNickname,
                         parameters: parameters as Parameter[],
                         type: responseType,
-                        responseMessages: responseMessages as ResponseMessage[],
+                        responseMessages: (responseMessages ?: []) as ResponseMessage[],
                 )
         ] as Operation[])
     }
@@ -579,7 +579,7 @@ class SwaggyDataService {
         httpMethods.collect { httpMethod ->
             List<Parameter> parameters = apiParams?.collect { new Parameter(it as ApiImplicitParam, modelTypes) } ?: []
             log.debug "## parameters: ${parameters}"
-            def inferredNickname = "${httpMethod.toLowerCase()}${slug}${method.name}"
+            def inferredNickname = "${method.name}"
             log.debug "Generating ${inferredNickname}"
 
             def responseType = apiOperation.response() == Void ? 'void' : apiOperation.response().simpleName
@@ -593,7 +593,7 @@ class SwaggyDataService {
                             nickname: apiOperation.nickname() ?: inferredNickname,
                             parameters: parameters as Parameter[],
                             type: responseIsArray.isEmpty() ? responseType : responseIsArray,
-                            responseMessages: apiResponses?.value()?.collect { new ResponseMessage(it) },
+                            responseMessages: apiResponses?.value()?.collect { new ResponseMessage(it) } ?: [],
                             produces: apiOperation.produces().split(',')*.trim().findAll { it } ?: null,
                             consumes: apiOperation.consumes().split(',')*.trim().findAll { it } ?: null,
                     ).with {
