@@ -25,6 +25,7 @@ class Parameter {
     String defaultValue
     String[] _enum
     boolean allowMultiple
+    String format
 
     Parameter(String name, String description, String paramType, String type, boolean required = false) {
         this.name = name
@@ -32,6 +33,10 @@ class Parameter {
         this.paramType = paramType
         this.type = type
         this.required = required
+        if (type == 'int') {
+            this.type = 'integer'
+            format = 'int64'
+        }
     }
 
     Parameter(ApiImplicitParam param, Set<Class> classes = []) {
