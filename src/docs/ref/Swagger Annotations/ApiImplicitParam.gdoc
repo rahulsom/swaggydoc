@@ -8,7 +8,7 @@ h2. Usage
 
 {code}
 @ApiImplicitParam(name="", value="", defaultValue="", allowableValues="", required=false, access="",
-        allowMultiple="", dataType="", paramType="")
+        allowMultiple=false, dataType="", paramType="")
 {code}
 
 h2. Parameters
@@ -21,7 +21,7 @@ h2. Parameters
 @allowableValues@   | Yes           | Limits the acceptable values for this parameter. To set a list of values, provide a comma-separated list surrounded by square brackets.
 @required@          | Yes           | Specifies if the parameter is required or not.
 @access@            | No            | Allows for filtering a parameter from the API documentation.
-@allowMultiple@     | No            | Specifies whether the parameter can accept multiple comma-separated values.
+@allowMultiple@     | Yes           | Specifies whether the parameter can accept multiple comma-separated values.
 @dataType@          | Yes           | The data type of the parameter. This can be the class name or a primitive.
 @paramType@         | Yes           | The parameter type of the parameter. Valid values are @path@, @query@, @body@, @header@ or @form@.
 {table}

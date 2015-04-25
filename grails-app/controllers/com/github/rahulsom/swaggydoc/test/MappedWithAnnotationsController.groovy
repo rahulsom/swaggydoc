@@ -12,6 +12,7 @@ import grails.transaction.Transactional
 
 @Transactional(readOnly = true)
 @Api(value = 'mapped with some overriding annotations')
+// TODO This should return Domain in codegen, not MappedWithAnnotations
 class MappedWithAnnotationsController extends RestfulController {
 
     static responseFormats = ['json', 'xml']
@@ -41,9 +42,9 @@ class MappedWithAnnotationsController extends RestfulController {
     ])
     @ApiImplicitParams([
         @ApiImplicitParam(name = 'id', value = 'Id to patch', paramType = 'path', dataType = 'int', required = true),
-        @ApiImplicitParam(name = 'body', paramType = 'body', required = true, dataType = 'Demo')
+        @ApiImplicitParam(name = 'body', paramType = 'body', required = true, dataType = 'Domain')
     ])
-    Object patch() {
+    Domain patch() {
         return super.patch()
     }
 }

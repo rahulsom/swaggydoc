@@ -18,11 +18,15 @@ class ApiController {
      * Renders the Swagger Resources.
      * @return
      */
-    def resources() { render swaggyDataService.resources() as JSON }
+    def resources() {
+        log.info "Presenting resource listing"
+        render swaggyDataService.resources() as JSON
+    }
 
 
     def show(String id) {
         header 'Access-Control-Allow-Origin', '*'
+        log.info "Presenting definition for $id"
         ControllerDefinition controllerDefinition = swaggyDataService.apiDetails(id)
         if (!controllerDefinition) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND)
@@ -40,6 +44,17 @@ class ApiController {
                             (controllerDefinition as JSON).toString()
                     ) as Map
             )
+
+            newJson.apis.each { api ->
+                api.operations.each {op ->
+                    op.responseMessages.each {rm ->
+                        if (rm.responseModel == 'void') {
+                            rm.remove('responseModel')
+                        }
+                    }
+                }
+            }
+
             render newJson as JSON
         }
     }

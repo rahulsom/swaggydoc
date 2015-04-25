@@ -24,6 +24,8 @@ class Parameter {
     boolean required
     String defaultValue
     String[] _enum
+    boolean allowMultiple
+    String format
 
     Parameter(String name, String description, String paramType, String type, boolean required = false) {
         this.name = name
@@ -31,6 +33,10 @@ class Parameter {
         this.paramType = paramType
         this.type = type
         this.required = required
+        if (type == 'int') {
+            this.type = 'integer'
+            format = 'int64'
+        }
     }
 
     Parameter(ApiImplicitParam param, Set<Class> classes = []) {
@@ -53,6 +59,6 @@ class Parameter {
                 log.error("Non enum class ${param.dataType()} sent as param - ${param.name()}")
             }
         }
-
+        allowMultiple = param.allowMultiple()
     }
 }
