@@ -10,6 +10,7 @@ import org.codehaus.groovy.grails.web.mapping.UrlMapping
 import org.codehaus.groovy.grails.web.mapping.UrlMappings
 import org.codehaus.groovy.grails.web.mime.MimeUtility
 
+import java.beans.ConstructorProperties
 import java.lang.annotation.Annotation
 import java.lang.reflect.AccessibleObject
 import java.lang.reflect.Method
@@ -457,9 +458,9 @@ class SwaggyDataService {
                                 it.name != 'errors'
                     }
 
-            def optional = domainClass?.constrainedProperties?.findAll { String k, ConstrainedProperty v ->
-                v.isNullable()
-            }
+
+            Map<String, ConstrainedProperty> constrainedProperties = domainClass?.constrainedProperties
+            def optional = constrainedProperties?.findAll { k, v -> v.isNullable() }
 
             if (domainClass) {
                 // Check for marshalling config
@@ -488,20 +489,27 @@ class SwaggyDataService {
             )
 
             models[model.simpleName] = modelDescription
+            log.debug "Added ${model.simpleName} to models"
             props.each { f ->
+                log.debug "Property ${f.name} is ${f.type}"
                 if (!models.containsKey(f.type.simpleName) && !m.contains(f.type) && !knownTypes.contains(f.type)) {
                     if (f.type.isAssignableFrom(List) || f.type.isAssignableFrom(Set)) {
                         if (f instanceof GrailsDomainClassProperty) {
-                            def genericType = domainClass?.associationMap?.getAt(f.name)
+                            Class genericType = domainClass?.associationMap?.getAt(f.name)
                             if (genericType) {
-                                m.add(genericType)
+                                log.debug "Add #1"
+                                if (!models.containsKey(genericType.simpleName)) {
+                                    m.add(genericType)
+                                }
                             } else {
                                 log.warn "No type args found for ${f.name}"
                             }
                         } else {
+                            log.debug "Add #2"
                             m.add(f.genericType.actualTypeArguments[0])
                         }
                     } else {
+                        log.debug "Add #3"
                         m.add(f.type)
                     }
 

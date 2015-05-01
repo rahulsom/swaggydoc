@@ -7,7 +7,7 @@ log4j = {
     //appenders {
     //    console name:'stdout', layout:pattern(conversionPattern: '%c{2} %m%n')
     //}
-    info 'grails.app.services',
+    debug 'grails.app.services',
          'grails.app.controllers.com.github.rahulsom.swaggydoc.ApiController'
 
     error 'org.codehaus.groovy.grails.web.servlet',  //  controllers
