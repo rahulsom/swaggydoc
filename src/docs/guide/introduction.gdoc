@@ -3,6 +3,8 @@ Swaggydoc makes it easy to document grails controllers using swagger.
 This guide documents configuration defaults and describes how to configure the Swaggydoc plugin for Grails applications.
 
 h4. Release History
+* 2015-05-01 - 0.18
+    ** Fixed Infinite loops in self referencing models
 * 2015-04-24 - 0.17
     ** Support for multiple values
     ** No responseModel when responseModel is 'void'. This improves codegen.

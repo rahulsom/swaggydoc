@@ -1,6 +1,6 @@
 class SwaggydocGrailsPlugin {
     // the plugin version
-    def version = "0.17"
+    def version = "0.18"
     // the version or versions of Grails the plugin is designed for
     def grailsVersion = "2.2 > *"
     // resources that are excluded from plugin packaging
@@ -19,7 +19,7 @@ Uses swagger to document Grails Controllers
 '''
 
     // URL to the plugin's documentation
-    def documentation = "http://grails.org/plugin/swaggydoc"
+    def documentation = "https://rahulsom.github.io/swaggydoc"
 
     // Extra (optional) plugin metadata
 
@@ -33,7 +33,7 @@ Uses swagger to document Grails Controllers
 //    def developers = [ [ name: "Joe Bloggs", email: "joe@bloggs.net" ]]
 
     // Location of the plugin's issue tracker.
-    def issueManagement = [ system: "Github", url: "https://github.com/rahulsom/swaggydoc" ]
+    def issueManagement = [ system: "Github", url: "https://github.com/rahulsom/swaggydoc/issues" ]
 
     // Online location of the plugin's browseable source code.
     def scm = [ url: "http://github.com/rahulsom/swaggydoc.git" ]
