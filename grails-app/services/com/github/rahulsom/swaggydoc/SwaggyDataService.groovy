@@ -464,7 +464,9 @@ class SwaggyDataService {
                     }
 
 
-            Map<String, ConstrainedProperty> constrainedProperties = model.declaredMethods.find{ it.name == 'getConstraints'} ? model.constraints : null
+            Map<String, ConstrainedProperty> constrainedProperties = model.declaredMethods.find {
+                it.name == 'getConstraints'
+            } ? model.constraints : null
             def optional = constrainedProperties?.findAll { k, v -> v.isNullable() }
 
             if (domainClass) {
