@@ -1,8 +1,8 @@
 package com.github.rahulsom.swaggydoc
 
 import com.wordnik.swagger.annotations.*
-import grails.compiler.GrailsCompileStatic
 import grails.util.Holders
+import groovy.transform.CompileStatic
 import org.codehaus.groovy.grails.commons.*
 import org.codehaus.groovy.grails.validation.ConstrainedProperty
 import org.codehaus.groovy.grails.web.mapping.LinkGenerator
@@ -10,7 +10,6 @@ import org.codehaus.groovy.grails.web.mapping.UrlMapping
 import org.codehaus.groovy.grails.web.mapping.UrlMappings
 import org.codehaus.groovy.grails.web.mime.MimeUtility
 
-import java.beans.ConstructorProperties
 import java.lang.annotation.Annotation
 import java.lang.reflect.AccessibleObject
 import java.lang.reflect.Method
@@ -38,15 +37,14 @@ class SwaggyDataService {
             String, boolean, Boolean, Date, byte, Byte, void
     ]
 
-    @Newify([Parameter, ResponseMessage, DefaultAction])
     public static final Map<String, Closure<DefaultAction>> DefaultActionComponents = [
             index: { String domainName ->
-                DefaultAction(SwaggyList, domainName, [
-                        Parameter('offset', 'Records to skip. Empty means 0.', 'query', 'int'),
-                        Parameter('max', 'Max records to return. Empty means 10.', 'query', 'int'),
-                        Parameter('sort', 'Field to sort by. Empty means id if q is empty. If q is provided, empty ' +
+                new DefaultAction(SwaggyList, domainName, [
+                        new Parameter('offset', 'Records to skip. Empty means 0.', 'query', 'int'),
+                        new Parameter('max', 'Max records to return. Empty means 10.', 'query', 'int'),
+                        new Parameter('sort', 'Field to sort by. Empty means id if q is empty. If q is provided, empty ' +
                                 'means relevance.', 'query', 'string'),
-                        Parameter('order', 'Order to sort by. Empty means asc if q is empty. If q is provided, empty ' +
+                        new Parameter('order', 'Order to sort by. Empty means asc if q is empty. If q is provided, empty ' +
                                 'means desc.', 'query', 'string').with {
                             _enum = ['asc', 'desc']
                             it
@@ -54,67 +52,67 @@ class SwaggyDataService {
                 ], [], true)
             },
             show: { String domainName ->
-                DefaultAction(SwaggyShow, domainName, [Parameter('id', 'Identifier to look for', 'path', 'string', true)],
+                new DefaultAction(SwaggyShow, domainName, [new Parameter('id', 'Identifier to look for', 'path', 'string', true)],
                         [
-                                ResponseMessage(BAD_REQUEST, 'Bad Request'),
-                                ResponseMessage(NOT_FOUND, "Could not find ${domainName} with that Id"),
+                                new ResponseMessage(BAD_REQUEST, 'Bad Request'),
+                                new ResponseMessage(NOT_FOUND, "Could not find ${domainName} with that Id"),
                         ]
                 )
             },
             save: { String domainName ->
-                DefaultAction(SwaggySave, domainName, [Parameter('body', "Description of ${domainName}", 'body', domainName, true)],
+                new DefaultAction(SwaggySave, domainName, [new Parameter('body', "Description of ${domainName}", 'body', domainName, true)],
                         [
-                                ResponseMessage(CREATED, "New ${domainName} created"),
-                                ResponseMessage(UNPROCESSABLE_ENTITY, 'Malformed Entity received'),
+                                new ResponseMessage(CREATED, "New ${domainName} created"),
+                                new ResponseMessage(UNPROCESSABLE_ENTITY, 'Malformed Entity received'),
                         ]
                 )
             },
             update: { String domainName ->
-                DefaultAction(SwaggyUpdate, domainName,
+                new DefaultAction(SwaggyUpdate, domainName,
                         [
-                                Parameter('id', "Id to update", 'path', 'string', true),
-                                Parameter('body', "Description of ${domainName}", 'body', domainName, true),
+                                new Parameter('id', "Id to update", 'path', 'string', true),
+                                new Parameter('body', "Description of ${domainName}", 'body', domainName, true),
                         ],
                         [
-                                ResponseMessage(BAD_REQUEST, 'Bad Request'),
-                                ResponseMessage(NOT_FOUND, "Could not find ${domainName} with that Id"),
-                                ResponseMessage(UNPROCESSABLE_ENTITY, 'Malformed Entity received'),
+                                new ResponseMessage(BAD_REQUEST, 'Bad Request'),
+                                new ResponseMessage(NOT_FOUND, "Could not find ${domainName} with that Id"),
+                                new ResponseMessage(UNPROCESSABLE_ENTITY, 'Malformed Entity received'),
                         ]
                 )
             },
             patch: { String domainName ->
-                DefaultAction(SwaggyPatch, domainName,
+                new DefaultAction(SwaggyPatch, domainName,
                         [
-                                Parameter('id', "Id to patch", 'path', 'string', true),
-                                Parameter('body', "Description of ${domainName}", 'body', domainName, true),
+                                new Parameter('id', "Id to patch", 'path', 'string', true),
+                                new Parameter('body', "Description of ${domainName}", 'body', domainName, true),
                         ],
                         [
-                                ResponseMessage(BAD_REQUEST, 'Bad Request'),
-                                ResponseMessage(NOT_FOUND, "Could not find ${domainName} with that Id"),
-                                ResponseMessage(UNPROCESSABLE_ENTITY, 'Malformed Entity received'),
+                                new ResponseMessage(BAD_REQUEST, 'Bad Request'),
+                                new ResponseMessage(NOT_FOUND, "Could not find ${domainName} with that Id"),
+                                new ResponseMessage(UNPROCESSABLE_ENTITY, 'Malformed Entity received'),
                         ]
                 )
             },
             delete: { String domainName ->
-                DefaultAction(SwaggyDelete, 'void', [Parameter('id', "Id to delete", 'path', 'string', true)],
+                new DefaultAction(SwaggyDelete, 'void', [new Parameter('id', "Id to delete", 'path', 'string', true)],
                         [
-                                ResponseMessage(NO_CONTENT, 'Delete successful'),
-                                ResponseMessage(BAD_REQUEST, 'Bad Request'),
-                                ResponseMessage(NOT_FOUND, "Could not find ${domainName} with that Id"),
+                                new ResponseMessage(NO_CONTENT, 'Delete successful'),
+                                new ResponseMessage(BAD_REQUEST, 'Bad Request'),
+                                new ResponseMessage(NOT_FOUND, "Could not find ${domainName} with that Id"),
                         ]
                 )
             }
     ]
 
-    @GrailsCompileStatic
+    @CompileStatic
     private static Parameter makePathParam(String pathParam) {
         new Parameter(pathParam, "$pathParam identifier", 'path', 'string', true)
     }
 
-    @GrailsCompileStatic
+    @CompileStatic
     private ConfigObject getConfig() { grailsApplication.config['swaggydoc'] as ConfigObject ?: new ConfigObject() }
 
-    @GrailsCompileStatic
+    @CompileStatic
     private String getApiVersion() { config.apiVersion ?: grailsApplication.metadata['app.version'] }
 
     /**
@@ -143,7 +141,7 @@ class SwaggyDataService {
      */
     ControllerDefinition apiDetails(String controllerName) {
         GrailsControllerClass theController = grailsApplication.controllerClasses.find {
-            it.logicalPropertyName == controllerName
+            it.logicalPropertyName == controllerName && getApi(it)
         } as GrailsControllerClass
         if (!theController) {
             return null
@@ -303,13 +301,13 @@ class SwaggyDataService {
         )
     }
 
-    @GrailsCompileStatic
+    @CompileStatic
     @SuppressWarnings("GrMethodMayBeStatic")
     private <T> List<T> filter(ArrayList<Annotation> allAnnotations, Class<T> clazz) {
-        allAnnotations.findAll { it.annotationType() == clazz } as List<T>
+        allAnnotations.findAll { Annotation annotation -> annotation.annotationType() == clazz } as List<T>
     }
 
-    @GrailsCompileStatic
+    @CompileStatic
     @SuppressWarnings("GrMethodMayBeStatic")
     private Pair<List<String>, List<Parameter>> populatePaths(UrlMapping mapping) {
         List<Parameter> pathParams = []
@@ -339,7 +337,7 @@ class SwaggyDataService {
      * Converts a controller to an api declaration
      * @param controller
      */
-    @GrailsCompileStatic
+    @CompileStatic
     @SuppressWarnings("GrMethodMayBeStatic")
     private ApiDeclaration controllerToApi(GrailsClass controller) {
         def name = controller.logicalPropertyName
@@ -364,7 +362,7 @@ class SwaggyDataService {
      * @return
      */
     private static Api getApi(GrailsClass controller) {
-        controller.clazz.annotations.find { it.annotationType() == Api } as Api
+        controller.clazz.annotations.find { Annotation annotation -> annotation.annotationType() == Api } as Api
     }
 
     /**
@@ -447,9 +445,16 @@ class SwaggyDataService {
              * otherwise props will be a list of Field objects
              * Interface for these two classes are similar enough to duck type for our purposes
              */
-            def fieldSource = domainClass ?
-                    [domainClass.identifier, domainClass.version] + domainClass.persistentProperties.toList()
-                    : model.declaredFields
+            def fieldSource = []
+            if (domainClass) {
+                fieldSource = [domainClass.identifier, domainClass.version] + domainClass.persistentProperties.toList()
+            } else {
+                Class tmpClass = model
+                while (tmpClass != null) {
+                    fieldSource.addAll(Arrays.asList(tmpClass.declaredFields))
+                    tmpClass = tmpClass.superclass
+                }
+            }
 
             def props = fieldSource.
                     findAll {
@@ -459,7 +464,9 @@ class SwaggyDataService {
                     }
 
 
-            Map<String, ConstrainedProperty> constrainedProperties = domainClass?.constrainedProperties
+            Map<String, ConstrainedProperty> constrainedProperties = model.declaredMethods.find {
+                it.name == 'getConstraints'
+            } ? model.constraints : null
             def optional = constrainedProperties?.findAll { k, v -> v.isNullable() }
 
             if (domainClass) {
@@ -552,7 +559,7 @@ class SwaggyDataService {
         }
     }
 
-    @GrailsCompileStatic
+    @CompileStatic
     private static MethodDocumentation defineAction(
             String link, String httpMethod, String responseType, String inferredNickname,
             List<Parameter> parameters, List<ResponseMessage> responseMessages, String summary) {
@@ -649,41 +656,57 @@ class SwaggyDataService {
     private Field getTypeDescriptor(def f, GrailsDomainClass gdc) {
 
         String fieldName = f.name
-        def constrainedProperty = gdc?.constrainedProperties?.getAt(fieldName) as ConstrainedProperty
+        def constrainedProperty = gdc?.constraints?.getAt(fieldName) as ConstrainedProperty
         Class type = f.type
-        if (type.isAssignableFrom(String)) {
-            constrainedProperty?.inList ? new StringField(constrainedProperty.inList as String[]) : new StringField()
-        } else if (type.isEnum()) {
-            new StringField(type.values()*.name() as String[])
-        } else if (type.isAssignableFrom(Double) || type.isAssignableFrom(Float) || type.isAssignableFrom(double) ||
-                type.isAssignableFrom(float) || type.isAssignableFrom(BigDecimal)) {
-            addNumericConstraints(constrainedProperty, new NumberField('number', 'double'))
-        } else if (type.isAssignableFrom(Long) || type.isAssignableFrom(Integer) || type.isAssignableFrom(long) ||
-                type.isAssignableFrom(int) || type.isAssignableFrom(BigInteger)) {
-            addNumericConstraints(constrainedProperty, new NumberField('integer', 'int64'))
-        } else if (type.isAssignableFrom(Date)) {
-            new StringField('date-time')
-        } else if (type.isAssignableFrom(byte) || type.isAssignableFrom(Byte)) {
-            new StringField('byte')
-        } else if (type.isAssignableFrom(Boolean) || type.isAssignableFrom(boolean)) {
-            new BooleanField()
+        Field field
+        Field primitiveField = getPrimitiveType(type, constrainedProperty)
+        if (primitiveField) {
+            field = primitiveField
         } else if (type.isAssignableFrom(Set) || type.isAssignableFrom(List)) {
             Class genericType = null
             if (f instanceof GrailsDomainClassProperty) {
                 genericType = gdc?.associationMap?.getAt(fieldName) as Class
                 if (genericType) {
-                    new ContainerField(new RefItem(genericType.simpleName))
+                    field = new ContainerField(new RefItem(genericType.simpleName))
                 } else {
                     log.warn "Unknown type for property ${fieldName}, please specify it in the domain's class hasMany"
-                    new ContainerField(null, null)
+                    field = new ContainerField(null, null)
                 }
             } else {
                 genericType = genericType ?: f.genericType.actualTypeArguments[0] as Class
-                new ContainerField(new RefItem(genericType.simpleName))
+                Field listPrimitiveField = getPrimitiveType(genericType)
+                if (listPrimitiveField) {
+                    field = new ContainerField(new TypeItem(listPrimitiveField.type, listPrimitiveField.format))
+                } else {
+                    field = new ContainerField(new RefItem(genericType.simpleName))
+                }
             }
         } else {
-            new RefField(type.simpleName)
+            field = new RefField(type.simpleName)
         }
+        return field
+    }
+
+    private Field getPrimitiveType(Class type, ConstrainedProperty constrainedProperty = null) {
+        Field field
+        if (type.isAssignableFrom(String)) {
+            field = constrainedProperty?.inList ? new StringField(constrainedProperty.inList as String[]) : new StringField()
+        } else if (type.isEnum()) {
+            field = new StringField(type.values()*.name() as String[])
+        } else if (type.isAssignableFrom(Double) || type.isAssignableFrom(Float) || type.isAssignableFrom(double) ||
+                type.isAssignableFrom(float) || type.isAssignableFrom(BigDecimal)) {
+            field = addNumericConstraints(constrainedProperty, new NumberField('number', 'double'))
+        } else if (type.isAssignableFrom(Long) || type.isAssignableFrom(Integer) || type.isAssignableFrom(long) ||
+                type.isAssignableFrom(int) || type.isAssignableFrom(BigInteger)) {
+            field = addNumericConstraints(constrainedProperty, new NumberField('integer', 'int64'))
+        } else if (type.isAssignableFrom(Date)) {
+            field = new StringField('date-time')
+        } else if (type.isAssignableFrom(byte) || type.isAssignableFrom(Byte)) {
+            field = new StringField('byte')
+        } else if (type.isAssignableFrom(Boolean) || type.isAssignableFrom(boolean)) {
+            field = new BooleanField()
+        }
+        return field
     }
 
     private NumberField addNumericConstraints(ConstrainedProperty constrainedProperty, NumberField retval) {

@@ -44,14 +44,14 @@ class Parameter {
         defaultValue = param.defaultValue()
         if (param.allowableValues() && !param.allowableValues().isEmpty()) {
             if (param.allowableValues()[0] == '[' && param.allowableValues()[-1] == ']') {
-                _enum = param.allowableValues()[1..-2].split(/,(?=([^\"]*\"[^\"]*\")*[^\"]*$)/)*.trim().collect {
-                    (it[0] == it[-1] && (it[0] == '"' || it[0] == "'")) ? it[1..-2] : it
+                _enum = param.allowableValues()[1..-2].split(/,(?=([^\"]*\"[^\"]*\")*[^\"]*$)/)*.trim().collect { String value ->
+                    (value[0] == value[-1] && (value[0] == '"' || value[0] == "'")) ? value[1..-2] : value
                 }
             } else {
                 log.error("Bad value for allowable values: '${param.allowableValues()}'")
             }
-        } else if (classes.find{it.simpleName == param.dataType()}) {
-            def clazz = classes.find{it.simpleName == param.dataType()}
+        } else if (classes.find{Class clazz -> clazz.simpleName == param.dataType()}) {
+            def clazz = classes.find{Class clazz -> clazz.simpleName == param.dataType()}
             if (clazz.isEnum()) {
                 this.type = 'string'
                 _enum = clazz.enumConstants
