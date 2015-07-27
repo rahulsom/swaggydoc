@@ -4,7 +4,7 @@ import spock.lang.Specification
 
 class OperationSpec extends Specification {
 
-    void "When the operator shift left is used, the fields with value should be copied"() {
+    void "When the operator left shift is used, the fields with value should be copied"() {
 
         given: "An operation as a source"
         Operation operationSource = new Operation()
@@ -12,34 +12,33 @@ class OperationSpec extends Specification {
         and: "An operation target"
         Operation operationTarget = new Operation()
 
-        when:
+        when: "Only the source has value"
         operationSource."$field" = sourceValue
         operationTarget << operationSource
 
-        then:
+        then: "The value is copied to the target"
         operationTarget."$field" == operationSource."$field"
         operationTarget."$field" == sourceValue
 
-        when:
+        when: "The source has value and the target has value"
         operationSource."$field" = sourceValue
         operationTarget."$field" = targetValue
         operationTarget << operationSource
 
-        then:
+        then: "The value in the target is overridden"
         operationTarget."$field" == operationSource."$field"
         operationTarget."$field" == sourceValue
 
-        when:
+        when: "The source is null or empty"
         operationSource."$field" = null
         operationTarget."$field" = targetValue
         operationTarget << operationSource
 
-        then:
+        then: "The value in the target is kept"
         operationTarget."$field" != operationSource."$field"
         operationTarget."$field" == targetValue
 
         where:
-
         field              | sourceValue                                                                | targetValue
         "method"           | "methodTestSource"                                                         | "methodTestTarget"
         "summary"          | "summaryTestSource"                                                        | "summaryTestTarget"
