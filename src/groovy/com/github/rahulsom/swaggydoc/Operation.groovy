@@ -32,6 +32,7 @@ class Operation {
         if (operation.nickname) this.nickname = operation.nickname
         if (operation.parameters) this.parameters = operation.parameters
         if (operation.type) this.type = operation.type
+        if (operation.items) this.items = operation.items
         if (operation.responseMessages) this.responseMessages = operation.responseMessages
         if (operation.produces) this.produces = operation.produces
         if (operation.consumes) this.consumes = operation.consumes

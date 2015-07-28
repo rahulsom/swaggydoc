@@ -172,3 +172,5 @@ class DemoController extends RestfulController {
     }
 }
 ```
+
+After this, just browse to `/api`.
