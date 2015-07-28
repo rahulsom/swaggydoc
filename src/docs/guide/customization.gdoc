@@ -1,0 +1,22 @@
+By default, the api page is rendered at the uri @/api@. If you prefer changing that to something else,
+ please keep in mind that the api page is rendered by a controller. You can do something like this:
+
+{code}
+class UrlMappings {
+
+	static mappings = {
+		"/$controller/$action?/$id?"{
+			constraints {
+				// apply constraints here
+			}
+		}
+
+		"/myapi" (controller: "api")
+
+		"/"(view:"/index")
+		"500"(view:'/error')
+	}
+}
+{code}
+
+This now moves the api page to the uri @/myapi@.
