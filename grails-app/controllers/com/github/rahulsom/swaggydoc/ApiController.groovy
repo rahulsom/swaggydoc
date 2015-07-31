@@ -31,14 +31,6 @@ class ApiController {
         if (!controllerDefinition) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND)
         } else {
-            //// START hacky workaround
-            // Fix for awful rendering bug in Grails 2.4.4.
-            // Keeping the code here as to not muddy up the service code
-            controllerDefinition.models.values().each { model ->
-                model.required = model.required?.toArray()
-            }
-            //// END hacky workaround (remove and uncomment next line after Grails bug is fixed)
-
             def newJson = removeUnderscores(
                     new JsonSlurper().parseText(
                             (controllerDefinition as JSON).toString()
@@ -55,9 +47,54 @@ class ApiController {
                 }
             }
 
+            //// START hacky workaround
+            // Fix for awful rendering bug in Grails 2.4.4.
+            // Keeping the code here as to not muddy up the service code
+            // N.B., this bug is FIXED in Grails 2.5.1. See https://github.com/grails/grails-core/issues/615
+            mapListToArrays(newJson)
+            // Now fix model.required (broken above by call "controllerDefinition as JSON")
+            controllerDefinition.models.each { key, model ->
+                newJson.models[key].required = model.required?.toArray()
+            }
+            //// END hacky workaround (remove and uncomment next line after Grails bug is fixed)
+
             render newJson as JSON
         }
     }
+
+    //// START hacky workaround
+    // Fix for awful rendering bug in Grails 2.4.4.
+    // Keeping the code here as to not muddy up the service code
+    // N.B., this bug is FIXED in Grails 2.5.1. See https://github.com/grails/grails-core/issues/615
+    private void mapListToArrays(Map map) {
+        List listKeys = []
+        map.each { key, entry ->
+            if (entry instanceof Map) {
+                mapListToArrays(entry)
+            } else if (entry instanceof Collection) {
+                listKeys.push(key)
+                listListToArrays(entry)
+            }
+        }
+        listKeys.each { key ->
+            map[key] = map[key].toArray()
+        }
+    }
+    private void listListToArrays(Collection col) {
+        def idxs = []
+        col.eachWithIndex { entry, idx ->
+            if (entry instanceof Map) {
+                mapListToArrays(entry)
+            } else if (entry instanceof Collection) {
+                idxs.push(idx)
+                listListToArrays(entry)
+            }
+        }
+        idxs.each { idx ->
+            col[idx] = col[idx].toArray()
+        }
+    }
+    //// END hacky workaround (remove and uncomment next line after Grails bug is fixed)
 
     private Map removeUnderscores (Map<String,Object> map) {
         map.collectEntries {String k, Object v ->
