@@ -51,7 +51,7 @@ class SwaggyDataService {
                         },
                 ], [], true)
             },
-            show: { String domainName ->
+            show : { String domainName ->
                 new DefaultAction(SwaggyShow, domainName, [new Parameter('id', 'Identifier to look for', 'path', 'string', true)],
                         [
                                 new ResponseMessage(BAD_REQUEST, 'Bad Request'),
@@ -59,7 +59,7 @@ class SwaggyDataService {
                         ]
                 )
             },
-            save: { String domainName ->
+            save : { String domainName ->
                 new DefaultAction(SwaggySave, domainName, [new Parameter('body', "Description of ${domainName}", 'body', domainName, true)],
                         [
                                 new ResponseMessage(CREATED, "New ${domainName} created"),
@@ -656,6 +656,8 @@ class SwaggyDataService {
     private Field getTypeDescriptor(def f, GrailsDomainClass gdc) {
 
         String fieldName = f.name
+        def declaredField = gdc?.clazz?.getDeclaredFields()?.find { it.name == fieldName }
+        def apiModelProperty = declaredField ? findAnnotation(ApiModelProperty, declaredField) : null
         def constrainedProperty = gdc?.constraints?.getAt(fieldName) as ConstrainedProperty
         Class type = f.type
         Field field
@@ -684,6 +686,7 @@ class SwaggyDataService {
         } else {
             field = new RefField(type.simpleName)
         }
+        field.description = apiModelProperty?.value()
         return field
     }
 

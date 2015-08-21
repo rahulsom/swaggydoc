@@ -121,9 +121,11 @@ class ApiControllerSpec extends Specification {
 
         assert domainProps.description
         assert domainProps.description.type == 'string'
+        assert domainProps.description.description == 'Description of the domain'
 
         assert domainProps.name
         assert domainProps.name.type == 'string'
+        assert domainProps.name.description == 'Name of the domain'
 
         assert domainProps.version
         assert domainProps.version.type == 'integer'
