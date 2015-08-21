@@ -3,6 +3,9 @@ Swaggydoc makes it easy to document grails controllers using swagger.
 This guide documents configuration defaults and describes how to configure the Swaggydoc plugin for Grails applications.
 
 h4. Release History
+* 2015-08-20 - 0.20
+    ** Grails 2.4.4 compatibility fixes (David Pisoni)
+    ** JavaMelody compatibility fixes (Sebastien Martin)
 * 2015-05-01 - 0.20
     ** Added support for items in Operation
     ** Docs on api url and customization
