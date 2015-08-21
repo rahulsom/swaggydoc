@@ -657,6 +657,7 @@ class SwaggyDataService {
 
         String fieldName = f.name
         def declaredField = gdc?.clazz?.getDeclaredFields()?.find { it.name == fieldName }
+        declaredField = declaredField ?: (f instanceof java.lang.reflect.Field ? f : null)
         def apiModelProperty = declaredField ? findAnnotation(ApiModelProperty, declaredField) : null
         def constrainedProperty = gdc?.constraints?.getAt(fieldName) as ConstrainedProperty
         Class type = f.type
