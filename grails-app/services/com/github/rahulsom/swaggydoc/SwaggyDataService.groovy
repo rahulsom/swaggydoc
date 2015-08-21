@@ -121,8 +121,8 @@ class SwaggyDataService {
      */
     Resources resources() {
         ApiDeclaration[] apis = grailsApplication.controllerClasses.
-                findAll { getApi(it) }.
-                sort { getApi(it).position() }.
+                findAll { SwaggyDataService.getApi(it) }.
+                sort { SwaggyDataService.getApi(it).position() }.
                 collect { controllerToApi(it) }.
                 toArray([] as ApiDeclaration[])
 
@@ -141,7 +141,7 @@ class SwaggyDataService {
      */
     ControllerDefinition apiDetails(String controllerName) {
         GrailsControllerClass theController = grailsApplication.controllerClasses.find {
-            it.logicalPropertyName == controllerName && getApi(it)
+            it.logicalPropertyName == controllerName && SwaggyDataService.getApi(it)
         } as GrailsControllerClass
         if (!theController) {
             return null
@@ -272,7 +272,7 @@ class SwaggyDataService {
         DefaultActionComponents.
                 each { action, defaultsFactory ->
                     def defaults = defaultsFactory(domainName)
-                    methodsOfType(defaults.swaggyAnnotation, theControllerClazz).
+                    SwaggyDataService.methodsOfType(defaults.swaggyAnnotation, theControllerClazz).
                             collectMany { method ->
                                 generateMethodFromSwaggyAnnotations(action, method, theController).
                                         collect { updateDocumentation(method.name, it) }
@@ -377,7 +377,7 @@ class SwaggyDataService {
     }
 
     private static List<Method> methodsOfType(Class annotation, Class theControllerClazz) {
-        theControllerClazz.methods.findAll { findAnnotation(annotation, it) } as List<Method>
+        theControllerClazz.methods.findAll { SwaggyDataService.findAnnotation(annotation, it) } as List<Method>
     }
 
     /**
