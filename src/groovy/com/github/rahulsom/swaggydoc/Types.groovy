@@ -26,7 +26,9 @@ class TypeItem extends Item {
 
 /* Field classes */
 
-class Field {}
+class Field {
+    String description
+}
 
 class BooleanField extends Field {
     def getType() { 'boolean' }
