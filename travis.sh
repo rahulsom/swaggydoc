@@ -3,7 +3,10 @@ set -e
 rm -rf *.zip
 ./bowerize.sh
 ./gradlew build
+
+cd grails2
 ./grailsw doc --pdf --non-interactive
+cd ..
 
 filename=$(find . -name "grails-*.zip" | head -1)
 filename=$(basename $filename)
@@ -22,7 +25,8 @@ if [[ $TRAVIS_BRANCH == 'master' && $TRAVIS_REPO_SLUG == "rahulsom/swaggydoc" \
         gh-pages --single-branch > /dev/null
     cd gh-pages
     git rm -rf .
-    cp -r ../target/docs/. ./
+    mkdir grails2
+    cp -r ../grails2/target/docs/. ./grails2/
     git add *
     git commit -a -m "Updating docs for Travis build: https://travis-ci.org/$TRAVIS_REPO_SLUG/builds/$TRAVIS_BUILD_ID"
     git push origin HEAD
@@ -32,7 +36,9 @@ if [[ $TRAVIS_BRANCH == 'master' && $TRAVIS_REPO_SLUG == "rahulsom/swaggydoc" \
     echo "SNAPSHOT version, not publishing docs"
   fi
 
+  cd grails2
   ./grailsw publish-plugin --no-scm --allow-overwrite --non-interactive
+  cd ..
 else
   echo "Not on master branch, so not publishing"
   echo "TRAVIS_BRANCH: $TRAVIS_BRANCH"
