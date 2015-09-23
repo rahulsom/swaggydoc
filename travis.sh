@@ -2,10 +2,8 @@
 set -e
 rm -rf *.zip
 ./bowerize.sh
-./gradlew grails-refresh-dependencies --non-interactive
-./gradlew grails-test-app --non-interactive
-./gradlew grails-package-plugin --non-interactive
-./gradlew grails-doc --pdf --non-interactive
+./gradlew build
+./grailsw doc --pdf --non-interactive
 
 filename=$(find . -name "grails-*.zip" | head -1)
 filename=$(basename $filename)
@@ -34,7 +32,7 @@ if [[ $TRAVIS_BRANCH == 'master' && $TRAVIS_REPO_SLUG == "rahulsom/swaggydoc" \
     echo "SNAPSHOT version, not publishing docs"
   fi
 
-  ./gradlew grails-publish-plugin --no-scm --allow-overwrite --non-interactive
+  ./grailsw publish-plugin --no-scm --allow-overwrite --non-interactive
 else
   echo "Not on master branch, so not publishing"
   echo "TRAVIS_BRANCH: $TRAVIS_BRANCH"
