@@ -28,3 +28,14 @@ plugin.xml
 
 # NPM stuff
 node_modules/
+
+### Gradle template
+.gradle
+build/
+buildPlugins/
+
+# Ignore Gradle GUI config
+gradle-app.setting
+
+# Avoid ignoring Gradle wrapper jar file (.jar files are usually ignored)
+!gradle-wrapper.jar
