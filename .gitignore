@@ -17,9 +17,6 @@ web-app/WEB-INF/tld/fmt.tld
 
 # Bower Stuff
 bower-sources/
-web-app/css/
-web-app/images/
-web-app/js/
 
 # Products
 grails-swaggydoc-*.zip

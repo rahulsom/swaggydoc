@@ -60,6 +60,8 @@ dependencies {
     testCompile "org.grails:grails-plugin-testing"
 
     console "org.grails:grails-console"
+
+    compile project(':commons')
 }
 
 task wrapper(type: Wrapper) {

@@ -9,7 +9,7 @@
  * in the user guide at https://docs.gradle.org/2.7/userguide/multi_project_builds.html
  */
 
-include 'grails2', 'grails3'
+include 'commons', 'grails2', 'grails3'
 /*
 // To declare projects as part of a multi-project build use the 'include' method
 include 'shared'

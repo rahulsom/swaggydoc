@@ -48,7 +48,7 @@ class Parameter {
                     (value[0] == value[-1] && (value[0] == '"' || value[0] == "'")) ? value[1..-2] : value
                 }
             } else {
-                log.error("Bad value for allowable values: '${param.allowableValues()}'")
+                Parameter.log.error("Bad value for allowable values: '${param.allowableValues()}'")
             }
         } else if (classes.find{Class clazz -> clazz.simpleName == param.dataType()}) {
             def clazz = classes.find{Class clazz -> clazz.simpleName == param.dataType()}
@@ -56,7 +56,7 @@ class Parameter {
                 this.type = 'string'
                 _enum = clazz.enumConstants
             } else {
-                log.error("Non enum class ${param.dataType()} sent as param - ${param.name()}")
+                Parameter.log.error("Non enum class ${param.dataType()} sent as param - ${param.name()}")
             }
         }
         allowMultiple = param.allowMultiple()

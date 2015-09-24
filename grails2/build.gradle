@@ -23,6 +23,6 @@ dependencies {
   bootstrap "org.grails.plugins:tomcat:7.0.55" // No container is deployed by default, so add this
   // compile 'org.grails.plugins:asset-pipeline:2.1.3' // Just an example of adding a Grails plugin
 
-  compile 'com.wordnik:swagger-annotations:1.3.8'
+  compile project(':commons')
   test 'org.grails.plugins:marshallers:0.6'
 }
