@@ -2,23 +2,27 @@
 
 bower install
 
-function resetDirs() {
-  def GRH=$1
-  if [ "$GRH" = "" ];
-    echo "No dir specified"
-    exit 1
-  fi
-  rm -rf $GRH/web-app/images/ $GRH/web-app/css/ $GRH/web-app/js/
-  mkdir -p $GRH/web-app/images/
-  mkdir -p $GRH/web-app/css/
-  mkdir -p $GRH/web-app/js/swagger-lib/
+BOWER_DIR=bower-sources/swagger-ui/dist/
 
-  cp -R bower-sources/swagger-ui/dist/images/*      $GRH/web-app/images/
-  cp -R bower-sources/swagger-ui/dist/css/*         $GRH/web-app/css/
-  cp -R bower-sources/swagger-ui/dist/lib/*         $GRH/web-app/js/swagger-lib/
-  cp -R bower-sources/swagger-ui/dist/swagger-ui.js $GRH/web-app/js/
+WA_DIR=grails2/web-app
 
-}
+rm -rf $WA_DIR/images/ $WA_DIR/css/ $WA_DIR/js/
+mkdir -p $WA_DIR/images/
+mkdir -p $WA_DIR/css/
+mkdir -p $WA_DIR/js/swagger-lib/
 
-resetDirs grails2
-resetDirs grails3
+cp -R $BOWER_DIR/images/*      $WA_DIR/images/
+cp -R $BOWER_DIR/css/*         $WA_DIR/css/
+cp -R $BOWER_DIR/lib/*         $WA_DIR/js/swagger-lib/
+cp -R $BOWER_DIR/swagger-ui.js $WA_DIR/js/
+
+ASSETS=grails3/grails-app/assets
+rm -rf $ASSETS/images/ $ASSETS/stylesheets/ $ASSETS/javascripts/
+mkdir -p $ASSETS/images/
+mkdir -p $ASSETS/stylesheets/
+mkdir -p $ASSETS/javascripts/swagger-lib/
+
+cp -R $BOWER_DIR/images/*      $ASSETS/images/
+cp -R $BOWER_DIR/css/*         $ASSETS/stylesheets/
+cp -R $BOWER_DIR/lib/*         $ASSETS/javascripts/swagger-lib/
+cp -R $BOWER_DIR/swagger-ui.js $ASSETS/javascripts/
