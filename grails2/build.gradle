@@ -37,10 +37,10 @@ task gdocs() {
     def publisher = new grails.doc.DocPublisher(srcDocs, outputDir)
     publisher.with {
       ant = project.ant
-      title = 'Grails Gradle Plugin'
-      subtitle = 'Grails Gradle Plugin'
+      title = 'Grails Swaggydoc Plugin'
+      subtitle = 'Grails Swaggydoc Plugin'
       version = project.version
-      authors = 'Luke Daley, Graeme Rocher, Peter Ledbrook, John Engelman'
+      authors = 'Rahul Somasunderam'
       license = 'The Apache Software License, Version 2.0'
       copyright = ''
       footer = ''
