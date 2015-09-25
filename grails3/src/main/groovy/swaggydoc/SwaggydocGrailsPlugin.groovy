@@ -1,32 +1,34 @@
 package swaggydoc
 
-import grails.plugins.*
+import grails.plugins.Plugin
 
 class SwaggydocGrailsPlugin extends Plugin {
 
     // the version or versions of Grails the plugin is designed for
-    def grailsVersion = "3.0.7 > *"
+    def grailsVersion = "3.0.0 > *"
     // resources that are excluded from plugin packaging
     def pluginExcludes = [
-        "grails-app/views/error.gsp"
+            "grails-app/views/error.gsp",
+            "grails-app/controllers/com/github/rahulsom/swaggydoc/test/*.groovy",
+            "grails-app/domain/com/github/rahulsom/swaggydoc/test/*.groovy",
+            "src/groovy/com/github/rahulsom/swaggydoc/test/*.groovy",
     ]
 
-    // TODO Fill in these fields
-    def title = "Swaggydoc" // Headline display name of the plugin
-    def author = "Your name"
-    def authorEmail = ""
+    def title = "Swaggydoc Plugin" // Headline display name of the plugin
+    def author = "Rahul Somasunderam"
+    def authorEmail = "rahul.som@gmail.com"
     def description = '''\
-Brief summary/description of the plugin.
+Uses swagger to document Grails Controllers
 '''
     def profiles = ['web']
 
     // URL to the plugin's documentation
-    def documentation = "http://grails.org/plugin/swaggydoc"
+    def documentation = "https://rahulsom.github.io/swaggydoc"
 
     // Extra (optional) plugin metadata
 
     // License: one of 'APACHE', 'GPL2', 'GPL3'
-//    def license = "APACHE"
+    def license = "APACHE"
 
     // Details of company behind the plugin (if there is one)
 //    def organization = [ name: "My Company", url: "http://www.my-company.com/" ]
@@ -35,12 +37,13 @@ Brief summary/description of the plugin.
 //    def developers = [ [ name: "Joe Bloggs", email: "joe@bloggs.net" ]]
 
     // Location of the plugin's issue tracker.
-//    def issueManagement = [ system: "JIRA", url: "http://jira.grails.org/browse/GPMYPLUGIN" ]
+    def issueManagement = [system: "Github", url: "https://github.com/rahulsom/swaggydoc/issues"]
 
     // Online location of the plugin's browseable source code.
-//    def scm = [ url: "http://svn.codehaus.org/grails-plugins/" ]
+    def scm = [url: "http://github.com/rahulsom/swaggydoc.git"]
 
-    Closure doWithSpring() { {->
+    Closure doWithSpring() {
+        { ->
             // TODO Implement runtime spring config (optional)
         }
     }
