@@ -713,6 +713,7 @@ class SwaggyDataService {
         return field
     }
 
+    @SuppressWarnings("GrMethodMayBeStatic")
     private NumberField addNumericConstraints(ConstrainedProperty constrainedProperty, NumberField retval) {
         if (constrainedProperty?.range) {
             retval.maximum = constrainedProperty.range.to as int
