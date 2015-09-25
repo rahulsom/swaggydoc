@@ -2,11 +2,7 @@
 set -e
 rm -rf *.zip
 ./bowerize.sh
-./gradlew build
-
-cd grails2
-./grailsw doc --pdf --non-interactive
-cd ..
+./gradlew build grails2:gdocs
 
 filename=$(find . -name "grails-*.zip" | head -1)
 filename=$(basename $filename)

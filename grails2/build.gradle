@@ -4,6 +4,7 @@ buildscript {
   }
   dependencies {
     classpath "org.grails:grails-gradle-plugin:2.2.0.RC1"
+    classpath 'org.grails:grails-docs:2.3.6'
   }
 }
 
@@ -25,4 +26,26 @@ dependencies {
 
   compile project(':commons')
   test 'org.grails.plugins:marshallers:0.6'
+}
+
+task gdocs() {
+  group 'Documentation'
+  description 'Generate Grails Doc style documentation'
+  doLast {
+    def srcDocs = file("src/docs")
+    def outputDir = file("build/docs/manual")
+    def publisher = new grails.doc.DocPublisher(srcDocs, outputDir)
+    publisher.with {
+      ant = project.ant
+      title = 'Grails Gradle Plugin'
+      subtitle = 'Grails Gradle Plugin'
+      version = project.version
+      authors = 'Luke Daley, Graeme Rocher, Peter Ledbrook, John Engelman'
+      license = 'The Apache Software License, Version 2.0'
+      copyright = ''
+      footer = ''
+      engineProperties = [:]
+    }
+    publisher.publish()
+  }
 }
