@@ -61,6 +61,7 @@ dependencies {
 
     console "org.grails:grails-console"
 
+    runtime "org.grails.plugins:asset-pipeline:3.0.6"
     compile project(':commons')
 }
 
