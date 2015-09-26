@@ -5,6 +5,11 @@ import grails.rest.RestfulController
 
 @Api("photo")
 class PhotoController extends RestfulController<Photo> {
+
+    PhotoController() {
+        super(Photo)
+    }
+
     @Override
     Object index(Integer max) {
         return super.index(max)

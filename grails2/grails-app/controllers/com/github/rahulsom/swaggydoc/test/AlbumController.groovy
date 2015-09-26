@@ -6,6 +6,10 @@ import grails.rest.RestfulController
 @Api("album")
 class AlbumController extends RestfulController<Album> {
 
+    AlbumController() {
+        super(Album)
+    }
+
     @Override
     Object show() {
         return super.show()
