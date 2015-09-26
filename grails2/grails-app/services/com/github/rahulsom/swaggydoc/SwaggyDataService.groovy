@@ -38,7 +38,7 @@ class SwaggyDataService {
     ]
 
     public static final Map<String, Closure<DefaultAction>> DefaultActionComponents = [
-            index: { String domainName ->
+            index : { String domainName ->
                 new DefaultAction(SwaggyList, domainName, [
                         new Parameter('offset', 'Records to skip. Empty means 0.', 'query', 'int'),
                         new Parameter('max', 'Max records to return. Empty means 10.', 'query', 'int'),
@@ -51,7 +51,7 @@ class SwaggyDataService {
                         },
                 ], [], true)
             },
-            show : { String domainName ->
+            show  : { String domainName ->
                 new DefaultAction(SwaggyShow, domainName, [new Parameter('id', 'Identifier to look for', 'path', 'string', true)],
                         [
                                 new ResponseMessage(BAD_REQUEST, 'Bad Request'),
@@ -59,7 +59,7 @@ class SwaggyDataService {
                         ]
                 )
             },
-            save : { String domainName ->
+            save  : { String domainName ->
                 new DefaultAction(SwaggySave, domainName, [new Parameter('body', "Description of ${domainName}", 'body', domainName, true)],
                         [
                                 new ResponseMessage(CREATED, "New ${domainName} created"),
@@ -80,7 +80,7 @@ class SwaggyDataService {
                         ]
                 )
             },
-            patch: { String domainName ->
+            patch : { String domainName ->
                 new DefaultAction(SwaggyPatch, domainName,
                         [
                                 new Parameter('id', "Id to patch", 'path', 'string', true),
@@ -464,9 +464,9 @@ class SwaggyDataService {
                     }
 
 
-            Map<String, ConstrainedProperty> constrainedProperties = model.declaredMethods.find {
-                it.name == 'getConstraints'
-            } ? model.constraints : null
+            Map<String, ConstrainedProperty> constrainedProperties =
+                    domainClass?.constrainedProperties ?:
+                            model.declaredMethods.find { it.name == 'getConstraints' } ? model.constraints : null
             def optional = constrainedProperties?.findAll { k, v -> v.isNullable() }
 
             if (domainClass) {
