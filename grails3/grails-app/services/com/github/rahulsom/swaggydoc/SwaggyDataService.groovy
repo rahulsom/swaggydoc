@@ -1,15 +1,16 @@
 package com.github.rahulsom.swaggydoc
 
 import com.wordnik.swagger.annotations.*
-import grails.transaction.Transactional
-import grails.util.Holders
-import grails.web.mapping.UrlMapping
-import groovy.transform.CompileStatic
 import grails.core.*
+import grails.transaction.Transactional
+import grails.util.GrailsClassUtils
+import grails.util.Holders
 import grails.validation.ConstrainedProperty
 import grails.web.mapping.LinkGenerator
+import grails.web.mapping.UrlMapping
 import grails.web.mapping.UrlMappings
 import grails.web.mime.MimeUtility
+import groovy.transform.CompileStatic
 
 import java.lang.annotation.Annotation
 import java.lang.reflect.AccessibleObject
@@ -30,81 +31,81 @@ class SwaggyDataService {
     static final String SwaggerVersion = '1.2'
     static final List<String> DefaultResponseContentTypes = ['application/json', 'application/xml', 'text/html']
     static final List<String> DefaultRequestContentTypes = [
-        'application/json', 'application/xml', 'application/x-www-form-urlencoded'
+            'application/json', 'application/xml', 'application/x-www-form-urlencoded'
     ]
     /*
      * These don't get documented in the listing of models.
      */
     static final List knownTypes = [
-        int, Integer, long, Long, float, Float, double, Double, BigInteger, BigDecimal,
-        String, boolean, Boolean, Date, byte, Byte, void
+            int, Integer, long, Long, float, Float, double, Double, BigInteger, BigDecimal,
+            String, boolean, Boolean, Date, byte, Byte, void
     ]
 
     public static final Map<String, Closure<DefaultAction>> DefaultActionComponents = [
-        index: { String domainName ->
-            new DefaultAction(SwaggyList, domainName, [
-                new Parameter('offset', 'Records to skip. Empty means 0.', 'query', 'int'),
-                new Parameter('max', 'Max records to return. Empty means 10.', 'query', 'int'),
-                new Parameter('sort', 'Field to sort by. Empty means id if q is empty. If q is provided, empty ' +
-                    'means relevance.', 'query', 'string'),
-                new Parameter('order', 'Order to sort by. Empty means asc if q is empty. If q is provided, empty ' +
-                    'means desc.', 'query', 'string').with {
-                    _enum = ['asc', 'desc']
-                    it
-                },
-            ], [], true)
-        },
-        show : { String domainName ->
-            new DefaultAction(SwaggyShow, domainName, [new Parameter('id', 'Identifier to look for', 'path', 'string', true)],
-                [
-                    new ResponseMessage(BAD_REQUEST, 'Bad Request'),
-                    new ResponseMessage(NOT_FOUND, "Could not find ${domainName} with that Id"),
-                ]
-            )
-        },
-        save : { String domainName ->
-            new DefaultAction(SwaggySave, domainName, [new Parameter('body', "Description of ${domainName}", 'body', domainName, true)],
-                [
-                    new ResponseMessage(CREATED, "New ${domainName} created"),
-                    new ResponseMessage(UNPROCESSABLE_ENTITY, 'Malformed Entity received'),
-                ]
-            )
-        },
-        update: { String domainName ->
-            new DefaultAction(SwaggyUpdate, domainName,
-                [
-                    new Parameter('id', "Id to update", 'path', 'string', true),
-                    new Parameter('body', "Description of ${domainName}", 'body', domainName, true),
-                ],
-                [
-                    new ResponseMessage(BAD_REQUEST, 'Bad Request'),
-                    new ResponseMessage(NOT_FOUND, "Could not find ${domainName} with that Id"),
-                    new ResponseMessage(UNPROCESSABLE_ENTITY, 'Malformed Entity received'),
-                ]
-            )
-        },
-        patch: { String domainName ->
-            new DefaultAction(SwaggyPatch, domainName,
-                [
-                    new Parameter('id', "Id to patch", 'path', 'string', true),
-                    new Parameter('body', "Description of ${domainName}", 'body', domainName, true),
-                ],
-                [
-                    new ResponseMessage(BAD_REQUEST, 'Bad Request'),
-                    new ResponseMessage(NOT_FOUND, "Could not find ${domainName} with that Id"),
-                    new ResponseMessage(UNPROCESSABLE_ENTITY, 'Malformed Entity received'),
-                ]
-            )
-        },
-        delete: { String domainName ->
-            new DefaultAction(SwaggyDelete, 'void', [new Parameter('id', "Id to delete", 'path', 'string', true)],
-                [
-                    new ResponseMessage(NO_CONTENT, 'Delete successful'),
-                    new ResponseMessage(BAD_REQUEST, 'Bad Request'),
-                    new ResponseMessage(NOT_FOUND, "Could not find ${domainName} with that Id"),
-                ]
-            )
-        }
+            index : { String domainName ->
+                new DefaultAction(SwaggyList, domainName, [
+                        new Parameter('offset', 'Records to skip. Empty means 0.', 'query', 'int'),
+                        new Parameter('max', 'Max records to return. Empty means 10.', 'query', 'int'),
+                        new Parameter('sort', 'Field to sort by. Empty means id if q is empty. If q is provided, empty ' +
+                                'means relevance.', 'query', 'string'),
+                        new Parameter('order', 'Order to sort by. Empty means asc if q is empty. If q is provided, empty ' +
+                                'means desc.', 'query', 'string').with {
+                            _enum = ['asc', 'desc']
+                            it
+                        },
+                ], [], true)
+            },
+            show  : { String domainName ->
+                new DefaultAction(SwaggyShow, domainName, [new Parameter('id', 'Identifier to look for', 'path', 'string', true)],
+                        [
+                                new ResponseMessage(BAD_REQUEST, 'Bad Request'),
+                                new ResponseMessage(NOT_FOUND, "Could not find ${domainName} with that Id"),
+                        ]
+                )
+            },
+            save  : { String domainName ->
+                new DefaultAction(SwaggySave, domainName, [new Parameter('body', "Description of ${domainName}", 'body', domainName, true)],
+                        [
+                                new ResponseMessage(CREATED, "New ${domainName} created"),
+                                new ResponseMessage(UNPROCESSABLE_ENTITY, 'Malformed Entity received'),
+                        ]
+                )
+            },
+            update: { String domainName ->
+                new DefaultAction(SwaggyUpdate, domainName,
+                        [
+                                new Parameter('id', "Id to update", 'path', 'string', true),
+                                new Parameter('body', "Description of ${domainName}", 'body', domainName, true),
+                        ],
+                        [
+                                new ResponseMessage(BAD_REQUEST, 'Bad Request'),
+                                new ResponseMessage(NOT_FOUND, "Could not find ${domainName} with that Id"),
+                                new ResponseMessage(UNPROCESSABLE_ENTITY, 'Malformed Entity received'),
+                        ]
+                )
+            },
+            patch : { String domainName ->
+                new DefaultAction(SwaggyPatch, domainName,
+                        [
+                                new Parameter('id', "Id to patch", 'path', 'string', true),
+                                new Parameter('body', "Description of ${domainName}", 'body', domainName, true),
+                        ],
+                        [
+                                new ResponseMessage(BAD_REQUEST, 'Bad Request'),
+                                new ResponseMessage(NOT_FOUND, "Could not find ${domainName} with that Id"),
+                                new ResponseMessage(UNPROCESSABLE_ENTITY, 'Malformed Entity received'),
+                        ]
+                )
+            },
+            delete: { String domainName ->
+                new DefaultAction(SwaggyDelete, 'void', [new Parameter('id', "Id to delete", 'path', 'string', true)],
+                        [
+                                new ResponseMessage(NO_CONTENT, 'Delete successful'),
+                                new ResponseMessage(BAD_REQUEST, 'Bad Request'),
+                                new ResponseMessage(NOT_FOUND, "Could not find ${domainName} with that Id"),
+                        ]
+                )
+            }
     ]
 
     @CompileStatic
@@ -124,16 +125,16 @@ class SwaggyDataService {
      */
     Resources resources() {
         ApiDeclaration[] apis = grailsApplication.controllerClasses.
-            findAll { SwaggyDataService.getApi(it) }.
-            sort { SwaggyDataService.getApi(it).position() }.
-            collect { controllerToApi(it) }.
-            toArray([] as ApiDeclaration[])
+                findAll { SwaggyDataService.getApi(it) }.
+                sort { SwaggyDataService.getApi(it).position() }.
+                collect { controllerToApi(it) }.
+                toArray([] as ApiDeclaration[])
 
         new Resources(
-            apiVersion: apiVersion,
-            swaggerVersion: SwaggerVersion,
-            info: infoObject,
-            apis: apis,
+                apiVersion: apiVersion,
+                swaggerVersion: SwaggerVersion,
+                info: infoObject,
+                apis: apis,
         )
     }
 
@@ -162,43 +163,43 @@ class SwaggyDataService {
         List<String> resourcePathParts
         List<Parameter> resourcePathParams
         Map<String, MethodDocumentation> apis = grailsUrlMappingsHolder.
-            urlMappings.
-            findAll { it.controllerName == controllerName }.
-            collectEntries { mapping ->
+                urlMappings.
+                findAll { it.controllerName == controllerName }.
+                collectEntries { mapping ->
 
-                log.debug("Mapping: $mapping")
-                def paths = populatePaths(mapping)
-                List<String> pathParts = paths.left
-                List<Parameter> pathParams = paths.right
-                // Capture resource path candidates
-                if (!resourcePathParts || resourcePathParts.size() > pathParts.size()) {
-                    resourcePathParts = pathParts
-                    resourcePathParams = pathParams
-                }
-
-                def actionMethod = DefaultActionComponents.get(mapping.actionName)
-                DefaultAction defaults = (actionMethod ?: actionFallback)(domainName)
-                log.debug "defaults?.parameters: ${defaults?.parameters}"
-                log.debug "pathParams: ${pathParams}"
-                List<Parameter> parameters = (defaults?.parameters?.clone() ?: []) + pathParams
-                if (pathParts[-1] != "{id}") {
-                    // Special case: defaults may include 'id' for single resource paths
-                    parameters.removeAll { it.name == 'id' }
-                }
-                [
-                    mapping.actionName,
-                    defineAction('/' + pathParts.join('/'), mapping.httpMethod, defaults.responseType,
-                        "${mapping.httpMethod.toLowerCase()}${controllerName}${mapping.actionName}",
-                        parameters, defaults?.responseMessages ?: [], "${mapping.actionName} ${domainName}"
-                    ).with {
-                        if (defaults.isList) {
-                            it.operations[0].type = 'array'
-                            it.operations[0].items = new RefItem(defaults.responseType)
-                        }
-                        it
+                    log.debug("Mapping: $mapping")
+                    def paths = populatePaths(mapping)
+                    List<String> pathParts = paths.left
+                    List<Parameter> pathParams = paths.right
+                    // Capture resource path candidates
+                    if (!resourcePathParts || resourcePathParts.size() > pathParts.size()) {
+                        resourcePathParts = pathParts
+                        resourcePathParams = pathParams
                     }
-                ]
-            }
+
+                    def actionMethod = DefaultActionComponents.get(mapping.actionName)
+                    DefaultAction defaults = (actionMethod ?: actionFallback)(domainName)
+                    log.debug "defaults?.parameters: ${defaults?.parameters}"
+                    log.debug "pathParams: ${pathParams}"
+                    List<Parameter> parameters = (defaults?.parameters?.clone() ?: []) + pathParams
+                    if (pathParts[-1] != "{id}") {
+                        // Special case: defaults may include 'id' for single resource paths
+                        parameters.removeAll { it.name == 'id' }
+                    }
+                    [
+                            mapping.actionName,
+                            defineAction('/' + pathParts.join('/'), mapping.httpMethod, defaults.responseType,
+                                    "${mapping.httpMethod.toLowerCase()}${controllerName}${mapping.actionName}",
+                                    parameters, defaults?.responseMessages ?: [], "${mapping.actionName} ${domainName}"
+                            ).with {
+                                if (defaults.isList) {
+                                    it.operations[0].type = 'array'
+                                    it.operations[0].items = new RefItem(defaults.responseType)
+                                }
+                                it
+                            }
+                    ]
+                }
 
         if (resourcePathParts?.size()) {
             // UrlMappings may override the resourcePath
@@ -219,8 +220,8 @@ class SwaggyDataService {
 
         def successTypes = apiOperationAnnotations*.response()
         def inferredTypes = grailsApplication.domainClasses.
-            find { it.logicalPropertyName == theController.logicalPropertyName }?.
-            clazz
+                find { it.logicalPropertyName == theController.logicalPropertyName }?.
+                clazz
         def additionalTypes = additionalClassesAnnotations*.value().flatten()
         def errorTypes = apiResponseAnnotations*.value().flatten()*.response().flatten()
 
@@ -255,8 +256,8 @@ class SwaggyDataService {
         def updateDocWithoutUrlMappings = { String action, MethodDocumentation documentation ->
             if (apis.containsKey(action)) {
                 apis[action].operations = (
-                    apis[action].operations.toList() +
-                        documentation.operations.toList()).unique() as Operation[]
+                        apis[action].operations.toList() +
+                                documentation.operations.toList()).unique() as Operation[]
             } else {
                 apis[action] = documentation
             }
@@ -273,34 +274,34 @@ class SwaggyDataService {
 
         // Update APIs with swaggydoc method annotations
         DefaultActionComponents.
-            each { action, defaultsFactory ->
-                def defaults = defaultsFactory(domainName)
-                SwaggyDataService.methodsOfType(defaults.swaggyAnnotation, theControllerClazz).
-                    collectMany { method ->
-                        generateMethodFromSwaggyAnnotations(action, method, theController).
-                            collect { updateDocumentation(method.name, it) }
-                    }
-            }
+                each { action, defaultsFactory ->
+                    def defaults = defaultsFactory(domainName)
+                    SwaggyDataService.methodsOfType(defaults.swaggyAnnotation, theControllerClazz).
+                            collectMany { method ->
+                                generateMethodFromSwaggyAnnotations(action, method, theController).
+                                        collect { updateDocumentation(method.name, it) }
+                            }
+                }
 
         log.debug("Apis: $apis")
 
         def groupedApis = apis.
-            findAll { k, v -> k && v && v.operations.any { op -> op.method != '*' } }.
-            values().
-            groupBy { MethodDocumentation it -> it.path }.
-            collect { path, methodDocs ->
-                new MethodDocumentation(path, null, methodDocs*.operations.flatten().unique() as Operation[])
-            }
+                findAll { k, v -> k && v && v.operations.any { op -> op.method != '*' } }.
+                values().
+                groupBy { MethodDocumentation it -> it.path }.
+                collect { path, methodDocs ->
+                    new MethodDocumentation(path, null, methodDocs*.operations.flatten().unique() as Operation[])
+                }
 
         return new ControllerDefinition(
-            apiVersion: apiVersion,
-            swaggerVersion: SwaggerVersion,
-            basePath: api?.basePath() ?: absoluteBasePath,
-            resourcePath: resourcePath - basePath,
-            produces: api?.produces()?.tokenize(',') ?: responseContentTypes(theControllerClazz),
-            consumes: api?.consumes()?.tokenize(',') ?: DefaultRequestContentTypes,
-            apis: groupedApis,
-            models: models
+                apiVersion: apiVersion,
+                swaggerVersion: SwaggerVersion,
+                basePath: api?.basePath() ?: absoluteBasePath,
+                resourcePath: resourcePath - basePath,
+                produces: api?.produces()?.tokenize(',') ?: responseContentTypes(theControllerClazz),
+                consumes: api?.consumes()?.tokenize(',') ?: DefaultRequestContentTypes,
+                apis: groupedApis,
+                models: models
         )
     }
 
@@ -320,7 +321,7 @@ class SwaggyDataService {
         mapping.urlData.tokens.eachWithIndex { String token, int idx ->
             if (token.matches(/^\(.*[\*\+]+.*\)$/)) {
                 def param = (idx == mapping.urlData.tokens.size() - 1) ? 'id' :
-                    mapping.constraints[constraintIdx]?.propertyName
+                        mapping.constraints[constraintIdx]?.propertyName
                 constraintIdx++
                 if (param != 'id') {
                     // Don't push 'id' as it is one of the default pathParams
@@ -345,8 +346,8 @@ class SwaggyDataService {
     private ApiDeclaration controllerToApi(GrailsClass controller) {
         def name = controller.logicalPropertyName
         new ApiDeclaration(
-            path: grailsLinkGenerator.link(controller: 'api', action: 'show', id: name, absolute: true),
-            description: getApi(controller).description() ?: controller.naturalName
+                path: grailsLinkGenerator.link(controller: 'api', action: 'show', id: name, absolute: true),
+                description: getApi(controller).description() ?: controller.naturalName
         )
     }
 
@@ -393,7 +394,7 @@ class SwaggyDataService {
             _marshallingConfig = [:]
             if (Holders.pluginManager.hasGrailsPlugin('marshallers')) {
                 def MarshallingConfigBuilder = grailsApplication.getClassLoader().
-                    loadClass("org.grails.plugins.marshallers.config.MarshallingConfigBuilder")
+                        loadClass("org.grails.plugins.marshallers.config.MarshallingConfigBuilder")
                 grailsApplication.domainClasses.each {
                     def clazz = it.clazz
                     Closure mc = GrailsClassUtils.getStaticPropertyValue(clazz, 'marshalling') as Closure
@@ -460,16 +461,16 @@ class SwaggyDataService {
             }
 
             def props = fieldSource.
-                findAll {
-                    !it.toString().contains(' static ') &&
-                        !it.toString().contains(' transient ') &&
-                        it.name != 'errors'
-                }
+                    findAll {
+                        !it.toString().contains(' static ') &&
+                                !it.toString().contains(' transient ') &&
+                                it.name != 'errors'
+                    }
 
+            Map<String, ConstrainedProperty> constrainedProperties =
+                    domainClass?.constrainedProperties ?:
+                            model.declaredMethods.find { it.name == 'getConstraints' } ? model.constraints : null
 
-            Map<String, ConstrainedProperty> constrainedProperties = model.declaredMethods.find {
-                it.name == 'getConstraints'
-            } ? model.constraints : null
             def optional = constrainedProperties?.findAll { k, v -> v.isNullable() }
 
             if (domainClass) {
@@ -493,9 +494,9 @@ class SwaggyDataService {
             def required = props.collect { f -> f.name } - optional*.key
 
             def modelDescription = new ModelDescription(
-                id: model.simpleName,
-                required: required,
-                properties: props.collectEntries { f -> [f.name, getTypeDescriptor(f, domainClass)] }
+                    id: model.simpleName,
+                    required: required,
+                    properties: props.collectEntries { f -> [f.name, getTypeDescriptor(f, domainClass)] }
             )
 
             models[model.simpleName] = modelDescription
@@ -530,26 +531,26 @@ class SwaggyDataService {
     }
 
     private List<MethodDocumentation> generateMethodFromSwaggyAnnotations(
-        String action, Method method, GrailsClass theController) {
+            String action, Method method, GrailsClass theController) {
         def basePath = grailsLinkGenerator.link(uri: '')
         def slug = theController.logicalPropertyName
         def domainName = slugToDomain(slug)
         DefaultAction defaults = DefaultActionComponents[action](domainName)
         List<Parameter> parameters = defaults.parameters.clone() as List<Parameter>
         if (defaults.swaggyAnnotation.metaClass.getMetaMethod('searchParam')
-            && findAnnotation(defaults.swaggyAnnotation, method).searchParam()) {
+                && findAnnotation(defaults.swaggyAnnotation, method).searchParam()) {
             parameters << new Parameter('q', 'Query. Follows Lucene Query Syntax.', 'query', 'string')
         }
         if (defaults.swaggyAnnotation.metaClass.getMetaMethod('extraParams')
-            && findAnnotation(defaults.swaggyAnnotation, method).extraParams()) {
+                && findAnnotation(defaults.swaggyAnnotation, method).extraParams()) {
             findAnnotation(defaults.swaggyAnnotation, method).extraParams().each { ApiImplicitParam param ->
                 parameters << new Parameter(param)
             }
         }
         def pathParams = parameters.
-            findAll { it.paramType == 'path' }.
-            collect { it.name }.
-            collectEntries { [it, "{${it}}"] }
+                findAll { it.paramType == 'path' }.
+                collect { it.name }.
+                collectEntries { [it, "{${it}}"] }
         def fullLink = grailsLinkGenerator.link(controller: slug, action: method.name, params: pathParams) as String
         def link = fullLink.replace('%7B', '{').replace('%7D', '}') - basePath
         def httpMethods = getHttpMethod(theController, method)
@@ -558,23 +559,23 @@ class SwaggyDataService {
             def inferredNickname = method.name
             log.debug "Generating ${inferredNickname}"
             defineAction(link, httpMethod, domainName, inferredNickname, parameters, defaults.responseMessages,
-                "${action} ${domainName}")
+                    "${action} ${domainName}")
         }
     }
 
     @CompileStatic
     private static MethodDocumentation defineAction(
-        String link, String httpMethod, String responseType, String inferredNickname,
-        List<Parameter> parameters, List<ResponseMessage> responseMessages, String summary) {
+            String link, String httpMethod, String responseType, String inferredNickname,
+            List<Parameter> parameters, List<ResponseMessage> responseMessages, String summary) {
         new MethodDocumentation(link, null, [
-            new Operation(
-                method: httpMethod,
-                summary: summary,
-                nickname: inferredNickname,
-                parameters: parameters as Parameter[],
-                type: responseType,
-                responseMessages: (responseMessages ?: []) as ResponseMessage[],
-            )
+                new Operation(
+                        method: httpMethod,
+                        summary: summary,
+                        nickname: inferredNickname,
+                        parameters: parameters as Parameter[],
+                        type: responseType,
+                        responseMessages: (responseMessages ?: []) as ResponseMessage[],
+                )
         ] as Operation[])
     }
 
@@ -604,22 +605,22 @@ class SwaggyDataService {
             def responseIsArray = apiOperation.responseContainer()
 
             new MethodDocumentation(link, null, [
-                new Operation(
-                    method: httpMethod,
-                    summary: apiOperation.value(),
-                    notes: apiOperation.notes(),
-                    nickname: apiOperation.nickname() ?: inferredNickname,
-                    parameters: parameters as Parameter[],
-                    type: responseIsArray.isEmpty() ? responseType : responseIsArray,
-                    responseMessages: apiResponses?.value()?.collect { new ResponseMessage(it) } ?: [],
-                    produces: apiOperation.produces().split(',')*.trim().findAll { it } ?: null,
-                    consumes: apiOperation.consumes().split(',')*.trim().findAll { it } ?: null,
-                ).with {
-                    if (responseIsArray) {
-                        it.items = new RefItem(responseType)
+                    new Operation(
+                            method: httpMethod,
+                            summary: apiOperation.value(),
+                            notes: apiOperation.notes(),
+                            nickname: apiOperation.nickname() ?: inferredNickname,
+                            parameters: parameters as Parameter[],
+                            type: responseIsArray.isEmpty() ? responseType : responseIsArray,
+                            responseMessages: apiResponses?.value()?.collect { new ResponseMessage(it) } ?: [],
+                            produces: apiOperation.produces().split(',')*.trim().findAll { it } ?: null,
+                            consumes: apiOperation.consumes().split(',')*.trim().findAll { it } ?: null,
+                    ).with {
+                        if (responseIsArray) {
+                            it.items = new RefItem(responseType)
+                        }
+                        it
                     }
-                    it
-                }
             ] as Operation[])
         }
 
@@ -701,10 +702,10 @@ class SwaggyDataService {
         } else if (type.isEnum()) {
             field = new StringField(type.values()*.name() as String[])
         } else if (type.isAssignableFrom(Double) || type.isAssignableFrom(Float) || type.isAssignableFrom(double) ||
-            type.isAssignableFrom(float) || type.isAssignableFrom(BigDecimal)) {
+                type.isAssignableFrom(float) || type.isAssignableFrom(BigDecimal)) {
             field = addNumericConstraints(constrainedProperty, new NumberField('number', 'double'))
         } else if (type.isAssignableFrom(Long) || type.isAssignableFrom(Integer) || type.isAssignableFrom(long) ||
-            type.isAssignableFrom(int) || type.isAssignableFrom(BigInteger)) {
+                type.isAssignableFrom(int) || type.isAssignableFrom(BigInteger)) {
             field = addNumericConstraints(constrainedProperty, new NumberField('integer', 'int64'))
         } else if (type.isAssignableFrom(Date)) {
             field = new StringField('date-time')
@@ -735,9 +736,9 @@ class SwaggyDataService {
 
     private List<String> responseContentTypes(Class controller) {
         GrailsClassUtils.getStaticPropertyValue(controller, 'responseFormats')?.
-            collect { String it ->
-                grailsMimeUtility.getMimeTypeForExtension(it)?.name ?: it.contains('/') ? it : null
-            }?.
-            grep() as List<String> ?: DefaultResponseContentTypes
+                collect { String it ->
+                    grailsMimeUtility.getMimeTypeForExtension(it)?.name ?: it.contains('/') ? it : null
+                }?.
+                grep() as List<String> ?: DefaultResponseContentTypes
     }
 }
