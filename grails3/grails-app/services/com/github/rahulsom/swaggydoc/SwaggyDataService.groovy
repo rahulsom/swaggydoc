@@ -517,7 +517,9 @@ class SwaggyDataService {
                             }
                         } else {
                             log.debug "Add #2"
-                            m.add(f.genericType.actualTypeArguments[0])
+                            if (model != f.genericType.actualTypeArguments[0]) {
+                                m.add(f.genericType.actualTypeArguments[0])
+                            }
                         }
                     } else {
                         log.debug "Add #3"
