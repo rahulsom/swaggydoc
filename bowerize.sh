@@ -2,12 +2,27 @@
 
 bower install
 
-rm -rf web-app/images/ web-app/css/ web-app/js/
-mkdir -p web-app/images/
-mkdir -p web-app/css/
-mkdir -p web-app/js/swagger-lib/
+BOWER_DIR=bower-sources/swagger-ui/dist/
 
-cp -R bower-sources/swagger-ui/dist/images/* web-app/images/
-cp -R bower-sources/swagger-ui/dist/css/* web-app/css/
-cp -R bower-sources/swagger-ui/dist/lib/* web-app/js/swagger-lib/
-cp -R bower-sources/swagger-ui/dist/swagger-ui.js web-app/js/
+WA_DIR=grails2/web-app
+
+rm -rf $WA_DIR/images/ $WA_DIR/css/ $WA_DIR/js/
+mkdir -p $WA_DIR/images/
+mkdir -p $WA_DIR/css/
+mkdir -p $WA_DIR/js/swagger-lib/
+
+cp -R $BOWER_DIR/images/*      $WA_DIR/images/
+cp -R $BOWER_DIR/css/*         $WA_DIR/css/
+cp -R $BOWER_DIR/lib/*         $WA_DIR/js/swagger-lib/
+cp -R $BOWER_DIR/swagger-ui.js $WA_DIR/js/
+
+ASSETS=grails3/grails-app/assets
+rm -rf $ASSETS/images/ $ASSETS/stylesheets/ $ASSETS/javascripts/
+mkdir -p $ASSETS/images/
+mkdir -p $ASSETS/stylesheets/
+mkdir -p $ASSETS/javascripts/swagger-lib/
+
+cp -R $BOWER_DIR/images/*      $ASSETS/images/
+cp -R $BOWER_DIR/css/*         $ASSETS/stylesheets/
+cp -R $BOWER_DIR/lib/*         $ASSETS/javascripts/swagger-lib/
+cp -R $BOWER_DIR/swagger-ui.js $ASSETS/javascripts/

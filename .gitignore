@@ -17,9 +17,6 @@ web-app/WEB-INF/tld/fmt.tld
 
 # Bower Stuff
 bower-sources/
-web-app/css/
-web-app/images/
-web-app/js/
 
 # Products
 grails-swaggydoc-*.zip
@@ -28,3 +25,19 @@ plugin.xml
 
 # NPM stuff
 node_modules/
+
+### Gradle template
+.gradle
+build/
+buildPlugins/
+
+# Ignore Gradle GUI config
+gradle-app.setting
+
+# Avoid ignoring Gradle wrapper jar file (.jar files are usually ignored)
+!gradle-wrapper.jar
+.gradletasknamecache
+
+### Bower managed directories
+grails2/web-app
+grails3/grails-app/assets

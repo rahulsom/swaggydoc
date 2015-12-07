@@ -1,0 +1,12 @@
+repositories {
+    jcenter()
+}
+
+allprojects {
+  version "0.22.0-SNAPSHOT"
+  group "org.grails.plugins"
+}
+// In this section you declare the dependencies for your production and test code
+dependencies {
+
+}
