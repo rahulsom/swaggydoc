@@ -5,5 +5,6 @@ package com.github.rahulsom.swaggydoc.test
  */
 class Pogo {
     Integer id
+    List<Pogo> siblingPogoList
     List<SubPogo> subPogoList
 }
