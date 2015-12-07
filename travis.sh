@@ -32,11 +32,7 @@ if [[ $TRAVIS_BRANCH == 'master' && $TRAVIS_REPO_SLUG == "rahulsom/swaggydoc" \
     echo "SNAPSHOT version, not publishing docs"
   fi
 
-  cd grails2
-  ./grailsw package-plugin
-  ./grailsw publish-plugin --no-scm --allow-overwrite --non-interactive
-
-  cd ..
+  ./gradlew -PgrailsArgs='--no-scm --allow-overwrite --non-interactive' grails2:grails-publish-plugin
   ./gradlew grails3:bintrayUpload
 else
   echo "Not on master branch, so not publishing"
