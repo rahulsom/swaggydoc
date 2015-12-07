@@ -22,7 +22,7 @@ if [[ $TRAVIS_BRANCH == 'master' && $TRAVIS_REPO_SLUG == "rahulsom/swaggydoc" \
     cd gh-pages
     git rm -rf .
     mkdir grails2
-    cp -r ../grails2/target/docs/. ./grails2/
+    cp -r ../grails2/build/docs/. .
     git add *
     git commit -a -m "Updating docs for Travis build: https://travis-ci.org/$TRAVIS_REPO_SLUG/builds/$TRAVIS_BUILD_ID"
     git push origin HEAD
@@ -32,10 +32,7 @@ if [[ $TRAVIS_BRANCH == 'master' && $TRAVIS_REPO_SLUG == "rahulsom/swaggydoc" \
     echo "SNAPSHOT version, not publishing docs"
   fi
 
-  cd grails2
-  ./grailsw publish-plugin --no-scm --allow-overwrite --non-interactive
-
-  cd ..
+  ./gradlew -PgrailsArgs='--no-scm --allow-overwrite --non-interactive' grails2:grails-publish-plugin
   ./gradlew grails3:bintrayUpload
 else
   echo "Not on master branch, so not publishing"

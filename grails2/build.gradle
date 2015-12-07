@@ -22,6 +22,7 @@ grails {
 
 dependencies {
   bootstrap "org.grails.plugins:tomcat:7.0.55" // No container is deployed by default, so add this
+  bootstrap "org.grails.plugins:release:3.0.1" // Needed for publishing plugin
   // compile 'org.grails.plugins:asset-pipeline:2.1.3' // Just an example of adding a Grails plugin
 
   compile project(':commons')
