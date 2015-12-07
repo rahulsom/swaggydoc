@@ -498,9 +498,9 @@ class SwaggyDataService {
             models[model.simpleName] = modelDescription
             log.debug "Added ${model.simpleName} to models"
             props.each { f ->
-                log.debug "Property ${f.name} is ${f.type}"
+                log.debug("Processing field ${f} of type ${f.type}")
                 if (!models.containsKey(f.type.simpleName) && !m.contains(f.type) && !knownTypes.contains(f.type)) {
-                    if (f.type.isAssignableFrom(List) || f.type.isAssignableFrom(Set)) {
+                    if (List.isAssignableFrom(f.type) || Set.isAssignableFrom(f.type)) {
                         if (f instanceof GrailsDomainClassProperty) {
                             Class genericType = domainClass?.associationMap?.getAt(f.name)
                             if (genericType) {
