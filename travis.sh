@@ -33,7 +33,7 @@ if [[ $TRAVIS_BRANCH == 'master' && $TRAVIS_REPO_SLUG == "rahulsom/swaggydoc" \
   fi
 
   cd grails2
-  ./grailsw build
+  ./grailsw package-plugin
   ./grailsw publish-plugin --no-scm --allow-overwrite --non-interactive
 
   cd ..
