@@ -512,8 +512,10 @@ class SwaggyDataService {
                                 log.warn "No type args found for ${f.name}"
                             }
                         } else {
-                            log.debug "Add #2"
-                            m.add(f.genericType.actualTypeArguments[0])
+                            log.debug "Add #2"                            
+                            if (model != f.genericType.actualTypeArguments[0]) {
+                                m.add(f.genericType.actualTypeArguments[0])    
+                            }                            
                         }
                     } else {
                         log.debug "Add #3"

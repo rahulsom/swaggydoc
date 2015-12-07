@@ -298,11 +298,15 @@ class ApiControllerSpec extends Specification {
         def pogoModel = json.models['Pogo']
         def subPogoModel = json.models['SubPogo']
         pogoModel
-        pogoModel.properties.size() == 2
+        pogoModel.properties.size() == 3
 
         pogoModel.properties.id
         pogoModel.properties.id.format == 'int64'
         pogoModel.properties.id.type == 'integer'
+
+        pogoModel.properties.siblingPogoList
+        pogoModel.properties.siblingPogoList.items['$ref'] == 'Pogo'
+        pogoModel.properties.siblingPogoList.type == 'array'
 
         pogoModel.properties.subPogoList
         pogoModel.properties.subPogoList.items['$ref'] == 'SubPogo'
