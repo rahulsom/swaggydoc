@@ -16,11 +16,8 @@ import java.lang.annotation.Annotation
 import java.lang.reflect.AccessibleObject
 import java.lang.reflect.Method
 
-import static org.springframework.http.HttpStatus.*
-
 @Transactional
 class SwaggyDataService {
-
 
     public static final Closure<DefaultAction> actionFallback = { new DefaultAction() }
     DefaultGrailsApplication grailsApplication
@@ -28,85 +25,6 @@ class SwaggyDataService {
     UrlMappings grailsUrlMappingsHolder
     MimeUtility grailsMimeUtility
 
-    static final String SwaggerVersion = '1.2'
-    static final List<String> DefaultResponseContentTypes = ['application/json', 'application/xml', 'text/html']
-    static final List<String> DefaultRequestContentTypes = [
-            'application/json', 'application/xml', 'application/x-www-form-urlencoded'
-    ]
-    /*
-     * These don't get documented in the listing of models.
-     */
-    static final List knownTypes = [
-            int, Integer, long, Long, float, Float, double, Double, BigInteger, BigDecimal,
-            String, boolean, Boolean, Date, byte, Byte, void
-    ]
-
-    public static final Map<String, Closure<DefaultAction>> DefaultActionComponents = [
-            index : { String domainName ->
-                new DefaultAction(SwaggyList, domainName, [
-                        new Parameter('offset', 'Records to skip. Empty means 0.', 'query', 'int'),
-                        new Parameter('max', 'Max records to return. Empty means 10.', 'query', 'int'),
-                        new Parameter('sort', 'Field to sort by. Empty means id if q is empty. If q is provided, empty ' +
-                                'means relevance.', 'query', 'string'),
-                        new Parameter('order', 'Order to sort by. Empty means asc if q is empty. If q is provided, empty ' +
-                                'means desc.', 'query', 'string').with {
-                            _enum = ['asc', 'desc']
-                            it
-                        },
-                ], [], true)
-            },
-            show  : { String domainName ->
-                new DefaultAction(SwaggyShow, domainName, [new Parameter('id', 'Identifier to look for', 'path', 'string', true)],
-                        [
-                                new ResponseMessage(BAD_REQUEST, 'Bad Request'),
-                                new ResponseMessage(NOT_FOUND, "Could not find ${domainName} with that Id"),
-                        ]
-                )
-            },
-            save  : { String domainName ->
-                new DefaultAction(SwaggySave, domainName, [new Parameter('body', "Description of ${domainName}", 'body', domainName, true)],
-                        [
-                                new ResponseMessage(CREATED, "New ${domainName} created"),
-                                new ResponseMessage(UNPROCESSABLE_ENTITY, 'Malformed Entity received'),
-                        ]
-                )
-            },
-            update: { String domainName ->
-                new DefaultAction(SwaggyUpdate, domainName,
-                        [
-                                new Parameter('id', "Id to update", 'path', 'string', true),
-                                new Parameter('body', "Description of ${domainName}", 'body', domainName, true),
-                        ],
-                        [
-                                new ResponseMessage(BAD_REQUEST, 'Bad Request'),
-                                new ResponseMessage(NOT_FOUND, "Could not find ${domainName} with that Id"),
-                                new ResponseMessage(UNPROCESSABLE_ENTITY, 'Malformed Entity received'),
-                        ]
-                )
-            },
-            patch : { String domainName ->
-                new DefaultAction(SwaggyPatch, domainName,
-                        [
-                                new Parameter('id', "Id to patch", 'path', 'string', true),
-                                new Parameter('body', "Description of ${domainName}", 'body', domainName, true),
-                        ],
-                        [
-                                new ResponseMessage(BAD_REQUEST, 'Bad Request'),
-                                new ResponseMessage(NOT_FOUND, "Could not find ${domainName} with that Id"),
-                                new ResponseMessage(UNPROCESSABLE_ENTITY, 'Malformed Entity received'),
-                        ]
-                )
-            },
-            delete: { String domainName ->
-                new DefaultAction(SwaggyDelete, 'void', [new Parameter('id', "Id to delete", 'path', 'string', true)],
-                        [
-                                new ResponseMessage(NO_CONTENT, 'Delete successful'),
-                                new ResponseMessage(BAD_REQUEST, 'Bad Request'),
-                                new ResponseMessage(NOT_FOUND, "Could not find ${domainName} with that Id"),
-                        ]
-                )
-            }
-    ]
 
     @CompileStatic
     private static Parameter makePathParam(String pathParam) {
@@ -132,7 +50,7 @@ class SwaggyDataService {
 
         new Resources(
                 apiVersion: apiVersion,
-                swaggerVersion: SwaggerVersion,
+                swaggerVersion: ServiceDefaults.SwaggerVersion,
                 info: infoObject,
                 apis: apis,
         )
@@ -157,7 +75,7 @@ class SwaggyDataService {
         def absoluteBasePath = grailsLinkGenerator.link(uri: '', absolute: true)
         def basePath = grailsLinkGenerator.link(uri: '')
         def resourcePath = grailsLinkGenerator.link(controller: theController.logicalPropertyName)
-        def domainName = slugToDomain(controllerName)
+        def domainName = ServiceDefaults.slugToDomain(controllerName)
 
         // These preserve the path components supporting hierarchical paths discovered through URL mappings
         List<String> resourcePathParts
@@ -177,7 +95,7 @@ class SwaggyDataService {
                         resourcePathParams = pathParams
                     }
 
-                    def actionMethod = DefaultActionComponents.get(mapping.actionName)
+                    def actionMethod = ServiceDefaults.DefaultActionComponents.get(mapping.actionName)
                     DefaultAction defaults = (actionMethod ?: actionFallback)(domainName)
                     log.debug "defaults?.parameters: ${defaults?.parameters}"
                     log.debug "pathParams: ${pathParams}"
@@ -273,7 +191,7 @@ class SwaggyDataService {
         }
 
         // Update APIs with swaggydoc method annotations
-        DefaultActionComponents.
+        ServiceDefaults.DefaultActionComponents.
                 each { action, defaultsFactory ->
                     def defaults = defaultsFactory(domainName)
                     SwaggyDataService.methodsOfType(defaults.swaggyAnnotation, theControllerClazz).
@@ -295,11 +213,11 @@ class SwaggyDataService {
 
         return new ControllerDefinition(
                 apiVersion: apiVersion,
-                swaggerVersion: SwaggerVersion,
+                swaggerVersion: ServiceDefaults.SwaggerVersion,
                 basePath: api?.basePath() ?: absoluteBasePath,
                 resourcePath: resourcePath - basePath,
                 produces: api?.produces()?.tokenize(',') ?: responseContentTypes(theControllerClazz),
-                consumes: api?.consumes()?.tokenize(',') ?: DefaultRequestContentTypes,
+                consumes: api?.consumes()?.tokenize(',') ?: ServiceDefaults.DefaultRequestContentTypes,
                 apis: groupedApis,
                 models: models
         )
@@ -503,7 +421,7 @@ class SwaggyDataService {
             log.debug "Added ${model.simpleName} to models"
             props.each { f ->
                 log.debug("Processing field ${f} of type ${f.type}")
-                if (!models.containsKey(f.type.simpleName) && !m.contains(f.type) && !knownTypes.contains(f.type)) {
+                if (!models.containsKey(f.type.simpleName) && !m.contains(f.type) && !ServiceDefaults.knownTypes.contains(f.type)) {
                     if (List.isAssignableFrom(f.type) || Set.isAssignableFrom(f.type)) {
                         if (f instanceof GrailsDomainClassProperty) {
                             Class genericType = domainClass?.associationMap?.getAt(f.name)
@@ -536,8 +454,8 @@ class SwaggyDataService {
             String action, Method method, GrailsClass theController) {
         def basePath = grailsLinkGenerator.link(uri: '')
         def slug = theController.logicalPropertyName
-        def domainName = slugToDomain(slug)
-        DefaultAction defaults = DefaultActionComponents[action](domainName)
+        def domainName = ServiceDefaults.slugToDomain(slug)
+        DefaultAction defaults = ServiceDefaults.DefaultActionComponents[action](domainName)
         List<Parameter> parameters = defaults.parameters.clone() as List<Parameter>
         if (defaults.swaggyAnnotation.metaClass.getMetaMethod('searchParam')
                 && findAnnotation(defaults.swaggyAnnotation, method).searchParam()) {
@@ -636,7 +554,7 @@ class SwaggyDataService {
                 log.debug "[Returned] ${method.name} supports [$retval]"
                 [retval]
             } else if (retval instanceof Collection<String>) {
-                def list = removeBoringMethods(retval.toList(), ['GET', 'POST'])
+                def list = ServiceDefaults.removeBoringMethods(retval.toList(), ['GET', 'POST'])
                 log.debug "[Returned] ${method.name} supports $list"
                 list
             } else {
@@ -649,14 +567,6 @@ class SwaggyDataService {
         }
     }
 
-    private static List<String> removeBoringMethods(List<String> methods, List<String> boringMethods) {
-        boringMethods.each { method ->
-            if (methods.size() > 1 && methods.contains(method)) {
-                methods.remove(method)
-            }
-        }
-        methods
-    }
 
     @SuppressWarnings("GrMethodMayBeStatic")
     private Field getTypeDescriptor(def f, GrailsDomainClass gdc) {
@@ -732,15 +642,12 @@ class SwaggyDataService {
         retval
     }
 
-    private static String slugToDomain(String slug) {
-        slug.with { it.replaceFirst(it[0], it[0].toUpperCase()) }
-    }
 
     private List<String> responseContentTypes(Class controller) {
         GrailsClassUtils.getStaticPropertyValue(controller, 'responseFormats')?.
                 collect { String it ->
                     grailsMimeUtility.getMimeTypeForExtension(it)?.name ?: it.contains('/') ? it : null
                 }?.
-                grep() as List<String> ?: DefaultResponseContentTypes
+                grep() as List<String> ?: ServiceDefaults.DefaultResponseContentTypes
     }
 }
