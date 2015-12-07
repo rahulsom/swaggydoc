@@ -11,8 +11,10 @@ env:
   - GIT_NAME="Rahul Somasunderam"
   - GIT_EMAIL="rahul.som@gmail.com"
   - GRAILS_CENTRAL_USERNAME=rahulsom
+  - BINTRAY_USER=rahulsom
   - secure: lcK0atc7vh1s9oh7Z9m17VTKcXrw0AiVM57MoJkuwpbXeZ46qYGN+EThsCaSlT4VcektrhnLVklDIMDcxt0Osv8AYBiZoPFHdnR5ISYb236BJzyC3ODGx5Vj6KQQhBntBGwXTJjXUh5S018fZpbnMbuCsj9xi0KQ055gx8rnxEQ=
   - secure: Py1s5CzVMB5QqaGmH+/rKyvilroqCS1b9q+ltOeTEgBI3jthrTVAnZf+hD3kTxL0OaA6on0LAObKV3Bh9A3Bpt/ZP8aizQjabBImXsJU+p7Hf0YGR4KZiQ4Y40FMnxk42I639FhDBTahL7j7+Mjj/L5jsOvYc03G8JRUMFX+5Sw=
+  - secure: oVg95by328tP44uYe1WcXcYhk42AWEZ98MyAtAd/x0LTdXoy8K/iqCCNIutyqhJgdJETlqT3PZWi6dleNK2RkSdYOVL9NoUwgbGEICOJ73sxVqknvvVrxeKVDCtlVdWzrhailc3Xn8A8ubW5+0DN5INsbWUZoFemIuJqyeEeW54=
 cache:
   directories:
   - "$HOME/.grails/wrapper"

@@ -68,3 +68,18 @@ dependencies {
 task wrapper(type: Wrapper) {
     gradleVersion = gradleWrapperVersion
 }
+
+group "org.grails.plugins"
+
+bintray {
+    pkg {
+        userOrg = ''
+        name = "swaggydoc"
+        issueTrackerUrl = "https://github.com/rahulsom/swaggydoc/issues"
+        vcsUrl = "https://github.com/rahulsom/swaggydoc"
+        version {
+            attributes = ['grails-plugin': "$project.group:swaggydoc"]
+            name = project.version
+        }
+    }
+}
