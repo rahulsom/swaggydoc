@@ -20,9 +20,8 @@ if [[ $TRAVIS_BRANCH == 'master' && $TRAVIS_REPO_SLUG == "rahulsom/swaggydoc" \
     git clone https://${GH_TOKEN}@github.com/$TRAVIS_REPO_SLUG.git -b gh-pages \
         gh-pages --single-branch > /dev/null
     cd gh-pages
-    git rm -rf .
-    mkdir grails2
-    cp -r ../grails2/build/docs/. .
+    git rm -rf *
+    cp -r ../grails2/build/docs/manual/* .
     git add *
     git commit -a -m "Updating docs for Travis build: https://travis-ci.org/$TRAVIS_REPO_SLUG/builds/$TRAVIS_BUILD_ID"
     git push origin HEAD
