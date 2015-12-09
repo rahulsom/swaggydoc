@@ -9,6 +9,7 @@ buildscript {
 }
 
 apply plugin: "grails"
+apply from: "gradle/publish.gradle"
 
 repositories {
   grails.central() //creates a maven repo for the Grails Central repository (Core libraries and plugins)

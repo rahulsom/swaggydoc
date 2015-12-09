@@ -32,6 +32,11 @@ if [[ $TRAVIS_BRANCH == 'master' && $TRAVIS_REPO_SLUG == "rahulsom/swaggydoc" \
     echo "SNAPSHOT version, not publishing docs"
   fi
 
+  cat >> ~/.grails/settings.groovy << EOF
+grails.project.repos.grailsCentral.username='${GRAILS_CENTRAL_USERNAME}'
+grails.project.repos.grailsCentral.password='${GRAILS_CENTRAL_PASSWORD}'
+EOF
+
   ./gradlew -PgrailsArgs='--no-scm --allow-overwrite --non-interactive' grails2:grails-publish-plugin
   ./gradlew grails3:bintrayUpload
 else
