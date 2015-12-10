@@ -23,3 +23,17 @@ dependencies {
     provided 'log4j:log4j:1.2.16'
 
 }
+
+group "com.github.rahulsom"
+
+bintray {
+    pkg {
+        userOrg = ''
+        name = "swaggydoc"
+        issueTrackerUrl = "https://github.com/rahulsom/swaggydoc/issues"
+        vcsUrl = "https://github.com/rahulsom/swaggydoc"
+        version {
+            name = project.version
+        }
+    }
+}
