@@ -1,0 +1,55 @@
+buildscript {
+    repositories {
+        maven { url "https://plugins.gradle.org/m2/" }
+    }
+    dependencies {
+        classpath "org.apache.httpcomponents:httpclient:4.0.1"
+        classpath "org.apache.httpcomponents:httpmime:4.0.1"
+    }
+}
+
+import org.apache.commons.codec.binary.Base64
+import org.apache.http.client.methods.HttpPost
+import org.apache.http.auth.UsernamePasswordCredentials
+import org.apache.http.entity.mime.MultipartEntity
+import org.apache.http.entity.mime.content.FileBody
+import org.apache.http.impl.client.DefaultHttpClient
+import org.apache.http.util.EntityUtils
+import org.apache.http.auth.AuthScope
+import static org.apache.http.auth.AuthScope.*
+import static org.apache.http.HttpVersion.*
+import static org.apache.http.entity.mime.HttpMultipartMode.*
+import static org.apache.http.params.CoreProtocolPNames.*
+
+
+task ('publishPlugin') << {
+
+    def client = new DefaultHttpClient()
+
+    def username = System.getenv("GRAILS_CENTRAL_USERNAME")
+    def password = System.getenv("GRAILS_CENTRAL_PASSWORD")
+    String encoding = Base64.encodeBase64("${username}:${password}".toString().bytes);
+
+    client.params.setParameter(PROTOCOL_VERSION, HTTP_1_1)
+
+    def post = new HttpPost("http://grails.org/api/v1.0/publish/swaggydoc/${version}")
+    post.setHeader('Authorization', "Basic $encoding");
+    def entity = new MultipartEntity(BROWSER_COMPATIBLE)
+
+    entity.addPart('zip', new FileBody(file("grails-swaggydoc-${version}.zip"), "application/zip"))
+    entity.addPart('pom', new FileBody(file('target/pom.xml'), "application/xml"))
+    entity.addPart('xml', new FileBody(file('plugin.xml'), "application/xml"))
+
+    post.setEntity(entity)
+
+
+    def response = client.execute(post)
+    println response.statusLine
+    def responseStr = EntityUtils.toString(response.entity, "UTF-8")
+    println "Response: ${responseStr}"
+
+    client.connectionManager.shutdown()
+
+}
+publishPlugin.dependsOn('grails-generatePom')
+publishPlugin.dependsOn('build')
