@@ -9,7 +9,7 @@
  * in the user guide at https://docs.gradle.org/2.7/userguide/multi_project_builds.html
  */
 
-include 'commons', 'grails2', 'grails3'
+include 'swaggydoc-commons', 'grails2', 'swaggydoc-grails3'
 /*
 // To declare projects as part of a multi-project build use the 'include' method
 include 'shared'
