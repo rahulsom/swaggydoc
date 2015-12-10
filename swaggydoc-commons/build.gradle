@@ -30,9 +30,14 @@ dependencies {
 group "com.github.rahulsom"
 
 bintray {
+    user = System.getenv('BINTRAY_USER')
+    key = System.getenv('BINTRAY_KEY')
+
     pkg {
+        repo = 'myjava'
         userOrg = ''
         name = "swaggydoc"
+        licenses = ['Apache-2.0']
         issueTrackerUrl = "https://github.com/rahulsom/swaggydoc/issues"
         vcsUrl = "https://github.com/rahulsom/swaggydoc"
         version {
