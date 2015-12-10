@@ -10,5 +10,3 @@ allprojects {
 dependencies {
 
 }
-
-build.dependsOn('grails2:')
