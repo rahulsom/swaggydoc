@@ -6,37 +6,41 @@ import static org.springframework.http.HttpStatus.*
 import grails.transaction.Transactional
 import grails.rest.RestfulController
 
+import com.github.rahulsom.swaggydoc.*
+import com.wordnik.swagger.annotations.*
+
 @Transactional(readOnly = true)
+@Api(value = 'domain')
 class DomainController extends RestfulController {
 
     static responseFormats = ['json', 'xml']
 
-    @Override
+    @Override @SwaggyList
     def index() {
         super.index()
     }
 
-    @Override
+    @Override @SwaggyShow
     def show() {
         super.show()
     }
 
-    @Override
+    @Override @SwaggySave
     def save() {
         super.save()
     }
 
-    @Override
+    @Override @SwaggyUpdate
     def update() {
         super.update()
     }
 
-    @Override
+    @Override @SwaggyDelete
     def delete() {
         super.delete()
     }
 
-    @Override
+    @Override @SwaggyPatch
     Object patch() {
         return super.patch()
     }
