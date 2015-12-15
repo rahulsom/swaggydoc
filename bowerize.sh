@@ -16,7 +16,7 @@ cp -R $BOWER_DIR/css/*         $WA_DIR/css/
 cp -R $BOWER_DIR/lib/*         $WA_DIR/js/swagger-lib/
 cp -R $BOWER_DIR/swagger-ui.js $WA_DIR/js/
 
-ASSETS=grails3/grails-app/assets
+ASSETS=swaggydoc-grails3/grails-app/assets
 rm -rf $ASSETS/images/ $ASSETS/stylesheets/ $ASSETS/javascripts/
 mkdir -p $ASSETS/images/
 mkdir -p $ASSETS/stylesheets/
