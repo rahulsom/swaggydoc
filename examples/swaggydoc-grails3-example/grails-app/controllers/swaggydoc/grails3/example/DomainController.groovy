@@ -2,17 +2,22 @@ package swaggydoc.grails3.example
 
 import static org.springframework.http.HttpStatus.*
 import grails.transaction.Transactional
+import com.github.rahulsom.swaggydoc.*
+import com.wordnik.swagger.annotations.*
 
 @Transactional(readOnly = true)
+@Api(value = 'domain')
 class DomainController {
 
     static allowedMethods = [save: "POST", update: "PUT", delete: "DELETE"]
 
+    @SwaggyList()
     def index(Integer max) {
         params.max = Math.min(max ?: 10, 100)
         respond Domain.list(params), model:[domainCount: Domain.count()]
     }
 
+    @SwaggyShow
     def show(Domain domain) {
         respond domain
     }
@@ -22,6 +27,7 @@ class DomainController {
     }
 
     @Transactional
+    @SwaggySave
     def save(Domain domain) {
         if (domain == null) {
             transactionStatus.setRollbackOnly()
@@ -51,6 +57,7 @@ class DomainController {
     }
 
     @Transactional
+    @SwaggyUpdate
     def update(Domain domain) {
         if (domain == null) {
             transactionStatus.setRollbackOnly()
@@ -76,6 +83,7 @@ class DomainController {
     }
 
     @Transactional
+    @SwaggyDelete
     def delete(Domain domain) {
 
         if (domain == null) {
