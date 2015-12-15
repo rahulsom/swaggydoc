@@ -3,7 +3,7 @@ repositories {
 }
 
 allprojects {
-  version "0.25.0-SNAPSHOT"
+  version "0.25.0"
   group "org.grails.plugins"
 }
 // In this section you declare the dependencies for your production and test code
