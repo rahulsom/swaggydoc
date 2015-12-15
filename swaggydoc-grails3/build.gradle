@@ -47,6 +47,10 @@ dependencyManagement {
     applyMavenExclusions false
 }
 
+jar {
+    exclude('com/github/rahulsom/swaggydoc/test/**')
+}
+
 dependencies {
     provided 'org.springframework.boot:spring-boot-starter-logging'
     provided "org.springframework.boot:spring-boot-starter-actuator"
