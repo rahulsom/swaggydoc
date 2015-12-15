@@ -9,9 +9,7 @@ class SwaggydocGrailsPlugin extends Plugin {
     // resources that are excluded from plugin packaging
     def pluginExcludes = [
             "grails-app/views/error.gsp",
-            "grails-app/controllers/com/github/rahulsom/swaggydoc/test/*.groovy",
-            "grails-app/domain/com/github/rahulsom/swaggydoc/test/*.groovy",
-            "src/groovy/com/github/rahulsom/swaggydoc/test/*.groovy",
+            "**/test/**",
     ]
 
     def title = "Swaggydoc Plugin" // Headline display name of the plugin
