@@ -40,4 +40,4 @@ gradle-app.setting
 
 ### Bower managed directories
 grails2/web-app
-grails3/grails-app/assets
+swaggydoc-grails3/grails-app/assets
