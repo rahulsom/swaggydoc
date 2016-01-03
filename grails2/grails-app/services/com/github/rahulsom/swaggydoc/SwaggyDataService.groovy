@@ -14,6 +14,8 @@ import java.lang.annotation.Annotation
 import java.lang.reflect.AccessibleObject
 import java.lang.reflect.Method
 
+import static com.github.rahulsom.swaggydoc.ServiceDefaults.SwaggerVersion
+
 class SwaggyDataService {
 
     public static final Closure<DefaultAction> actionFallback = { new DefaultAction() }
@@ -39,18 +41,12 @@ class SwaggyDataService {
      * @return Map
      */
     Resources resources() {
-        ApiDeclaration[] apis = grailsApplication.controllerClasses.
+        def apis = grailsApplication.controllerClasses.
                 findAll { SwaggyDataService.getApi(it) }.
-                sort { SwaggyDataService.getApi(it).position() }.
-                collect { controllerToApi(it) }.
-                toArray([] as ApiDeclaration[])
+                sort(false) { SwaggyDataService.getApi(it).position() }.
+                collect { controllerToApi(it) } as ApiDeclaration[]
 
-        new Resources(
-                apiVersion: apiVersion,
-                swaggerVersion: ServiceDefaults.SwaggerVersion,
-                info: infoObject,
-                apis: apis,
-        )
+        new Resources(apiVersion, SwaggerVersion, infoObject, apis)
     }
 
     /**
@@ -101,19 +97,19 @@ class SwaggyDataService {
                         // Special case: defaults may include 'id' for single resource paths
                         parameters.removeAll { it.name == 'id' }
                     }
-                    [
-                            mapping.actionName,
-                            defineAction('/' + pathParts.join('/'), mapping.httpMethod, defaults.responseType,
-                                    "${mapping.httpMethod.toLowerCase()}${controllerName}${mapping.actionName}",
-                                    parameters, defaults?.responseMessages ?: [], "${mapping.actionName} ${domainName}"
-                            ).with {
+                    def methodDocumentation = defineAction(
+                            '/' + pathParts.join('/'), mapping.httpMethod, defaults.responseType,
+                            "${mapping.httpMethod.toLowerCase()}${controllerName}${mapping.actionName}",
+                            parameters, defaults?.responseMessages ?: [],
+                            "${mapping.actionName} ${domainName}").
+                            with {
                                 if (defaults.isList) {
                                     it.operations[0].type = 'array'
                                     it.operations[0].items = new RefItem(defaults.responseType)
                                 }
                                 it
                             }
-                    ]
+                    [mapping.actionName, methodDocumentation]
                 }
 
         if (resourcePathParts?.size()) {
@@ -147,7 +143,65 @@ class SwaggyDataService {
         log.debug "modelTypes: $modelTypes"
         Map models = getModels(modelTypes.findAll { !it.isEnum() && it != Void })
 
-        def updateDocFromUrlMappings = { String action, MethodDocumentation documentation ->
+        def updateDocFromUrlMappings = createUrlMappingsClosure(apis, resourcePath, resourcePathParams)
+        def updateDocWithoutUrlMappings = createNonUrlMappingsClosure(apis)
+        def updateDocumentation = apis ? updateDocFromUrlMappings : updateDocWithoutUrlMappings
+
+        // Update APIs with low-level method annotations
+        apiMethods.each { method ->
+            documentMethodWithSwaggerAnnotations(method, theController, modelTypes).each {
+                updateDocumentation(method.name, it)
+            }
+        }
+
+        // Update APIs with swaggydoc method annotations
+        ServiceDefaults.DefaultActionComponents.
+                each { action, defaultsFactory ->
+                    def defaults = defaultsFactory(domainName)
+                    methodsOfType(defaults.swaggyAnnotation, theControllerClazz).
+                            collectMany { method ->
+                                generateMethodFromSwaggyAnnotations(action, method, theController).
+                                        collect { updateDocumentation(method.name, it) }
+                            }
+                }
+
+        log.debug("Apis: $apis")
+
+        def groupedApis = apis.
+                findAll { k, v -> k && v && v.operations.any { op -> op.method != '*' } }.
+                values().
+                groupBy { MethodDocumentation it -> it.path }.
+                collect { path, methodDocs ->
+                    new MethodDocumentation(path, null, methodDocs*.operations.flatten().unique() as Operation[])
+                }
+
+        return new ControllerDefinition(
+                apiVersion: apiVersion,
+                swaggerVersion: SwaggerVersion,
+                basePath: api?.basePath() ?: absoluteBasePath,
+                resourcePath: resourcePath - basePath,
+                produces: api?.produces()?.tokenize(',') ?: responseContentTypes(theControllerClazz),
+                consumes: api?.consumes()?.tokenize(',') ?: ServiceDefaults.DefaultRequestContentTypes,
+                apis: groupedApis,
+                models: models
+        )
+    }
+
+    private Closure<Object> createNonUrlMappingsClosure(Map<String, MethodDocumentation> apis) {
+        { String action, MethodDocumentation documentation ->
+            if (apis.containsKey(action)) {
+                apis[action].operations = (
+                        apis[action].operations.toList() +
+                                documentation.operations.toList()).unique() as Operation[]
+            } else {
+                apis[action] = documentation
+            }
+        }
+    }
+
+    private Closure<Parameter[]> createUrlMappingsClosure(
+            Map<String, MethodDocumentation> apis, resourcePath, List<Parameter> resourcePathParams) {
+        { String action, MethodDocumentation documentation ->
             if (apis.containsKey(action)) {
                 // leave the path alone, update everything else
                 apis[action].operations[0] << documentation.operations[0]
@@ -167,57 +221,6 @@ class SwaggyDataService {
                 apis[action].operations[0].parameters = parameters as Parameter[]
             }
         }
-
-        def updateDocWithoutUrlMappings = { String action, MethodDocumentation documentation ->
-            if (apis.containsKey(action)) {
-                apis[action].operations = (
-                        apis[action].operations.toList() +
-                                documentation.operations.toList()).unique() as Operation[]
-            } else {
-                apis[action] = documentation
-            }
-        }
-
-        def updateDocumentation = apis ? updateDocFromUrlMappings : updateDocWithoutUrlMappings
-
-        // Update APIs with low-level method annotations
-        apiMethods.each { method ->
-            documentMethodWithSwaggerAnnotations(method, theController, modelTypes).each {
-                updateDocumentation(method.name, it)
-            }
-        }
-
-        // Update APIs with swaggydoc method annotations
-        ServiceDefaults.DefaultActionComponents.
-                each { action, defaultsFactory ->
-                    def defaults = defaultsFactory(domainName)
-                    SwaggyDataService.methodsOfType(defaults.swaggyAnnotation, theControllerClazz).
-                            collectMany { method ->
-                                generateMethodFromSwaggyAnnotations(action, method, theController).
-                                        collect { updateDocumentation(method.name, it) }
-                            }
-                }
-
-        log.debug("Apis: $apis")
-
-        def groupedApis = apis.
-                findAll { k, v -> k && v && v.operations.any { op -> op.method != '*' } }.
-                values().
-                groupBy { MethodDocumentation it -> it.path }.
-                collect { path, methodDocs ->
-                    new MethodDocumentation(path, null, methodDocs*.operations.flatten().unique() as Operation[])
-                }
-
-        return new ControllerDefinition(
-                apiVersion: apiVersion,
-                swaggerVersion: ServiceDefaults.SwaggerVersion,
-                basePath: api?.basePath() ?: absoluteBasePath,
-                resourcePath: resourcePath - basePath,
-                produces: api?.produces()?.tokenize(',') ?: responseContentTypes(theControllerClazz),
-                consumes: api?.consumes()?.tokenize(',') ?: ServiceDefaults.DefaultRequestContentTypes,
-                apis: groupedApis,
-                models: models
-        )
     }
 
     @CompileStatic
@@ -296,7 +299,7 @@ class SwaggyDataService {
     }
 
     private static List<Method> methodsOfType(Class annotation, Class theControllerClazz) {
-        theControllerClazz.methods.findAll { SwaggyDataService.findAnnotation(annotation, it) } as List<Method>
+        theControllerClazz.methods.findAll { findAnnotation(annotation, it) } as List<Method>
     }
 
     /**
@@ -472,12 +475,13 @@ class SwaggyDataService {
         def link = fullLink.replace('%7B', '{').replace('%7D', '}') - basePath
         def httpMethods = getHttpMethod(theController, method)
         log.debug "Link: $link - ${httpMethods}"
-        httpMethods.collect { httpMethod ->
-            def inferredNickname = method.name
-            log.debug "Generating ${inferredNickname}"
-            defineAction(link, httpMethod, domainName, inferredNickname, parameters, defaults.responseMessages,
-                    "${action} ${domainName}")
-        }
+        httpMethods.
+                collect { httpMethod ->
+                    def inferredNickname = method.name
+                    log.debug "Generating ${inferredNickname}"
+                    defineAction(link, httpMethod, domainName, inferredNickname, parameters, defaults.responseMessages,
+                            "${action} ${domainName}")
+                }
     }
 
     @CompileStatic
@@ -521,24 +525,20 @@ class SwaggyDataService {
             def responseType = apiOperation.response() == Void ? 'void' : apiOperation.response().simpleName
             def responseIsArray = apiOperation.responseContainer()
 
-            new MethodDocumentation(link, null, [
-                    new Operation(
-                            method: httpMethod,
-                            summary: apiOperation.value(),
-                            notes: apiOperation.notes(),
-                            nickname: apiOperation.nickname() ?: inferredNickname,
-                            parameters: parameters as Parameter[],
-                            type: responseIsArray.isEmpty() ? responseType : responseIsArray,
-                            responseMessages: apiResponses?.value()?.collect { new ResponseMessage(it) } ?: [],
-                            produces: apiOperation.produces().split(',')*.trim().findAll { it } ?: null,
-                            consumes: apiOperation.consumes().split(',')*.trim().findAll { it } ?: null,
-                    ).with {
-                        if (responseIsArray) {
-                            it.items = new RefItem(responseType)
-                        }
-                        it
-                    }
-            ] as Operation[])
+            def operation = new Operation(
+                    method: httpMethod,
+                    summary: apiOperation.value(),
+                    notes: apiOperation.notes(),
+                    nickname: apiOperation.nickname() ?: inferredNickname,
+                    parameters: parameters as Parameter[],
+                    type: responseIsArray.isEmpty() ? responseType : responseIsArray,
+                    responseMessages: apiResponses?.value()?.collect { new ResponseMessage(it) } ?: [],
+                    produces: apiOperation.produces().split(',')*.trim().findAll { it } ?: null,
+                    consumes: apiOperation.consumes().split(',')*.trim().findAll { it } ?: null,
+                    items: responseIsArray ? new RefItem(responseType) : null
+            )
+
+            new MethodDocumentation(link, null, [operation] as Operation[])
         }
 
     }
@@ -605,25 +605,23 @@ class SwaggyDataService {
     }
 
     private Field getPrimitiveType(Class type, ConstrainedProperty constrainedProperty = null) {
-        Field field
         if (type.isAssignableFrom(String)) {
-            field = constrainedProperty?.inList ? new StringField(constrainedProperty.inList as String[]) : new StringField()
+            constrainedProperty?.inList ? new StringField(constrainedProperty.inList as String[]) : new StringField()
         } else if (type.isEnum()) {
-            field = new StringField(type.values()*.name() as String[])
+            new StringField(type.values()*.name() as String[])
         } else if (type.isAssignableFrom(Double) || type.isAssignableFrom(Float) || type.isAssignableFrom(double) ||
                 type.isAssignableFrom(float) || type.isAssignableFrom(BigDecimal)) {
-            field = addNumericConstraints(constrainedProperty, new NumberField('number', 'double'))
+            addNumericConstraints(constrainedProperty, new NumberField('number', 'double'))
         } else if (type.isAssignableFrom(Long) || type.isAssignableFrom(Integer) || type.isAssignableFrom(long) ||
                 type.isAssignableFrom(int) || type.isAssignableFrom(BigInteger)) {
-            field = addNumericConstraints(constrainedProperty, new NumberField('integer', 'int64'))
+            addNumericConstraints(constrainedProperty, new NumberField('integer', 'int64'))
         } else if (type.isAssignableFrom(Date)) {
-            field = new StringField('date-time')
+            new StringField('date-time')
         } else if (type.isAssignableFrom(byte) || type.isAssignableFrom(Byte)) {
-            field = new StringField('byte')
+            new StringField('byte')
         } else if (type.isAssignableFrom(Boolean) || type.isAssignableFrom(boolean)) {
-            field = new BooleanField()
+            new BooleanField()
         }
-        return field
     }
 
     @SuppressWarnings("GrMethodMayBeStatic")
@@ -638,7 +636,6 @@ class SwaggyDataService {
         }
         retval
     }
-
 
     private List<String> responseContentTypes(Class controller) {
         GrailsClassUtils.getStaticPropertyValue(controller, 'responseFormats')?.

@@ -83,3 +83,12 @@ bintray {
         }
     }
 }
+
+task('generate-sources') << {
+    new File("${rootDir}/grails3/grails-app/services/com/github/rahulsom/swaggydoc/SwaggyDataService.groovy").text =
+            new File("${rootDir}/grails2/grails-app/services/com/github/rahulsom/swaggydoc/SwaggyDataService.groovy").text.
+            replace('org.codehaus.groovy.grails','grails').
+            replace('grails.commons.*','grails.core.*\nimport grails.util.GrailsClassUtils')
+}
+
+compileGroovy.dependsOn('generate-sources')
