@@ -44,7 +44,7 @@ grails3/grails-app/assets
 swaggydoc-grails3/grails-app/assets
 
 ### Stuff copied over from grails2 to grails3
-grails3/grails-app/services/com/github/rahulsom/swaggydoc/SwaggyDataService.groovy
+swaggydoc-grails3/grails-app/services/com/github/rahulsom/swaggydoc/SwaggyDataService.groovy
 
 ## Example excludes
 .asscache
