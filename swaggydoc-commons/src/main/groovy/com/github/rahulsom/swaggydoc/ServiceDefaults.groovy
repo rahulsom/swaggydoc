@@ -6,14 +6,6 @@ import org.springframework.http.HttpStatus
  * Created by rahul on 12/6/15.
  */
 class ServiceDefaults {
-    protected static final String SwaggerVersion = '1.2'
-    protected static final List<String> DefaultResponseContentTypes = [
-            'application/json', 'application/xml', 'text/html'
-    ]
-    protected static final List<String> DefaultRequestContentTypes = [
-            'application/json', 'application/xml', 'application/x-www-form-urlencoded'
-    ]
-
     /*
      * These don't get documented in the listing of models.
      */
@@ -89,11 +81,12 @@ class ServiceDefaults {
     ]
 
     static List<String> removeBoringMethods(List<String> methods, List<String> boringMethods) {
-        boringMethods.each { method ->
-            if (methods.size() > 1 && methods.contains(method)) {
-                methods.remove(method)
-            }
-        }
+        boringMethods.
+                each { method ->
+                    if (methods.size() > 1 && methods.contains(method)) {
+                        methods.remove(method)
+                    }
+                }
         methods
     }
 

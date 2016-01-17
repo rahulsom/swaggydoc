@@ -1,13 +1,13 @@
 package com.github.rahulsom.swaggydoc
 
-import groovy.transform.TupleConstructor
+import groovy.transform.Immutable
 
 /**
  * Represents the top level resource listing for an application
  *
  * @author Rahul Somasunderam
  */
-@TupleConstructor
+@Immutable(knownImmutableClasses = [ApiInfo, ApiDeclaration])
 class Resources {
     String apiVersion
     String swaggerVersion

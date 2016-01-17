@@ -15,18 +15,23 @@ import java.lang.annotation.Annotation
 import java.lang.reflect.AccessibleObject
 import java.lang.reflect.Method
 
-import static com.github.rahulsom.swaggydoc.ServiceDefaults.SwaggerVersion
-
 class SwaggyDataService {
 
-    public static final Closure<DefaultAction> actionFallback = { new DefaultAction() }
-    public static
-    final String MARSHALLING_CONFIG_BUILDER = "org.grails.plugins.marshallers.config.MarshallingConfigBuilder"
+    private static final String SwaggerVersion = '1.2'
+    private static final List<String> DefaultResponseContentTypes = [
+            'application/json', 'application/xml', 'text/html'
+    ]
+    private static final List<String> DefaultRequestContentTypes = [
+            'application/json', 'application/xml', 'application/x-www-form-urlencoded'
+    ]
+    private static final Closure<DefaultAction> actionFallback = { new DefaultAction() }
+    private static final String MARSHALLING_CONFIG_BUILDER =
+            'org.grails.plugins.marshallers.config.MarshallingConfigBuilder'
+
     DefaultGrailsApplication grailsApplication
     LinkGenerator grailsLinkGenerator
     UrlMappings grailsUrlMappingsHolder
     MimeUtility grailsMimeUtility
-
 
     @CompileStatic
     private static Parameter makePathParam(String pathParam) {
@@ -78,9 +83,10 @@ class SwaggyDataService {
         // These preserve the path components supporting hierarchical paths discovered through URL mappings
         List<String> resourcePathParts = null
         List<Parameter> resourcePathParams = null
-        Map<String, MethodDocumentation> apis = grailsUrlMappingsHolder.
-                urlMappings.
-                findAll { it.controllerName == controller }.
+
+        def mappingsForController = grailsUrlMappingsHolder.urlMappings.findAll { it.controllerName == controller }
+
+        Map<String, MethodDocumentation> apis = mappingsForController.
                 collectEntries { mapping ->
 
                     log.debug("Mapping: $mapping")
@@ -97,11 +103,7 @@ class SwaggyDataService {
                     DefaultAction defaults = (actionMethod ?: actionFallback)(domainName)
                     log.debug "defaults?.parameters: ${defaults?.parameters}"
                     log.debug "pathParams: ${pathParams}"
-                    List<Parameter> parameters = (defaults?.parameters?.clone() ?: []) + pathParams
-                    if (pathParts[-1] != "{id}") {
-                        // Special case: defaults may include 'id' for single resource paths
-                        parameters.removeAll { it.name == 'id' }
-                    }
+                    List<Parameter> parameters = getParameters(defaults, pathParams, pathParts)
 
                     def httpMethod = mapping.httpMethod
                     def md = methodDoc(pathParts, httpMethod, defaults, mapping, parameters, controller, domainName)
@@ -155,50 +157,68 @@ class SwaggyDataService {
                 each { action, defaultsFactory ->
                     def defaults = defaultsFactory(domainName)
                     methodsOfType(defaults.swaggyAnnotation, theControllerClazz).
-                            collectMany { method ->
+                            each { method ->
                                 generateMethodFromSwaggyAnnotations(action, method, theController).
-                                        collect { updateDocumentation(method.name, it) }
+                                        each { updateDocumentation(method.name, it) }
                             }
                 }
 
         log.debug("Apis: $apis")
 
-        List<MethodDocumentation> groupedApis = groupApis(apis)
+        defineController(api, absoluteBasePath, resourcePath, basePath, theControllerClazz, groupApis(apis), models)
+    }
 
-        return new ControllerDefinition(
+    @CompileStatic
+    private ControllerDefinition defineController(
+            Api api, String absoluteBasePath, String resourcePath, String basePath, Class<Object> theControllerClazz,
+            List<MethodDocumentation> groupedApis, Map<String, ModelDescription> models) {
+        new ControllerDefinition(
                 apiVersion: apiVersion,
                 swaggerVersion: SwaggerVersion,
                 basePath: api?.basePath() ?: absoluteBasePath,
                 resourcePath: resourcePath - basePath,
-                produces: api?.produces()?.tokenize(',') ?: responseContentTypes(theControllerClazz),
-                consumes: api?.consumes()?.tokenize(',') ?: ServiceDefaults.DefaultRequestContentTypes,
-                apis: groupedApis,
+                produces: (api?.produces()?.tokenize(',') ?: responseContentTypes(theControllerClazz)) as String[],
+                consumes: (api?.consumes()?.tokenize(',') ?: DefaultRequestContentTypes) as String[],
+                apis: groupedApis as MethodDocumentation[],
                 models: models
         )
     }
 
+    @CompileStatic
+    private static List<Parameter> getParameters(
+            DefaultAction defaults, List<Parameter> pathParams, List<String> pathParts) {
+        def parameters = defaults?.parameters + pathParams
+        if (pathParts[-1] != "{id}") {
+            // Special case: defaults may include 'id' for single resource paths
+            parameters.removeAll { it.name == 'id' }
+        }
+        parameters as List<Parameter>
+    }
+
+    @CompileStatic
     private static MethodDocumentation methodDoc(
             List<String> pathParts, String httpMethod, DefaultAction defaults, UrlMapping mapping,
             List<Parameter> parameters, String controllerName, String domainName) {
-        def methodDocumentation = defineAction(
-                '/' + pathParts.join('/'), httpMethod, defaults.responseType,
-                "${httpMethod.toLowerCase()}${controllerName}${mapping.actionName}",
-                parameters, defaults?.responseMessages ?: [],
-                "${mapping.actionName} ${domainName}").
-                with {
-                    if (defaults.isList) {
-                        it.operations[0].type = 'array'
-                        it.operations[0].items = new RefItem(defaults.responseType)
-                    }
-                    it
-                }
+        def relativeLink = '/' + pathParts.join('/')
+        def nickName = "${httpMethod.toLowerCase()}${controllerName}${mapping.actionName}"
+        def summary = "${mapping.actionName} ${domainName}"
+        def responseType = defaults.responseType
+        def responseMessages = defaults?.responseMessages ?: [] as List<ResponseMessage>
+        def methodDocumentation =
+                defineAction(relativeLink, httpMethod, responseType, nickName, parameters, responseMessages, summary).
+                        with {
+                            if (defaults.isList) {
+                                it.operations[0].type = 'array'
+                                it.operations[0].items = new RefItem(responseType)
+                            }
+                            it
+                        }
         methodDocumentation
     }
 
     private List<MethodDocumentation> groupApis(Map<String, MethodDocumentation> apis) {
         def groupedApis = apis.
-                findAll { k, v -> k && v && v.operations.any { op -> op.method != '*' } }.
-                values().
+                findAll { k, v -> k && v && v.operations.any { op -> op.method != '*' } }.values().
                 groupBy { MethodDocumentation it -> it.path }.
                 collect { path, methodDocs -> createMethodDoc(path, methodDocs) }
         groupedApis
@@ -226,7 +246,7 @@ class SwaggyDataService {
 
     @SuppressWarnings("GrMethodMayBeStatic")
     private Closure<Parameter[]> createUrlMappingsClosure(
-            Map<String, MethodDocumentation> apis, resourcePath, List<Parameter> resourcePathParams) {
+            Map<String, MethodDocumentation> apis, String resourcePath, List<Parameter> resourcePathParams) {
         { String action, MethodDocumentation documentation ->
             if (apis.containsKey(action)) {
                 // leave the path alone, update everything else
@@ -407,12 +427,9 @@ class SwaggyDataService {
                 }
             }
 
-            def props = fieldSource.
-                    findAll {
-                        !it.toString().contains(' static ') &&
-                                !it.toString().contains(' transient ') &&
-                                it.name != 'errors'
-                    }
+            def props = fieldSource.findAll {
+                !it.toString().contains(' static ') && !it.toString().contains(' transient ') && it.name != 'errors'
+            }
 
             Map<String, ConstrainedProperty> constrainedProperties =
                     domainClass?.constrainedProperties ?:
@@ -530,7 +547,8 @@ class SwaggyDataService {
         new MethodDocumentation(link, null, [operation] as Operation[])
     }
 
-    private List<MethodDocumentation> documentMethodWithSwaggerAnnotations(Method method, GrailsClass theController, Set<Class> modelTypes) {
+    private List<MethodDocumentation> documentMethodWithSwaggerAnnotations(
+            Method method, GrailsClass theController, Set<Class> modelTypes) {
         def basePath = grailsLinkGenerator.link(uri: '')
         def apiOperation = findAnnotation(ApiOperation, method)
         def apiResponses = findAnnotation(ApiResponses, method)
@@ -650,6 +668,7 @@ class SwaggyDataService {
         }
     }
 
+    @CompileStatic
     private static NumberField addNumericConstraints(ConstrainedProperty constrainedProperty, NumberField retval) {
         if (constrainedProperty?.range) {
             retval.maximum = constrainedProperty.range.to as int
@@ -662,11 +681,12 @@ class SwaggyDataService {
         retval
     }
 
+    @CompileStatic
     private List<String> responseContentTypes(Class controller) {
         GrailsClassUtils.getStaticPropertyValue(controller, 'responseFormats')?.
                 collect { String it ->
                     grailsMimeUtility.getMimeTypeForExtension(it)?.name ?: it.contains('/') ? it : null
                 }?.
-                grep() as List<String> ?: ServiceDefaults.DefaultResponseContentTypes
+                grep() as List<String> ?: DefaultResponseContentTypes
     }
 }

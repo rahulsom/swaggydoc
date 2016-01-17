@@ -38,11 +38,13 @@ grails.project.dependency.resolution = {
         //mavenRepo "http://repository.codehaus.org"
         //mavenRepo "http://download.java.net/maven/2/"
         //mavenRepo "http://repository.jboss.com/maven2/"
+        mavenRepo "http://dl.bintray.com/rahulsom/myjava"
     }
     dependencies {
         // specify dependencies here under either 'build', 'compile', 'runtime', 'test' or 'provided' scopes eg.
         // runtime 'mysql:mysql-connector-java:5.1.27'
         compile 'com.wordnik:swagger-annotations:1.3.8'
+        compile 'com.github.rahulsom:swaggydoc-commons:0.26.0'
     }
 
     plugins {
