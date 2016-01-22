@@ -2,6 +2,8 @@ package com.github.rahulsom.swaggydoc
 
 import org.springframework.http.HttpStatus
 
+import java.util.function.Function
+
 /**
  * Created by rahul on 12/6/15.
  */
@@ -13,7 +15,7 @@ class ServiceDefaults {
             int, Integer, long, Long, float, Float, double, Double, BigInteger, BigDecimal,
             String, boolean, Boolean, Date, byte, Byte, void
     ]
-    public static final Map<String, Closure<DefaultAction>> DefaultActionComponents = [
+    public static final Map<String, Function<String, DefaultAction>> DefaultActionComponents = [
             index : { String domainName ->
                 new DefaultAction(SwaggyList, domainName, [
                         new Parameter('offset', 'Records to skip. Empty means 0.', 'query', 'int'),
@@ -78,7 +80,7 @@ class ServiceDefaults {
                         ]
                 )
             }
-    ]
+    ].collectEntries {k, v -> [k, v as Function<String, DefaultAction>]}
 
     static List<String> removeBoringMethods(List<String> methods, List<String> boringMethods) {
         boringMethods.

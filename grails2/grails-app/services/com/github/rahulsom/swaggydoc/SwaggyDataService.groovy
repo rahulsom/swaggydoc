@@ -14,6 +14,8 @@ import org.codehaus.groovy.grails.web.mime.MimeUtility
 import java.lang.annotation.Annotation
 import java.lang.reflect.AccessibleObject
 import java.lang.reflect.Method
+import java.util.function.BiConsumer
+import java.util.function.Function
 
 class SwaggyDataService {
 
@@ -24,7 +26,12 @@ class SwaggyDataService {
     private static final List<String> DefaultRequestContentTypes = [
             'application/json', 'application/xml', 'application/x-www-form-urlencoded'
     ]
-    private static final Closure<DefaultAction> actionFallback = { new DefaultAction() }
+    private static final Function<String, DefaultAction> actionFallback = new Function<String, DefaultAction>() {
+        @Override
+        DefaultAction apply(String s) {
+            new DefaultAction()
+        }
+    }
     private static final String MARSHALLING_CONFIG_BUILDER =
             'org.grails.plugins.marshallers.config.MarshallingConfigBuilder'
 
@@ -81,28 +88,25 @@ class SwaggyDataService {
         final String domainName = ServiceDefaults.slugToDomain(controller)
 
         // These preserve the path components supporting hierarchical paths discovered through URL mappings
-        List<String> resourcePathParts = null
-        List<Parameter> resourcePathParams = null
-
         def mappingsForController = grailsUrlMappingsHolder.urlMappings.findAll { it.controllerName == controller }
+        def resourcePathsPair = mappingsForController.
+                collect { mapping -> populatePaths(mapping) }.
+                sort(false) { it.left?.size() ?: 0 }.
+                reverse().
+                find()
+
+        List<String> resourcePathParts = resourcePathsPair?.left
+        List<Parameter> resourcePathParams = resourcePathsPair?.right
 
         Map<String, MethodDocumentation> apis = mappingsForController.
                 collectEntries { mapping ->
 
-                    log.debug("Mapping: $mapping")
                     def paths = populatePaths(mapping)
                     List<String> pathParts = paths.left
                     List<Parameter> pathParams = paths.right
-                    // Capture resource path candidates
-                    if (!resourcePathParts || resourcePathParts.size() > pathParts.size()) {
-                        resourcePathParts = pathParts
-                        resourcePathParams = pathParams
-                    }
 
                     def actionMethod = ServiceDefaults.DefaultActionComponents.get(mapping.actionName)
-                    DefaultAction defaults = (actionMethod ?: actionFallback)(domainName)
-                    log.debug "defaults?.parameters: ${defaults?.parameters}"
-                    log.debug "pathParams: ${pathParams}"
+                    DefaultAction defaults = (actionMethod ?: actionFallback).apply(domainName)
                     List<Parameter> parameters = getParameters(defaults, pathParams, pathParts)
 
                     def httpMethod = mapping.httpMethod
@@ -145,27 +149,36 @@ class SwaggyDataService {
         def updateDocWithoutUrlMappings = createNonUrlMappingsClosure(apis)
         def updateDocumentation = apis ? updateDocFromUrlMappings : updateDocWithoutUrlMappings
 
+
+        updateDocumentationForController(apiMethods, theController, modelTypes, updateDocumentation, domainName, theControllerClazz)
+
+        log.debug("Apis: $apis")
+
+        defineController(api, absoluteBasePath, resourcePath, basePath, theControllerClazz, groupApis(apis), models)
+    }
+
+    @CompileStatic
+    private void updateDocumentationForController(
+            List<Method> apiMethods, GrailsClass theController, Set<Class> modelTypes,
+            BiConsumer<String, MethodDocumentation> updateDocumentation, String domainName, Class theControllerClazz) {
+
         // Update APIs with low-level method annotations
         apiMethods.each { method ->
             documentMethodWithSwaggerAnnotations(method, theController, modelTypes).each {
-                updateDocumentation(method.name, it)
+                updateDocumentation.accept(method.name, it)
             }
         }
 
         // Update APIs with swaggydoc method annotations
         ServiceDefaults.DefaultActionComponents.
                 each { action, defaultsFactory ->
-                    def defaults = defaultsFactory(domainName)
+                    def defaults = (defaultsFactory as Function<String, DefaultAction>).apply(domainName)
                     methodsOfType(defaults.swaggyAnnotation, theControllerClazz).
                             each { method ->
                                 generateMethodFromSwaggyAnnotations(action, method, theController).
-                                        each { updateDocumentation(method.name, it) }
+                                        each { updateDocumentation.accept(method.name, it) }
                             }
                 }
-
-        log.debug("Apis: $apis")
-
-        defineController(api, absoluteBasePath, resourcePath, basePath, theControllerClazz, groupApis(apis), models)
     }
 
     @CompileStatic
@@ -230,12 +243,16 @@ class SwaggyDataService {
     }
 
     @SuppressWarnings("GrMethodMayBeStatic")
-    private Closure<Object> createNonUrlMappingsClosure(Map<String, MethodDocumentation> apis) {
-        { String action, MethodDocumentation documentation ->
-            if (apis.containsKey(action)) {
-                apis[action].operations = uniqOperations([apis[action], documentation])
-            } else {
-                apis[action] = documentation
+    @CompileStatic
+    private BiConsumer<String, MethodDocumentation> createNonUrlMappingsClosure(Map<String, MethodDocumentation> apis) {
+        return new BiConsumer<String, MethodDocumentation>() {
+            @Override
+            void accept(String action, MethodDocumentation documentation) {
+                if (apis.containsKey(action)) {
+                    apis[action].operations = uniqOperations([apis[action], documentation])
+                } else {
+                    apis[action] = documentation
+                }
             }
         }
     }
@@ -245,26 +262,30 @@ class SwaggyDataService {
     }
 
     @SuppressWarnings("GrMethodMayBeStatic")
-    private Closure<Parameter[]> createUrlMappingsClosure(
+    @CompileStatic
+    private BiConsumer<String, MethodDocumentation> createUrlMappingsClosure(
             Map<String, MethodDocumentation> apis, String resourcePath, List<Parameter> resourcePathParams) {
-        { String action, MethodDocumentation documentation ->
-            if (apis.containsKey(action)) {
-                // leave the path alone, update everything else
-                apis[action].operations[0] << documentation.operations[0]
-            } else {
-                documentation.path = documentation.path.replaceFirst(/^.+(?=\/)/, resourcePath)
-                apis[action] = documentation
-            }
-
-            if (resourcePathParams) {
-                // Add additional params needed to support hierarchical path mappings
-                def parameters = apis[action].operations[0].parameters.toList()
-                int idx = 0
-                resourcePathParams.each { rpp ->
-                    if (!parameters.find { it.name == rpp.name })
-                        parameters.add(idx++, rpp)
+        return new BiConsumer<String, MethodDocumentation>() {
+            @Override
+            void accept(String action, MethodDocumentation documentation) {
+                if (apis.containsKey(action)) {
+                    // leave the path alone, update everything else
+                    apis[action].operations[0] << documentation.operations[0]
+                } else {
+                    documentation.path = documentation.path.replaceFirst(/^.+(?=\/)/, resourcePath)
+                    apis[action] = documentation
                 }
-                apis[action].operations[0].parameters = parameters as Parameter[]
+
+                if (resourcePathParams) {
+                    // Add additional params needed to support hierarchical path mappings
+                    def parameters = apis[action].operations[0].parameters.toList()
+                    int idx = 0
+                    resourcePathParams.each { rpp ->
+                        if (!parameters.find { it.name == rpp.name })
+                            parameters.add(idx++, rpp)
+                    }
+                    apis[action].operations[0].parameters = parameters as Parameter[]
+                }
             }
         }
     }
@@ -292,7 +313,7 @@ class SwaggyDataService {
                             // Don't push 'id' as it is one of the default pathParams
                             pathParams.push(makePathParam(param))
                         }
-                        pathParts.push("{" + param + "}")
+                        pathParts.push("{$param}".toString())
                     } else {
                         pathParts.push(token)
                     }
@@ -408,24 +429,14 @@ class SwaggyDataService {
         while (m.size()) {
             Class model = m.poll()
             log.debug "Getting model for class ${model}"
-            GrailsDomainClass domainClass = grailsApplication.domainClasses.find {
-                it.clazz == model
-            } as GrailsDomainClass
+            GrailsDomainClass domainClass = grailsApplication.domainClasses.
+                    find { it.clazz == model } as GrailsDomainClass
             /** Duck typing here:
              * if model has a GrailsDomainClass then props will be list of GrailsDomainClassProperty objects
              * otherwise props will be a list of Field objects
              * Interface for these two classes are similar enough to duck type for our purposes
              */
-            def fieldSource = []
-            if (domainClass) {
-                fieldSource = [domainClass.identifier, domainClass.version] + domainClass.persistentProperties.toList()
-            } else {
-                Class tmpClass = model
-                while (tmpClass != null) {
-                    fieldSource.addAll(Arrays.asList(tmpClass.declaredFields))
-                    tmpClass = tmpClass.superclass
-                }
-            }
+            Collection<GrailsDomainClassProperty> fieldSource = getFieldSource(domainClass, model)
 
             def props = fieldSource.findAll {
                 !it.toString().contains(' static ') && !it.toString().contains(' transient ') && it.name != 'errors'
@@ -496,12 +507,27 @@ class SwaggyDataService {
         models
     }
 
+    @CompileStatic
+    private static Collection<GrailsDomainClassProperty> getFieldSource(GrailsDomainClass domainClass, Class<?> model) {
+        if (domainClass) {
+            [domainClass.identifier, domainClass.version] + domainClass.persistentProperties.toList()
+        } else {
+            def fieldSource = []
+            Class tmpClass = model
+            while (tmpClass != null) {
+                fieldSource.addAll(Arrays.asList(tmpClass.declaredFields))
+                tmpClass = tmpClass.superclass
+            }
+            fieldSource
+        }
+    }
+
     private List<MethodDocumentation> generateMethodFromSwaggyAnnotations(
             String action, Method method, GrailsClass theController) {
         def basePath = grailsLinkGenerator.link(uri: '')
         def slug = theController.logicalPropertyName
         def domainName = ServiceDefaults.slugToDomain(slug)
-        DefaultAction defaults = ServiceDefaults.DefaultActionComponents[action](domainName)
+        DefaultAction defaults = ServiceDefaults.DefaultActionComponents[action].apply(domainName)
         List<Parameter> parameters = defaults.parameters.clone() as List<Parameter>
         if (defaults.swaggyAnnotation.metaClass.getMetaMethod('searchParam')
                 && findAnnotation(defaults.swaggyAnnotation, method).searchParam()) {
