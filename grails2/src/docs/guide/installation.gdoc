@@ -1,0 +1,42 @@
+h3. Mime Headers
+By default, grails prevents browsers from using the accept header. You must tell grails to allow browsers
+to do that.
+
+In grails 3, @application.yml@ should do this
+{code}
+grails:
+    mime:
+        disable:
+            accept:
+                header:
+                    userAgents: []
+{code}
+
+In grails 2, @Config.groovy@ should do this
+{code}
+grails.mime.disable.accept.header.userAgents = []
+{code}
+
+h3. Build Scripts
+Given how this codebase is built has changed to accommodate grails 2 as well as 3, if you are using grails 2,
+you'll have to add @jcenter@ as a repo and @swaggydoc-commons@ as a lib to your @BuildConfig.groovy@
+
+{code}
+repositories {
+    ...
+    mavenRepo "http://jcenter.bintray.com/"
+}
+dependencies {
+    ...
+    compile "com.github.rahulsom:swaggydoc-commons:0.27.0"
+}
+{code}
+
+In Grails 3, you need to make sure your @build.gradle@ has
+
+{code}
+repositories {
+    ...
+    jcenter()
+}
+{code}

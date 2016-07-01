@@ -5,7 +5,6 @@ buildscript {
     repositories {
         mavenLocal()
         maven { url "https://repo.grails.org/grails/core" }
-        maven { url "http://dl.bintray.com/rahulsom/plugins" }
     }
     dependencies {
         classpath "org.grails:grails-gradle-plugin:$grailsVersion"
@@ -40,8 +39,8 @@ assets {
 
 repositories {
     mavenLocal()
+    jcenter()
     maven { url "https://repo.grails.org/grails/core" }
-    maven { url "http://dl.bintray.com/rahulsom/plugins" }
 }
 
 dependencyManagement {
