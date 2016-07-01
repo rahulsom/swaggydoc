@@ -18,7 +18,7 @@ repositories {
 grails {
   grailsVersion = '2.4.5'
   groovyVersion = '2.3.9'
-  springLoadedVersion '1.2.0.RELEASE'
+  springLoadedVersion '1.2.2.RELEASE'
 }
 
 dependencies {

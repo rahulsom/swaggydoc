@@ -2,18 +2,12 @@ package com.github.rahulsom.swaggydoc
 
 import org.springframework.http.HttpStatus
 
+import java.util.function.Function
+
 /**
  * Created by rahul on 12/6/15.
  */
 class ServiceDefaults {
-    protected static final String SwaggerVersion = '1.2'
-    protected static final List<String> DefaultResponseContentTypes = [
-            'application/json', 'application/xml', 'text/html'
-    ]
-    protected static final List<String> DefaultRequestContentTypes = [
-            'application/json', 'application/xml', 'application/x-www-form-urlencoded'
-    ]
-
     /*
      * These don't get documented in the listing of models.
      */
@@ -21,7 +15,7 @@ class ServiceDefaults {
             int, Integer, long, Long, float, Float, double, Double, BigInteger, BigDecimal,
             String, boolean, Boolean, Date, byte, Byte, void
     ]
-    public static final Map<String, Closure<DefaultAction>> DefaultActionComponents = [
+    public static final Map<String, Function<String, DefaultAction>> DefaultActionComponents = [
             index : { String domainName ->
                 new DefaultAction(SwaggyList, domainName, [
                         new Parameter('offset', 'Records to skip. Empty means 0.', 'query', 'int'),
@@ -86,14 +80,15 @@ class ServiceDefaults {
                         ]
                 )
             }
-    ]
+    ].collectEntries {k, v -> [k, v as Function<String, DefaultAction>]}
 
     static List<String> removeBoringMethods(List<String> methods, List<String> boringMethods) {
-        boringMethods.each { method ->
-            if (methods.size() > 1 && methods.contains(method)) {
-                methods.remove(method)
-            }
-        }
+        boringMethods.
+                each { method ->
+                    if (methods.size() > 1 && methods.contains(method)) {
+                        methods.remove(method)
+                    }
+                }
         methods
     }
 
