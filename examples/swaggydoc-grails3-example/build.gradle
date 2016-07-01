@@ -62,7 +62,7 @@ dependencies {
     compile "org.grails.plugins:cache"
     compile "org.hibernate:hibernate-ehcache"
     compile "org.grails.plugins:scaffolding"
-    compile "org.grails.plugins:swaggydoc-grails3:0.26.0"
+    compile "org.grails.plugins:swaggydoc-grails3:0.27.0"
 
     runtime "org.grails.plugins:asset-pipeline"
 
