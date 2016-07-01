@@ -30,6 +30,10 @@ dependencies {
     ...
     compile "com.github.rahulsom:swaggydoc-commons:0.27.0"
 }
+plugins {
+    ...
+    compile ":swaggydoc:0.27.0"
+}
 {code}
 
 In Grails 3, you need to make sure your @build.gradle@ has
@@ -38,5 +42,9 @@ In Grails 3, you need to make sure your @build.gradle@ has
 repositories {
     ...
     jcenter()
+}
+dependencies {
+    ...
+    compile "org.grails.plugins:swaggydoc-grails3:0.27.0"
 }
 {code}
