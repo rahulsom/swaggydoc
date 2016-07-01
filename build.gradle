@@ -3,10 +3,17 @@ repositories {
 }
 
 allprojects {
-  version "0.27.0"
+  version "0.28.0"
   group "org.grails.plugins"
 }
 // In this section you declare the dependencies for your production and test code
 dependencies {
 
 }
+
+/*
+swaggydoc-commons:bintrayUpload \
+        swaggydoc-grails3:bintrayUpload \
+        grails2:grails-publish-plugin
+ */
+tasks.findByPath('grails2:grails-publish-plugin').mustRunAfter('swaggydoc-commons:bintrayUpload', 'swaggydoc-grails3:bintrayUpload')

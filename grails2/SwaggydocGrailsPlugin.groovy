@@ -1,5 +1,5 @@
 class SwaggydocGrailsPlugin {
-    def version = "0.27.0" // added by Gradle
+    def version = "0.28.0" // added by Gradle
     // the version or versions of Grails the plugin is designed for
     def grailsVersion = "2.2 > *"
     // resources that are excluded from plugin packaging
