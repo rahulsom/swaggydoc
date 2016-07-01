@@ -2,7 +2,7 @@
                       "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
-    <title>4 Customization 0.27.0</title>
+    <title>2 Installation 0.27.0</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <link rel="stylesheet" href="../css/main.css" type="text/css" media="screen, print" title="Style" charset="utf-8"/>
     <link rel="stylesheet" href="../css/pdf.css" type="text/css" media="print" title="PDF" charset="utf-8"/>
@@ -59,16 +59,18 @@ function addJsClass() {
             <div id="main" class="corner-all">
 
                 
-                    <div class="toc-item prev-left"><a href="../guide/configuration.html">&lt;&lt; <strong>3</strong><span>Configuration</span></a></div>
+                    <div class="toc-item prev-left"><a href="../guide/introduction.html">&lt;&lt; <strong>1</strong><span>Introduction</span></a></div>
                 
 
                 <span id='toggle-col1' class="toggle">(<a href="#" onclick="localToggle(); return false;">Quick Reference</a>)</span>
 
                 
+                    <div class="toc-item next-right"><a href="../guide/configuration.html"><strong>3</strong><span>Configuration</span> >></a></div>
+                
 
 
                 <div class="project">
-                    <h1>4 Customization - Reference Documentation</h1>
+                    <h1>2 Installation - Reference Documentation</h1>
 
                     <p><strong>Authors:</strong> Rahul Somasunderam</p>
 
@@ -81,22 +83,36 @@ function addJsClass() {
 
                 
 
-<h1 id="customization">4 Customization</h1>
-By default, the api page is rendered at the uri <code>/api</code>. If you prefer changing that to something else,
- please keep in mind that the api page is rendered by a controller. You can do something like this:<p class="paragraph"/><div class="code"><pre>class UrlMappings &#123;<p class="paragraph"/>	<span class="java&#45;keyword">static</span> mappings = &#123;
-		<span class="java&#45;quote">"/$controller/$action?/$id?"</span>&#123;
-			constraints &#123;
-				// apply constraints here
-			&#125;
-		&#125;<p class="paragraph"/>		<span class="java&#45;quote">"/myapi"</span> (controller: <span class="java&#45;quote">"api"</span>)<p class="paragraph"/>		<span class="java&#45;quote">"/"</span>(view:<span class="java&#45;quote">"/index"</span>)
-		<span class="java&#45;quote">"500"</span>(view:'/error')
-	&#125;
-&#125;</pre></div><p class="paragraph"/>This now moves the api page to the uri <code>/myapi</code>.
+<h1 id="installation">2 Installation</h1>
+<h3>Mime Headers</h3>
+By default, grails prevents browsers from using the accept header. You must tell grails to allow browsers
+to do that.<p class="paragraph"/>In grails 3, <code>application.yml</code> should do this
+<div class="code"><pre>grails:
+    mime:
+        disable:
+            accept:
+                header:
+                    userAgents: &#91;&#93;</pre></div><p class="paragraph"/>In grails 2, <code>Config.groovy</code> should do this
+<div class="code"><pre>grails.mime.disable.accept.header.userAgents = &#91;&#93;</pre></div><p class="paragraph"/><h3>Build Scripts</h3>
+Given how this codebase is built has changed to accommodate grails 2 as well as 3, if you are using grails 2,
+you'll have to add <code>jcenter</code> as a repo and <code>swaggydoc-commons</code> as a lib to your <code>BuildConfig.groovy</code><p class="paragraph"/><div class="code"><pre>repositories &#123;
+    &#8230;
+    mavenRepo <span class="java&#45;quote">"http://jcenter.bintray.com/"</span>
+&#125;
+dependencies &#123;
+    &#8230;
+    compile <span class="java&#45;quote">"com.github.rahulsom:swaggydoc&#45;commons:0.27.0"</span>
+&#125;</pre></div><p class="paragraph"/>In Grails 3, you need to make sure your <code>build.gradle</code> has<p class="paragraph"/><div class="code"><pre>repositories &#123;
+    &#8230;
+    jcenter()
+&#125;</pre></div>
 
 
                 <div style="clear:both;margin-top:15px;"></div>
                 
-                    <div class="toc-item prev-left"><a href="../guide/configuration.html">&lt;&lt; <strong>3</strong><span>Configuration</span></a></div>
+                    <div class="toc-item prev-left"><a href="../guide/introduction.html">&lt;&lt; <strong>1</strong><span>Introduction</span></a></div>
+                
+                    <div class="toc-item next-right"><a href="../guide/configuration.html"><strong>3</strong><span>Configuration</span> >></a></div>
                 
                 <div style="clear:both"></div>
             </div>
