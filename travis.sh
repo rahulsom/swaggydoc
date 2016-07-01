@@ -37,11 +37,13 @@ grails.project.repos.grailsCentral.password='${GRAILS_CENTRAL_PASSWORD}'
 EOF
 
   ./gradlew \
-        -PgrailsArgs='--no-scm --allow-overwrite --non-interactive' \
         swaggydoc-commons:bintrayUpload \
         swaggydoc-grails3:bintrayUpload \
+        --info || echo "Bintray upload failed"
+  ./gradlew \
+        -PgrailsArgs='--no-scm --allow-overwrite --non-interactive' \
         grails2:grails-publish-plugin \
-        --info
+        --info || echo "Grails2 upload failed"
 else
   echo "Not on master branch, so not publishing"
   echo "TRAVIS_BRANCH: $TRAVIS_BRANCH"
