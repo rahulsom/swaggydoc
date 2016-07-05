@@ -1,7 +1,5 @@
 package swaggydoc.grails2.example
 
-
-
 import static org.springframework.http.HttpStatus.*
 import grails.transaction.Transactional
 import grails.rest.RestfulController
@@ -11,37 +9,109 @@ import com.wordnik.swagger.annotations.*
 
 @Transactional(readOnly = true)
 @Api(value = 'domain')
-class DomainController extends RestfulController {
+class DomainController {
 
-    static responseFormats = ['json', 'xml']
+    static allowedMethods = [save: "POST", update: "PUT", delete: "DELETE"]
 
-    @Override @SwaggyList
-    def index() {
-        super.index()
+    @SwaggyList()
+    def index(Integer max) {
+        params.max = Math.min(max ?: 10, 100)
+        respond Domain.list(params), model:[domainCount: Domain.count()]
     }
 
-    @Override @SwaggyShow
-    def show() {
-        super.show()
+    @SwaggyShow
+    def show(Domain domain) {
+        respond domain
     }
 
-    @Override @SwaggySave
-    def save() {
-        super.save()
+    def create() {
+        respond new Domain(params)
     }
 
-    @Override @SwaggyUpdate
-    def update() {
-        super.update()
+    @Transactional
+    @SwaggySave
+    def save(Domain domain) {
+        if (domain == null) {
+            transactionStatus.setRollbackOnly()
+            notFound()
+            return
+        }
+
+        if (domain.hasErrors()) {
+            transactionStatus.setRollbackOnly()
+            respond domain.errors, view:'create'
+            return
+        }
+
+        domain.save flush:true
+
+        request.withFormat {
+            form multipartForm {
+                flash.message = message(code: 'default.created.message', args: [message(code: 'domain.label', default: 'Domain'), domain.id])
+                redirect domain
+            }
+            '*' { respond domain, [status: CREATED] }
+        }
     }
 
-    @Override @SwaggyDelete
-    def delete() {
-        super.delete()
+    def edit(Domain domain) {
+        respond domain
     }
 
-    @Override @SwaggyPatch
-    Object patch() {
-        return super.patch()
+    @Transactional
+    @SwaggyUpdate
+    def update(Domain domain) {
+        if (domain == null) {
+            transactionStatus.setRollbackOnly()
+            notFound()
+            return
+        }
+
+        if (domain.hasErrors()) {
+            transactionStatus.setRollbackOnly()
+            respond domain.errors, view:'edit'
+            return
+        }
+
+        domain.save flush:true
+
+        request.withFormat {
+            form multipartForm {
+                flash.message = message(code: 'default.updated.message', args: [message(code: 'domain.label', default: 'Domain'), domain.id])
+                redirect domain
+            }
+            '*'{ respond domain, [status: OK] }
+        }
+    }
+
+    @Transactional
+    @SwaggyDelete
+    def delete(Domain domain) {
+
+        if (domain == null) {
+            transactionStatus.setRollbackOnly()
+            notFound()
+            return
+        }
+
+        domain.delete flush:true
+
+        request.withFormat {
+            form multipartForm {
+                flash.message = message(code: 'default.deleted.message', args: [message(code: 'domain.label', default: 'Domain'), domain.id])
+                redirect action:"index", method:"GET"
+            }
+            '*'{ render status: NO_CONTENT }
+        }
+    }
+
+    protected void notFound() {
+        request.withFormat {
+            form multipartForm {
+                flash.message = message(code: 'default.not.found.message', args: [message(code: 'domain.label', default: 'Domain'), params.id])
+                redirect action: "index", method: "GET"
+            }
+            '*'{ render status: NOT_FOUND }
+        }
     }
 }
